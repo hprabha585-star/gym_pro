@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GymPro - Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <h2>GymPro</h2>
+      <nav>
+        <a href="#" class="nav-link active" data-page="dashboard">Dashboard</a>
+        <a href="#" class="nav-link" data-page="members">Members</a>
+        <a href="#" class="nav-link" data-page="plans">Plans</a>
+        <a href="#" class="nav-link" data-page="attendance">Attendance</a>
+        <a href="#" class="nav-link" data-page="trainers">Trainers</a>
+      </nav>
+
+      <button id="add-member-btn" class="add-btn">
+        + Add New Member
+      </button>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header>
+        <h1 id="page-title">Management Dashboard</h1>
+      </header>
+
+      <!-- Dashboard Content -->
+      <div id="dashboard-content">
+        <!-- Payment Reminders Card - MOVED OUTSIDE stats-grid -->
+        <div class="card" id="payment-reminders-container" style="margin-bottom: 1.5rem;">
+          <div style="text-align:center; padding: 20px;">
+            <p>Loading payment reminders...</p>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="card">
+            <h3>Total Members</h3>
+            <p id="total-members" class="number">0</p>
+          </div>
+          <div class="card">
+            <h3>Active Today</h3>
+            <p id="active-today" class="number">0</p>
+          </div>
+          <div class="card">
+            <h3>Est. Revenue</h3>
+            <p id="estimated-revenue" class="number">₹0</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Recent Members</h2>
+          <table id="members-table">
+            <thead>
+              <tr>
+                <th>Member</th>
+                <th>Plan</th>
+                <th>Join Date</th>
+                <th>Expiry</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Members Content -->
+      <div id="members-content" style="display: none;">
+        <div class="card">
+          <h2>All Members</h2>
+          <table id="all-members-table" style="width:100%;">
+            <thead>
+              <tr>
+                <th>Photo</th>
+                <th>Member</th>
+                <th>Contact</th>
+                <th>Plan</th>
+                <th>Expiry</th>
+                <th>Health</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          
+          <!-- Danger Zone -->
+          <div class="danger-zone" style="margin-top: 2rem; border: 2px solid #dc3545; border-radius: 12px; padding: 1.5rem; background: #fff5f5;">
+            <h3 style="color: #dc3545; margin-bottom: 1rem;">⚠️ Danger Zone</h3>
+            <p style="margin-bottom: 1rem; color: #666;">Permanently delete all member records. This action cannot be undone.</p>
+            <button id="delete-all-members-btn" class="danger-btn" style="background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+              🗑️ Delete All Members
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Plans Content -->
+      <div id="plans-content" style="display: none;">
+        <div class="card">
+          <h2>Membership Plans</h2>
+          <p style="color: #666; margin-bottom: 1.5rem;">* Admission Fee: ₹500 (one-time) included in all plans</p>
+          <div class="plans-grid">
+            
+            <!-- 1 MONTH PLANS -->
+            <div class="plan-card" data-plan="1M-Strength">
+              <h3>1 MONTH</h3>
+              <div class="plan-type">STRENGTH</div>
+              <div class="price">₹1,000<span>/month</span></div>
+              <ul>
+                <li>✓ Strength Training</li>
+                <li>✓ Equipment Access</li>
+                <li>✓ 1 Month Validity</li>
+                <li>₹500 Admission Fee Included</li>
+              </ul>
+              <button class="plan-btn select-plan-btn">Select Plan</button>
+            </div>
+
+            <div class="plan-card" data-plan="1M-Strength-Cardio">
+              <h3>1 MONTH</h3>
+              <div class="plan-type">STRENGTH + CARDIO</div>
+              <div class="price">₹1,500<span>/month</span></div>
+              <ul>
+                <li>✓ Strength Training</li>
+                <li>✓ Cardio Workouts</li>
+                <li>✓ Full Gym Access</li>
+                <li>✓ 1 Month Validity</li>
+              </ul>
+              <button class="plan-btn select-plan-btn">Select Plan</button>
+            </div>
+
+            <!-- 3 MONTHS PLANS -->
+            <div class="plan-card popular" data-plan="3M-Strength">
+              <h3>3 MONTHS</h3>
+              <div class="plan-type">STRENGTH</div>
+              <div class="price">₹2,700<span>/3 months</span></div>
+              <ul>
+                <li>✓ Strength Training</li>
+                <li>✓ Equipment Access</li>
+                <li>✓ Save ₹300</li>
+                <li>✓ 3 Months Validity</li>
+              </ul>
+              <button class="plan-btn select-plan-btn">Select Plan</button>
+            </div>
+
+            <div class="plan-card popular" data-plan="3M-Strength-Cardio">
+              <h3>3 MONTHS</h3>
+              <div class="plan-type">STRENGTH + CARDIO</div>
+              <div class="price">₹4,000<span>/3 months</span></div>
+              <ul>
+                <li>✓ Strength Training</li>
+                <li>✓ Cardio Workouts</li>
+                <li>✓ Save ₹500</li>
+                <li>✓ 3 Months Validity</li>
+              </ul>
+              <button class="plan-btn select-plan-btn">Select Plan</button>
+            </div>
+
+            <!-- 6 MONTHS PLANS -->
+            <div class="plan-card" data-plan="6M-Strength">
+              <h3>6 MONTHS</h3>
+              <div class="plan-type">STRENGTH</div>
+              <div class="price">₹5,000<span>/6 months</span></div>
+              <ul>
+                <li>✓ Strength Training</li>
+                <li>✓ Equipment Access</li>
+                <li>✓ Save ₹1,000</li>
+                <li>✓ 6 Months Validity</li>
+              </ul>
+              <button class="plan-btn select-plan-btn">Select Plan</button>
+            </div>
+
+            <div class="plan-card" data-plan="6M-Strength-Cardio">
+              <h3>6 MONTHS</h3>
+              <div class="plan-type">STRENGTH + CARDIO</div>
+              <div class="price">₹7,500<span>/6 months</span></div>
+              <ul>
+                <li>✓ Strength Training</li>
+                <li>✓ Cardio Workouts</li>
+                <li>✓ Save ₹1,500</li>
+                <li>✓ 6 Months Validity</li>
+              </ul>
+              <button class="plan-btn select-plan-btn">Select Plan</button>
+            </div>
+
+            <!-- 1 YEAR PLANS -->
+            <div class="plan-card" data-plan="1Y-Strength">
+              <h3>1 YEAR</h3>
+              <div class="plan-type">STRENGTH</div>
+              <div class="price">₹9,000<span>/year</span></div>
+              <ul>
+                <li>✓ Strength Training</li>
+                <li>✓ Equipment Access</li>
+                <li>✓ Best Value - Save ₹3,000</li>
+                <li>✓ 12 Months Validity</li>
+              </ul>
+              <button class="plan-btn select-plan-btn">Select Plan</button>
+            </div>
+
+            <div class="plan-card" data-plan="1Y-Strength-Cardio">
+              <h3>1 YEAR</h3>
+              <div class="plan-type">STRENGTH + CARDIO</div>
+              <div class="price">₹14,000<span>/year</span></div>
+              <ul>
+                <li>✓ Strength Training</li>
+                <li>✓ Cardio Workouts</li>
+                <li>✓ Best Value - Save ₹4,000</li>
+                <li>✓ 12 Months Validity</li>
+              </ul>
+              <button class="plan-btn select-plan-btn">Select Plan</button>
+            </div>
+
+          </div>
+          
+          <!-- Admission Fee Note -->
+          <div style="margin-top: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; text-align: center;">
+            <p style="color: #666;">📋 One-time Admission Fee: <strong style="color: #7B61FF;">₹500</strong> (included in all plan prices)</p>
+            <p style="color: #888; font-size: 0.9rem; margin-top: 0.5rem;">* Prices include GST and admission fee</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attendance Content -->
+      <div id="attendance-content" style="display: none;">
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2>Attendance Management</h2>
+            <div>
+              <input type="date" id="attendance-date" style="padding:8px 12px; border-radius:8px; border:1px solid #ddd;">
+              <button id="mark-all-present" class="submit-btn" style="margin-left:10px; padding:8px 16px;">Mark All Present</button>
+            </div>
+          </div>
+
+          <!-- Statistics -->
+          <div class="stats-grid" style="margin-bottom: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+            <div class="card" style="padding:1rem;">
+              <h4>Total Active</h4>
+              <p id="total-active" class="number" style="font-size:1.8rem;">0</p>
+            </div>
+            <div class="card" style="padding:1rem;">
+              <h4>Present Today</h4>
+              <p id="present-count" class="number" style="font-size:1.8rem; color:#4CAF50;">0</p>
+            </div>
+            <div class="card" style="padding:1rem;">
+              <h4>Attendance %</h4>
+              <p id="attendance-percentage" class="number" style="font-size:1.8rem; color:#7B61FF;">0%</p>
+            </div>
+          </div>
+
+          <table id="attendance-table" style="width:100%;">
+            <thead>
+              <tr>
+                <th>Member</th>
+                <th>Plan</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Trainers Content -->
+      <div id="trainers-content" style="display: none;">
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2>Trainers Management</h2>
+            <button id="add-trainer-btn" class="submit-btn">+ Add New Trainer</button>
+          </div>
+
+          <table id="trainers-table" style="width:100%;">
+            <thead>
+              <tr>
+                <th>Trainer</th>
+                <th>Specialty</th>
+                <th>Phone</th>
+                <th>Join Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Other Pages Placeholder -->
+      <div id="other-pages" style="display: none; padding: 2rem;">
+        <h2 id="placeholder-title">Module</h2>
+        <p>This section will be implemented next.</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Member Modal - With Camera -->
+  <div id="add-member-modal" class="modal">
+    <div class="modal-content" style="max-width: 650px; max-height: 85vh; overflow-y: auto;">
+      <h2>Add New Member</h2>
+      <form id="add-member-form">
+        
+        <!-- Photo Capture Section -->
+        <div class="form-section">
+          <h3>Member Photo</h3>
+          <div class="photo-capture-container">
+            <div class="photo-preview">
+              <img id="member-photo-preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%237B61FF'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" alt="Profile Preview">
+            </div>
+            <div class="photo-actions">
+              <button type="button" id="open-camera-btn" class="camera-btn">📸 Take Photo</button>
+              <button type="button" id="upload-photo-btn" class="upload-btn">📁 Upload Photo</button>
+              <input type="file" id="photo-upload" accept="image/*" style="display: none;">
+              <button type="button" id="clear-photo-btn" class="clear-btn" style="display: none;">🗑️ Clear</button>
+            </div>
+            <input type="hidden" id="photo-data" value="">
+          </div>
+        </div>
+
+        <!-- Camera Modal -->
+        <div id="camera-modal" class="modal">
+          <div class="modal-content" style="max-width: 500px; text-align: center;">
+            <h3>Take a Photo</h3>
+            <video id="camera-video" autoplay playsinline style="width: 100%; border-radius: 8px;"></video>
+            <canvas id="camera-canvas" style="display: none;"></canvas>
+            <div class="modal-buttons" style="margin-top: 1rem;">
+              <button type="button" id="capture-photo-btn" class="submit-btn">📸 Capture</button>
+              <button type="button" id="close-camera-btn" class="cancel-btn">Close</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Basic Information -->
+        <div class="form-section">
+          <h3>Basic Information</h3>
+          <div class="form-row">
+            <div class="form-group" style="flex: 2;">
+              <label>Full Name *</label>
+              <input type="text" id="name" placeholder="John Doe" required>
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label>Age</label>
+              <input type="number" id="age" placeholder="25" min="12" max="100">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group" style="flex: 1;">
+              <label>Phone Number *</label>
+              <input type="tel" id="phone" placeholder="9876543210" required>
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label>Email Address</label>
+              <input type="email" id="email" placeholder="john@example.com">
+            </div>
+          </div>
+        </div>
+
+        <!-- Health Information -->
+        <div class="form-section">
+          <h3>Health Information</h3>
+          <div class="form-group">
+            <label>Health Conditions</label>
+            <div id="health-conditions-container">
+              <div class="condition-row">
+                <select class="condition-type" style="width: 35%;">
+                  <option value="">Select Condition</option>
+                  <option value="Diabetes">Diabetes</option>
+                  <option value="Asthma">Asthma</option>
+                  <option value="High Blood Pressure">High Blood Pressure</option>
+                  <option value="Heart Condition">Heart Condition</option>
+                  <option value="Back Pain">Back Pain</option>
+                  <option value="Knee Injury">Knee Injury</option>
+                  <option value="Other">Other</option>
+                </select>
+                <select class="condition-severity" style="width: 25%;">
+                  <option value="Mild">Mild</option>
+                  <option value="Moderate">Moderate</option>
+                  <option value="Severe">Severe</option>
+                </select>
+                <input type="text" class="condition-notes" placeholder="Notes" style="width: 30%;">
+                <button type="button" class="remove-condition" onclick="this.parentElement.remove()">❌</button>
+              </div>
+            </div>
+            <button type="button" id="add-condition-btn" class="small-btn">+ Add Condition</button>
+          </div>
+          <div class="form-group">
+            <label>Medical Notes</label>
+            <textarea id="medicalNotes" rows="2" placeholder="Any additional medical information..."></textarea>
+          </div>
+        </div>
+
+        <!-- Emergency Contact -->
+        <div class="form-section">
+          <h3>Emergency Contact</h3>
+          <div class="form-row">
+            <div class="form-group" style="flex: 2;">
+              <label>Contact Name</label>
+              <input type="text" id="emergency-name" placeholder="Emergency contact person">
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label>Relationship</label>
+              <input type="text" id="emergency-relationship" placeholder="e.g., Spouse">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Contact Phone</label>
+            <input type="tel" id="emergency-phone" placeholder="Emergency phone number">
+          </div>
+        </div>
+
+        <!-- Membership Details -->
+        <div class="form-section">
+          <h3>Membership Details</h3>
+          <div class="form-group">
+            <label>Plan *</label>
+            <select id="plan" required>
+              <option value="">Select Plan</option>
+              <option value="1 Month Strength">1 Month Strength - ₹1,000</option>
+              <option value="1 Month Strength + Cardio">1 Month Strength + Cardio - ₹1,500</option>
+              <option value="3 Months Strength">3 Months Strength - ₹2,700</option>
+              <option value="3 Months Strength + Cardio">3 Months Strength + Cardio - ₹4,000</option>
+              <option value="6 Months Strength">6 Months Strength - ₹5,000</option>
+              <option value="6 Months Strength + Cardio">6 Months Strength + Cardio - ₹7,500</option>
+              <option value="1 Year Strength">1 Year Strength - ₹9,000</option>
+              <option value="1 Year Strength + Cardio">1 Year Strength + Cardio - ₹14,000</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group" style="flex: 1;">
+              <label>Expiry Date *</label>
+              <input type="date" id="expiryDate" required>
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label>Status *</label>
+              <select id="status" required>
+                <option value="Active">Active</option>
+                <option value="Trial">Trial</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-buttons">
+          <button type="button" id="cancel-btn" class="cancel-btn">Cancel</button>
+          <button type="submit" class="submit-btn">Add Member</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- QR Payment Modal -->
+  <div id="payment-modal" class="modal">
+    <div class="modal-content" style="max-width: 450px;">
+      <h2 style="text-align:center; color:#7B61FF;">Complete Payment</h2>
+      <p id="payment-member-info" style="text-align:center; margin:15px 0; font-weight:600;"></p>
+      
+      <div style="text-align:center; margin:20px 0;">
+        <p>Scan QR Code to Pay</p>
+        <img id="qr-code" src="" alt="Payment QR" 
+             style="width:250px; height:250px; border:8px solid #7B61FF; border-radius:12px;">
+      </div>
+
+      <div style="background:#f8f9fa; padding:15px; border-radius:8px; margin:15px 0;">
+        <strong>Amount to Pay:</strong> <span id="payment-amount" style="color:#7B61FF; font-size:1.3rem;"></span>
+      </div>
+
+      <button id="payment-done-btn" class="submit-btn" style="width:100%; margin-top:10px;">
+        ✅ Payment Received - Activate Member
+      </button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+ <!-- Add Trainer Modal -->
+<div id="add-trainer-modal" class="modal">
+  <div class="modal-content">
+    <h2>Add New Trainer</h2>
+    <form id="add-trainer-form">
+      <div class="form-group">
+        <label>Full Name *</label>
+        <input type="text" id="trainer-name" required>
+      </div>
+      <div class="form-group">
+        <label>Phone Number *</label>
+        <input type="tel" id="trainer-phone" required>
+      </div>
+      <div class="form-group">
+        <label>Specialty *</label>
+        <input type="text" id="trainer-specialty" placeholder="e.g., Weight Training, Yoga, Cardio" required>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="trainer-status">
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+      </div>
+      <div class="modal-buttons">
+        <button type="button" id="cancel-trainer-btn" class="cancel-btn">Cancel</button>
+        <button type="submit" class="submit-btn">Add Trainer</button>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

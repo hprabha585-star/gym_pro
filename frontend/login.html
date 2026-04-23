@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GymPro - Login</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .auth-container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      width: 90%;
+      max-width: 450px;
+      padding: 40px;
+    }
+    .auth-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .auth-header h1 {
+      color: #7B61FF;
+      font-size: 2rem;
+    }
+    .auth-header p {
+      color: #666;
+      margin-top: 10px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #333;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: #7B61FF;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background: #7B61FF;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .btn:hover {
+      background: #6b4fff;
+    }
+    .auth-footer {
+      text-align: center;
+      margin-top: 20px;
+      color: #666;
+    }
+    .auth-footer a {
+      color: #7B61FF;
+      text-decoration: none;
+    }
+    .auth-footer a:hover {
+      text-decoration: underline;
+    }
+    .error-message {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .success-message {
+      background: #d4edda;
+      color: #155724;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .role-select {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    .toggle-form {
+      cursor: pointer;
+      color: #7B61FF;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-header">
+      <h1>🏋️ GymPro</h1>
+      <p id="form-title">Login to your account</p>
+    </div>
+    
+    <div id="message-container"></div>
+    
+    <form id="auth-form">
+      <div id="name-field" style="display: none;">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="name" placeholder="Enter your full name">
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="email" placeholder="Enter your email" required>
+      </div>
+      
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="Enter your password" required>
+      </div>
+      
+      <div id="role-field" style="display: none;">
+        <div class="form-group">
+          <label>Role</label>
+          <select id="role" class="role-select">
+            <option value="staff">Staff</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      
+      <button type="submit" class="btn" id="submit-btn">Login</button>
+    </form>
+    
+    <div class="auth-footer">
+      <p id="toggle-text">Don't have an account? <span class="toggle-form" onclick="toggleForm()">Register here</span></p>
+    </div>
+  </div>
+
+  <script>
+    let isLogin = true;
+    const API_URL = 'http://localhost:5000/api/auth';
+    
+    function toggleForm() {
+      isLogin = !isLogin;
+      const formTitle = document.getElementById('form-title');
+      const submitBtn = document.getElementById('submit-btn');
+      const nameField = document.getElementById('name-field');
+      const roleField = document.getElementById('role-field');
+      const toggleText = document.getElementById('toggle-text');
+      
+      if (isLogin) {
+        formTitle.textContent = 'Login to your account';
+        submitBtn.textContent = 'Login';
+        nameField.style.display = 'none';
+        roleField.style.display = 'none';
+        toggleText.innerHTML = `Don't have an account? <span class="toggle-form" onclick="toggleForm()">Register here</span>`;
+      } else {
+        formTitle.textContent = 'Create new account';
+        submitBtn.textContent = 'Register';
+        nameField.style.display = 'block';
+        roleField.style.display = 'block';
+        toggleText.innerHTML = `Already have an account? <span class="toggle-form" onclick="toggleForm()">Login here</span>`;
+      }
+    }
+    
+    function showMessage(message, isError = true) {
+      const container = document.getElementById('message-container');
+      container.innerHTML = `<div class="${isError ? 'error-message' : 'success-message'}">${message}</div>`;
+      setTimeout(() => {
+        container.innerHTML = '';
+      }, 5000);
+    }
+    
+    document.getElementById('auth-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      if (!email || !password) {
+        showMessage('Please fill all required fields');
+        return;
+      }
+      
+      if (!isLogin) {
+        const name = document.getElementById('name').value;
+        const role = document.getElementById('role').value;
+        if (!name) {
+          showMessage('Please enter your name');
+          return;
+        }
+      }
+      
+      const endpoint = isLogin ? '/login' : '/register';
+      const body = isLogin ? { email, password } : {
+        name: document.getElementById('name').value,
+        email,
+        password,
+        role: document.getElementById('role').value
+      };
+      
+      try {
+        const res = await fetch(`${API_URL}${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          showMessage(isLogin ? 'Login successful! Redirecting...' : 'Registration successful! Redirecting...', false);
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 1500);
+        } else {
+          showMessage(data.error || data.message || 'Authentication failed');
+        }
+      } catch (err) {
+        showMessage('Network error. Please try again.');
+        console.error(err);
+      }
+    });
+    
+    // Check if already logged in
+    const token = localStorage.getItem('token');
+    if (token) {
+      window.location.href = '/';
+    }
+  </script>
+</body>
+</html>
