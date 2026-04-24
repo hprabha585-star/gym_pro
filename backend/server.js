@@ -21,6 +21,7 @@ const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes.router);
 app.use('/api/members', require('./routes/members'));
 app.use('/api/trainers', require('./routes/trainers'));
+app.use('/api/attendance', require('./routes/attendance'));
 
 // ✅ Health check (only once)
 app.get('/api/health', (req, res) => {
