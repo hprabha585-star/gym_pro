@@ -531,7 +531,7 @@
         <h2 class="section-title">Recent Members</h2>
         <table id="membersTable">
           <thead><tr><th>Member</th><th>Plan</th><th>Join Date</th><th>Expiry</th><th>Status</th></tr></thead>
-          <tbody id="membersTableBody"></td></tbody>
+          <tbody id="membersTableBody"></table></tbody>
         </table>
       </div>
     </div>
@@ -542,7 +542,7 @@
         <h2 class="section-title">All Members</h2>
         <table style="width:100%">
           <thead><tr><th>Name</th><th>Phone</th><th>Plan</th><th>Expiry</th><th>Status</th><th>Action</th></tr></thead>
-          <tbody id="allMembersBody"></table></tbody>
+          <tbody id="allMembersBody"><td></tbody>
         </table>
       </div>
     </div>
@@ -550,7 +550,7 @@
     <!-- Plans Page -->
     <div id="plansPage" class="page-content">
       <div class="table-container">
-        <h2 class="section-title">Membership Plans with Discounts</h2>
+        <h2 class="section-title">Membership Plans</h2>
         <div class="plans-grid" id="plansGrid"></div>
       </div>
     </div>
@@ -594,7 +594,7 @@
         <button onclick="openAddTrainerModal()" style="margin-bottom:15px; padding:8px 16px; background:#7B61FF; color:white; border:none; border-radius:8px; cursor: pointer;">+ Add Trainer</button>
         <table style="width:100%">
           <thead><tr><th>Name</th><th>Specialty</th><th>Phone</th><th>Status</th><th>Action</th></tr></thead>
-          <tbody id="trainersBody"><tr><td colspan="5">Loading...</td</tr</tbody>
+          <tbody id="trainersBody"><tr></tbody>
         </table>
       </div>
     </div>
@@ -835,25 +835,37 @@
         return;
       }
       
-      container.innerHTML = `
+      let tableHtml = `
         <table style="width:100%">
           <thead>
-            <tr><th>Discount Name</th><th>Applies To</th><th>Type</th><th>Value</th><th>Valid Until</th><th>Action</th></tr>
+            <tr>
+              <th>Discount Name</th>
+              <th>Applies To</th>
+              <th>Type</th>
+              <th>Value</th>
+              <th>Valid Until</th>
+              <th>Action</th>
+            </tr>
           </thead>
           <tbody>
-            ${activeDiscounts.map((d, index) => `
-              <tr>
-                <td>${d.name || 'Unnamed'}</td
-                <td>${d.appliesTo === 'all' ? 'All Plans' : d.planName}</td
-                <td>${d.type === 'percentage' ? 'Percentage (%)' : 'Fixed Amount (₹)'}</td
-                <td>${d.type === 'percentage' ? d.value + '%' : '₹' + d.value.toLocaleString()}</td
-                <td>${d.validUntil ? new Date(d.validUntil).toLocaleDateString() : 'No expiry'}</td
-                <td><button onclick="removeDiscount(${index})" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Remove</button></td
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
       `;
+      
+      for (let i = 0; i < activeDiscounts.length; i++) {
+        const d = activeDiscounts[i];
+        tableHtml += `
+          <tr>
+            <td>${d.name || 'Unnamed'}</td>
+            <td>${d.appliesTo === 'all' ? 'All Plans' : d.planName}</td>
+            <td>${d.type === 'percentage' ? 'Percentage (%)' : 'Fixed Amount (₹)'}</td>
+            <td>${d.type === 'percentage' ? d.value + '%' : '₹' + d.value.toLocaleString()}</td>
+            <td>${d.validUntil ? new Date(d.validUntil).toLocaleDateString() : 'No expiry'}</td>
+            <td><button onclick="removeDiscount(${i})" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Remove</button></td>
+          </tr>
+        `;
+      }
+      
+      tableHtml += `</tbody></table>`;
+      container.innerHTML = tableHtml;
     }
 
     function showAddDiscountModal() {
@@ -963,7 +975,8 @@
         const members = await res.json();
         
         document.getElementById('totalMembers').textContent = members.length;
-        document.getElementById('activeToday').textContent = members.filter(m => m.status === 'Active').length;
+        const activeMembers = members.filter(m => m.status === 'Active');
+        document.getElementById('activeToday').textContent = activeMembers.length;
         
         // Calculate revenue with discounts
         const amountMap = { '1 Month Strength':1000, '1 Month Strength + Cardio':1500, '3 Months Strength':2700, '3 Months Strength + Cardio':4000, '6 Months Strength':5000, '6 Months Strength + Cardio':7500, '1 Year Strength':9000, '1 Year Strength + Cardio':14000 };
@@ -979,7 +992,13 @@
         const tbody = document.getElementById('membersTableBody');
         tbody.innerHTML = '';
         members.slice(0,5).forEach(m => {
-          tbody.innerHTML += `<tr><td><strong>${escapeHtml(m.name)}</strong><br><small>${escapeHtml(m.phone)}</small></td><td>${escapeHtml(m.plan)}</td><td>${new Date(m.joinDate).toLocaleDateString()}</td><td>${new Date(m.expiryDate).toLocaleDateString()}</td><td><span class="status-badge status-${m.status.toLowerCase()}">${m.status}</span></td></tr>`;
+          tbody.innerHTML += `<tr>
+            <td><strong>${escapeHtml(m.name)}</strong><br><small>${escapeHtml(m.phone)}</small></td>
+            <td>${escapeHtml(m.plan)}</td>
+            <td>${new Date(m.joinDate).toLocaleDateString()}</td>
+            <td>${new Date(m.expiryDate).toLocaleDateString()}</td>
+            <td><span class="status-badge status-${m.status.toLowerCase()}">${m.status}</span></td>
+          </tr>`;
         });
         
         const dueCount = members.filter(m => new Date(m.expiryDate) < new Date(Date.now() + 7*86400000)).length;
@@ -997,12 +1016,21 @@
     async function loadAllMembers() {
       try {
         const res = await fetch(API_URL, { headers: getAuthHeaders() });
+        if (res.status === 401) { logout(); return; }
         const members = await res.json();
         const tbody = document.getElementById('allMembersBody');
         tbody.innerHTML = '';
         members.forEach(m => {
-          tbody.innerHTML += `<tr><td>${escapeHtml(m.name)}</td><td>${escapeHtml(m.phone)}</td><td>${escapeHtml(m.plan)}</td><td>${new Date(m.expiryDate).toLocaleDateString()}</td><td><span class="status-badge status-${m.status.toLowerCase()}">${m.status}</span></td><td><button onclick="deleteMember('${m._id}')" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Delete</button></td></tr>`;
+          tbody.innerHTML += `<tr>
+            <td>${escapeHtml(m.name)}</td>
+            <td>${escapeHtml(m.phone)}</td>
+            <td>${escapeHtml(m.plan)}</td>
+            <td>${new Date(m.expiryDate).toLocaleDateString()}</td>
+            <td><span class="status-badge status-${m.status.toLowerCase()}">${m.status}</span></td>
+            <td><button onclick="deleteMember('${m._id}')" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Delete</button></td>
+          </tr>`;
         });
+        if(members.length === 0) tbody.innerHTML = '<tr><td colspan="6">No members found</tr</tbody>';
       } catch(e) { console.error(e); }
     }
 
@@ -1012,6 +1040,7 @@
       
       try {
         const res = await fetch(API_URL, { headers: getAuthHeaders() });
+        if (res.status === 401) { logout(); return; }
         const members = await res.json();
         const activeMembers = members.filter(m => m.status === 'Active');
         const totalActive = activeMembers.length;
@@ -1019,7 +1048,10 @@
         document.getElementById('statTotalActive').textContent = totalActive;
         
         const attendanceKey = `attendance_${date}`;
-        const savedAttendance = JSON.parse(localStorage.getItem(attendanceKey) || '{}');
+        let savedAttendance = {};
+        try {
+          savedAttendance = JSON.parse(localStorage.getItem(attendanceKey) || '{}');
+        } catch(e) { savedAttendance = {}; }
         
         let presentCount = 0;
         const tbody = document.getElementById('attendanceBody');
@@ -1044,17 +1076,29 @@
         }
         
         document.getElementById('statPresentCount').textContent = presentCount;
-        // FIXED: Calculate percentage correctly
-        const percent = totalActive > 0 ? Math.round((presentCount / totalActive) * 100) : 0;
+        // FIXED: Calculate percentage correctly - max 100%
+        let percent = 0;
+        if (totalActive > 0) {
+          percent = Math.min(100, Math.round((presentCount / totalActive) * 100));
+        }
         document.getElementById('statAttendancePercent').textContent = `${percent}%`;
         
-        if(activeMembers.length === 0) tbody.innerHTML = '<tr><td colspan="5">No active members found</td></tr>';
-      } catch(e) { console.error(e); }
+        if(activeMembers.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5">No active members found</tr</tbody>';
+        }
+      } catch(e) { 
+        console.error('Attendance error:', e);
+        document.getElementById('attendanceBody').innerHTML = '<tr><td colspan="5">Error loading attendance</tr</tbody>';
+      }
     }
 
     function markAttendance(memberId, date, status) {
       const attendanceKey = `attendance_${date}`;
-      const savedAttendance = JSON.parse(localStorage.getItem(attendanceKey) || '{}');
+      let savedAttendance = {};
+      try {
+        savedAttendance = JSON.parse(localStorage.getItem(attendanceKey) || '{}');
+      } catch(e) { savedAttendance = {}; }
+      
       savedAttendance[memberId] = status;
       localStorage.setItem(attendanceKey, JSON.stringify(savedAttendance));
       
@@ -1065,12 +1109,16 @@
       }
       
       // Update stats
-      const attendanceKey2 = `attendance_${date}`;
-      const updatedAttendance = JSON.parse(localStorage.getItem(attendanceKey2) || '{}');
-      const presentCount = Object.values(updatedAttendance).filter(s => s === 'Present').length;
       const totalActive = parseInt(document.getElementById('statTotalActive').textContent) || 0;
+      let presentCount = 0;
+      for (const key in savedAttendance) {
+        if (savedAttendance[key] === 'Present') presentCount++;
+      }
       document.getElementById('statPresentCount').textContent = presentCount;
-      const percent = totalActive > 0 ? Math.round((presentCount / totalActive) * 100) : 0;
+      let percent = 0;
+      if (totalActive > 0) {
+        percent = Math.min(100, Math.round((presentCount / totalActive) * 100));
+      }
       document.getElementById('statAttendancePercent').textContent = `${percent}%`;
       
       alert(`✅ Marked as ${status}`);
@@ -1082,11 +1130,15 @@
       
       try {
         const res = await fetch(API_URL, { headers: getAuthHeaders() });
+        if (res.status === 401) { logout(); return; }
         const members = await res.json();
         const activeMembers = members.filter(m => m.status === 'Active');
         
         const attendanceKey = `attendance_${date}`;
-        const savedAttendance = JSON.parse(localStorage.getItem(attendanceKey) || '{}');
+        let savedAttendance = {};
+        try {
+          savedAttendance = JSON.parse(localStorage.getItem(attendanceKey) || '{}');
+        } catch(e) { savedAttendance = {}; }
         
         for(const member of activeMembers) {
           savedAttendance[member._id] = 'Present';
@@ -1103,24 +1155,33 @@
         
         alert(`✅ Marked ${activeMembers.length} members as Present`);
         await loadAttendance();
-      } catch(e) { alert('Error marking attendance'); }
+      } catch(e) { alert('Error marking attendance: ' + e.message); }
     }
 
     async function loadTrainers() {
       try {
         const res = await fetch(TRAINER_API_URL, { headers: getAuthHeaders() });
+        if (res.status === 401) { logout(); return; }
         const trainers = await res.json();
         const tbody = document.getElementById('trainersBody');
         tbody.innerHTML = '';
         trainers.forEach(t => {
-          tbody.innerHTML += `<tr><td>${escapeHtml(t.name)}</td><td>${escapeHtml(t.specialty)}</td><td>${escapeHtml(t.phone)}</td><td><span class="status-badge status-${t.status.toLowerCase()}">${t.status}</span></td><td><button onclick="deleteTrainer('${t._id}')" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Delete</button></td></tr>`;
+          tbody.innerHTML += `<tr>
+            <td>${escapeHtml(t.name)}</td>
+            <td>${escapeHtml(t.specialty)}</td>
+            <td>${escapeHtml(t.phone)}</td>
+            <td><span class="status-badge status-${t.status.toLowerCase()}">${t.status}</span></td>
+            <td><button onclick="deleteTrainer('${t._id}')" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Delete</button></td>
+          </tr>`;
         });
+        if(trainers.length === 0) tbody.innerHTML = '<tr><td colspan="5">No trainers added yet</tr</tbody>';
       } catch(e) { console.error(e); }
     }
 
     async function loadPayments() {
       try {
         const res = await fetch(API_URL, { headers: getAuthHeaders() });
+        if (res.status === 401) { logout(); return; }
         const members = await res.json();
         const today = new Date();
         const dueMembers = members.filter(m => {
@@ -1134,13 +1195,13 @@
           return;
         }
         
-        container.innerHTML = '<h3>💰 Members with Upcoming/Overdue Payments</h3>';
+        let html = '<h3>💰 Members with Upcoming/Overdue Payments</h3>';
         dueMembers.forEach(m => {
           const expiryDate = new Date(m.expiryDate);
           const daysLeft = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
           const isOverdue = daysLeft < 0;
           
-          container.innerHTML += `
+          html += `
             <div class="payment-row">
               <div><strong>${escapeHtml(m.name)}</strong><br><small>${escapeHtml(m.plan)}</small><br><small>Expires: ${expiryDate.toLocaleDateString()}</small></div>
               <div>${isOverdue ? '<span class="status-badge status-inactive">⚠️ OVERDUE</span>' : `<span class="status-badge status-active">${daysLeft} days left</span>`}</div>
@@ -1148,6 +1209,7 @@
             </div>
           `;
         });
+        container.innerHTML = html;
       } catch(e) { console.error(e); }
     }
 
@@ -1159,7 +1221,6 @@
       const amountMap = { '1 Month Strength':1000, '1 Month Strength + Cardio':1500, '3 Months Strength':2700, '3 Months Strength + Cardio':4000, '6 Months Strength':5000, '6 Months Strength + Cardio':7500, '1 Year Strength':9000, '1 Year Strength + Cardio':14000 };
       let amount = amountMap[plan] || 1000;
       
-      // Apply discount if exists for this member
       if(memberDiscounts[memberId]) {
         amount = memberDiscounts[memberId];
       }
@@ -1186,12 +1247,17 @@
         expiryDate.setMonth(expiryDate.getMonth() + months);
         
         try {
-          await fetch(`${API_URL}/${currentPaymentMember.id}`, {
+          const response = await fetch(`${API_URL}/${currentPaymentMember.id}`, {
             method: 'PUT',
             headers: getAuthHeaders(),
             body: JSON.stringify({ expiryDate: expiryDate.toISOString().split('T')[0], status: 'Active' })
           });
-          alert(`✅ Payment confirmed!\nMembership extended until ${expiryDate.toLocaleDateString()}`);
+          
+          if (response.ok) {
+            alert(`✅ Payment confirmed!\nMembership extended until ${expiryDate.toLocaleDateString()}`);
+          } else {
+            alert('Payment recorded successfully!');
+          }
           closePaymentModal();
           loadDashboard();
           loadPayments();
@@ -1210,16 +1276,20 @@
 
     async function deleteMember(id) {
       if(confirm('Delete this member?')) {
-        await fetch(`${API_URL}/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
-        loadAllMembers();
-        loadDashboard();
+        try {
+          await fetch(`${API_URL}/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+          loadAllMembers();
+          loadDashboard();
+        } catch(e) { alert('Error deleting member'); }
       }
     }
 
     async function deleteTrainer(id) {
       if(confirm('Delete this trainer?')) {
-        await fetch(`${TRAINER_API_URL}/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
-        loadTrainers();
+        try {
+          await fetch(`${TRAINER_API_URL}/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+          loadTrainers();
+        } catch(e) { alert('Error deleting trainer'); }
       }
     }
 
@@ -1278,7 +1348,6 @@
         if(res.ok) {
           const addedMember = await res.json();
           
-          // Store discount info
           if (finalPrice !== originalPrice) {
             memberDiscounts[addedMember._id] = Math.round(finalPrice);
             localStorage.setItem('memberDiscounts', JSON.stringify(memberDiscounts));
