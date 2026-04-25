@@ -17,7 +17,6 @@
       min-height: 100vh;
     }
 
-    /* Modern Dashboard Layout */
     .dashboard-container {
       max-width: 1400px;
       margin: 0 auto;
@@ -67,10 +66,9 @@
     .menu-toggle-btn:hover {
       background: #6b4fff;
       transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(123, 97, 255, 0.3);
     }
 
-    /* Sidebar Menu - Hidden by default */
+    /* Sidebar Menu */
     .sidebar-menu {
       background: white;
       border-radius: 20px;
@@ -98,7 +96,7 @@
 
     .menu-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 15px;
     }
 
@@ -116,11 +114,6 @@
       background: #7B61FF10;
       border-color: #7B61FF;
       transform: translateY(-3px);
-    }
-
-    .menu-item.active {
-      background: #7B61FF;
-      color: white;
     }
 
     .menu-item .menu-icon {
@@ -141,7 +134,27 @@
 
     .logout-item:hover {
       background: #c82333;
-      border-color: #dc3545;
+    }
+
+    /* Page Content */
+    .page-content {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .page-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     /* Stats Grid */
@@ -179,25 +192,13 @@
       margin-bottom: 10px;
     }
 
-    .stat-trend {
-      color: #4CAF50;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    /* Revenue Card Special Style */
-    .revenue-card .stat-number {
-      color: #FF6B6B;
-    }
-
-    /* Members Table */
-    .members-table-container {
+    /* Tables */
+    .table-container {
       background: white;
       border-radius: 20px;
       padding: 25px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      overflow-x: auto;
     }
 
     .section-title {
@@ -232,36 +233,6 @@
       background: #f8f9fa;
       color: #555;
       font-weight: 600;
-      font-size: 0.9rem;
-    }
-
-    .member-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .member-avatar {
-      width: 45px;
-      height: 45px;
-      background: #7B61FF;
-      color: white;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      font-size: 1.2rem;
-    }
-
-    .member-name {
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .member-phone {
-      font-size: 0.8rem;
-      color: #888;
     }
 
     .status-badge {
@@ -272,81 +243,136 @@
       display: inline-block;
     }
 
-    .status-active {
-      background: #d4edda;
-      color: #155724;
+    .status-active { background: #d4edda; color: #155724; }
+    .status-trial { background: #fff3cd; color: #856404; }
+    .status-inactive { background: #f8d7da; color: #721c24; }
+
+    /* Plans Grid */
+    .plans-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
     }
 
-    .status-trial {
-      background: #fff3cd;
-      color: #856404;
+    .plan-card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      transition: transform 0.3s;
     }
 
-    .status-inactive {
-      background: #f8d7da;
-      color: #721c24;
+    .plan-card:hover {
+      transform: translateY(-5px);
     }
 
-    /* Payment Reminder Card */
+    .plan-card h3 {
+      color: #7B61FF;
+      margin-bottom: 10px;
+    }
+
+    .plan-price {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #333;
+      margin: 15px 0;
+    }
+
+    .plan-btn {
+      background: #7B61FF;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+
+    /* Attendance Buttons */
+    .attendance-btn {
+      padding: 6px 12px;
+      margin: 0 4px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn-present {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .btn-absent {
+      background: #dc3545;
+      color: white;
+    }
+
+    /* Form Styles */
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+
+    .submit-btn {
+      background: #7B61FF;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      max-width: 500px;
+      width: 90%;
+    }
+
     .reminder-card {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
       color: white;
       border-radius: 20px;
       padding: 25px;
       margin-bottom: 25px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     }
 
-    .reminder-card h3 {
-      margin-bottom: 10px;
-      font-size: 1.3rem;
-    }
-
-    .reminder-card .due-count {
-      font-size: 2rem;
-      font-weight: 700;
-      margin: 10px 0;
-    }
-
-    /* Responsive Design */
     @media (max-width: 768px) {
       .dashboard-container {
         padding: 15px;
       }
-
-      .stats-grid {
-        grid-template-columns: 1fr;
-        gap: 15px;
-      }
-
       .menu-grid {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       }
-
-      th, td {
-        padding: 10px 8px;
-        font-size: 0.85rem;
-      }
-
-      .member-avatar {
-        width: 35px;
-        height: 35px;
-        font-size: 1rem;
-      }
-    }
-
-    /* Loading State */
-    .loading {
-      text-align: center;
-      padding: 40px;
-      color: #999;
-    }
-
-    /* Empty State */
-    .empty-state {
-      text-align: center;
-      padding: 60px;
-      color: #999;
     }
   </style>
 </head>
@@ -356,309 +382,387 @@
     <div class="dashboard-header">
       <div class="logo-section">
         <h1>🏋️ GymPro</h1>
-        <p>Management Dashboard</p>
+        <p id="pageTitle">Management Dashboard</p>
       </div>
-      <button class="menu-toggle-btn" onclick="toggleMenu()">
-        ☰ Menu
-      </button>
+      <button class="menu-toggle-btn" onclick="toggleMenu()">☰ Menu</button>
     </div>
 
-    <!-- Sidebar Menu (Hidden by default) -->
+    <!-- Menu -->
     <div id="sidebarMenu" class="sidebar-menu">
       <div class="menu-grid">
-        <div class="menu-item" onclick="handleMenuClick('dashboard')">
+        <div class="menu-item" onclick="showPage('dashboard')">
           <span class="menu-icon">📊</span>
           <span class="menu-label">Dashboard</span>
         </div>
-        <div class="menu-item" onclick="handleMenuClick('members')">
+        <div class="menu-item" onclick="showPage('members')">
           <span class="menu-icon">👥</span>
           <span class="menu-label">Members</span>
         </div>
-        <div class="menu-item" onclick="handleMenuClick('plans')">
+        <div class="menu-item" onclick="showPage('plans')">
           <span class="menu-icon">💎</span>
           <span class="menu-label">Plans</span>
         </div>
-        <div class="menu-item" onclick="handleMenuClick('attendance')">
+        <div class="menu-item" onclick="showPage('attendance')">
           <span class="menu-icon">📅</span>
           <span class="menu-label">Attendance</span>
         </div>
-        <div class="menu-item" onclick="handleMenuClick('trainers')">
+        <div class="menu-item" onclick="showPage('trainers')">
           <span class="menu-icon">🏋️‍♂️</span>
           <span class="menu-label">Trainers</span>
         </div>
-        <div class="menu-item" onclick="handleMenuClick('addMember')">
+        <div class="menu-item" onclick="openAddMemberModal()">
           <span class="menu-icon">➕</span>
           <span class="menu-label">Add Member</span>
         </div>
-        <div class="menu-item logout-item" onclick="handleMenuClick('logout')">
+        <div class="menu-item logout-item" onclick="logout()">
           <span class="menu-icon">🚪</span>
           <span class="menu-label">Logout</span>
         </div>
       </div>
     </div>
 
-    <!-- Payment Reminder Card -->
-    <div id="reminderCard" class="reminder-card">
-      <h3>⚠️ Payment Reminders</h3>
-      <p>Loading payment reminders...</p>
+    <!-- Dashboard Page -->
+    <div id="dashboardPage" class="page-content active">
+      <div id="reminderCard" class="reminder-card">
+        Loading payment reminders...
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h3>Total Members</h3>
+          <div class="stat-number" id="totalMembers">0</div>
+        </div>
+        <div class="stat-card">
+          <h3>Active Today</h3>
+          <div class="stat-number" id="activeToday">0</div>
+        </div>
+        <div class="stat-card">
+          <h3>Est. Revenue</h3>
+          <div class="stat-number" id="estimatedRevenue">₹0</div>
+        </div>
+      </div>
+      <div class="table-container">
+        <h2 class="section-title">Recent Members</h2>
+        <table id="membersTable">
+          <thead><tr><th>Member</th><th>Plan</th><th>Join Date</th><th>Expiry</th><th>Status</th></tr></thead>
+          <tbody id="membersTableBody"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- Stats Grid -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <h3>Total Members</h3>
-        <div class="stat-number" id="totalMembers">0</div>
-        <div class="stat-trend">📈 +12% this month</div>
-      </div>
-      <div class="stat-card">
-        <h3>Active Today</h3>
-        <div class="stat-number" id="activeToday">0</div>
-        <div class="stat-trend">✅ Currently active</div>
-      </div>
-      <div class="stat-card revenue-card">
-        <h3>Est. Revenue</h3>
-        <div class="stat-number" id="estimatedRevenue">₹0</div>
-        <div class="stat-trend">💰 Monthly recurring</div>
+    <!-- Members Page -->
+    <div id="membersPage" class="page-content">
+      <div class="table-container">
+        <h2 class="section-title">All Members</h2>
+        <table style="width:100%">
+          <thead><tr><th>Name</th><th>Phone</th><th>Plan</th><th>Expiry</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="allMembersBody"><tr><td colspan="6">Loading...</td></tr></tbody>
+        </table>
       </div>
     </div>
 
-    <!-- Recent Members Table -->
-    <div class="members-table-container">
-      <h2 class="section-title">Recent Members</h2>
-      <table id="membersTable">
-        <thead>
-          <tr>
-            <th>Member</th>
-            <th>Plan</th>
-            <th>Join Date</th>
-            <th>Expiry Date</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="membersTableBody">
-          <tr>
-            <td colspan="5" class="loading">Loading members...</td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- Plans Page -->
+    <div id="plansPage" class="page-content">
+      <div class="table-container">
+        <h2 class="section-title">Membership Plans</h2>
+        <div class="plans-grid" id="plansGrid"></div>
+      </div>
+    </div>
+
+    <!-- Attendance Page -->
+    <div id="attendancePage" class="page-content">
+      <div class="table-container">
+        <h2 class="section-title">Attendance</h2>
+        <input type="date" id="attendanceDate" style="margin-bottom:15px; padding:8px;">
+        <button onclick="loadAttendance()" style="margin-left:10px; padding:8px 16px;">Load</button>
+        <table style="width:100%; margin-top:15px">
+          <thead><tr><th>Member</th><th>Plan</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="attendanceBody"><tr><td colspan="4">Select date to view attendance</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Trainers Page -->
+    <div id="trainersPage" class="page-content">
+      <div class="table-container">
+        <h2 class="section-title">Trainers</h2>
+        <button onclick="openAddTrainerModal()" style="margin-bottom:15px; padding:8px 16px; background:#7B61FF; color:white; border:none; border-radius:8px;">+ Add Trainer</button>
+        <table style="width:100%">
+          <thead><tr><th>Name</th><th>Specialty</th><th>Phone</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="trainersBody"><tr><td colspan="5">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Member Modal -->
+  <div id="addMemberModal" class="modal">
+    <div class="modal-content">
+      <h2>Add New Member</h2>
+      <form id="addMemberForm">
+        <div class="form-group"><label>Name *</label><input type="text" id="memberName" required></div>
+        <div class="form-group"><label>Phone *</label><input type="tel" id="memberPhone" required></div>
+        <div class="form-group"><label>Email</label><input type="email" id="memberEmail"></div>
+        <div class="form-group"><label>Plan *</label>
+          <select id="memberPlan" required>
+            <option value="1 Month Strength">1 Month Strength - ₹1,000</option>
+            <option value="1 Month Strength + Cardio">1 Month Strength + Cardio - ₹1,500</option>
+            <option value="3 Months Strength">3 Months Strength - ₹2,700</option>
+            <option value="3 Months Strength + Cardio">3 Months Strength + Cardio - ₹4,000</option>
+            <option value="6 Months Strength">6 Months Strength - ₹5,000</option>
+            <option value="6 Months Strength + Cardio">6 Months Strength + Cardio - ₹7,500</option>
+            <option value="1 Year Strength">1 Year Strength - ₹9,000</option>
+            <option value="1 Year Strength + Cardio">1 Year Strength + Cardio - ₹14,000</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Expiry Date</label><input type="date" id="memberExpiry"></div>
+        <button type="submit" class="submit-btn">Add Member</button>
+        <button type="button" onclick="closeAddMemberModal()" style="margin-top:10px; width:100%; padding:10px;">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Trainer Modal -->
+  <div id="addTrainerModal" class="modal">
+    <div class="modal-content">
+      <h2>Add New Trainer</h2>
+      <form id="addTrainerForm">
+        <div class="form-group"><label>Name *</label><input type="text" id="trainerName" required></div>
+        <div class="form-group"><label>Phone *</label><input type="tel" id="trainerPhone" required></div>
+        <div class="form-group"><label>Specialty *</label><input type="text" id="trainerSpecialty" required></div>
+        <button type="submit" class="submit-btn">Add Trainer</button>
+        <button type="button" onclick="closeAddTrainerModal()" style="margin-top:10px; width:100%; padding:10px;">Cancel</button>
+      </form>
     </div>
   </div>
 
   <script>
-    // API Configuration
     const BASE_URL = "https://gym-pro-mvyv.onrender.com/api";
     const API_URL = `${BASE_URL}/members`;
     const TRAINER_API_URL = `${BASE_URL}/trainers`;
 
-    // Helper function to get auth headers
     function getAuthHeaders() {
       const token = localStorage.getItem('token');
-      return {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      };
+      return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
     }
 
-    // Check if user is logged in
     function checkAuth() {
       const token = localStorage.getItem('token');
-      if (!token) {
-        window.location.href = '/login.html';
-        return false;
-      }
+      if (!token) { window.location.href = '/login.html'; return false; }
       return true;
     }
 
-    // Get current user
-    function getCurrentUser() {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        try {
-          return JSON.parse(userStr);
-        } catch (e) {
-          console.error('Error parsing user data:', e);
-          return null;
-        }
-      }
-      return null;
-    }
-
-    // Logout function
     function logout() {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login.html';
     }
 
-    // Escape HTML
-    function escapeHtml(str) {
-      if (!str) return '';
-      return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
-
-    // Toggle Menu
     function toggleMenu() {
-      const menu = document.getElementById('sidebarMenu');
-      menu.classList.toggle('show');
+      document.getElementById('sidebarMenu').classList.toggle('show');
     }
 
-    // Handle Menu Click
-    function handleMenuClick(action) {
-      // Close menu
+    function showPage(page) {
       document.getElementById('sidebarMenu').classList.remove('show');
+      document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+      document.getElementById(`${page}Page`).classList.add('active');
+      document.getElementById('pageTitle').textContent = page.charAt(0).toUpperCase() + page.slice(1);
       
-      switch(action) {
-        case 'dashboard':
-          // Already on dashboard
-          break;
-        case 'members':
-          alert('Members page would open here');
-          break;
-        case 'plans':
-          alert('Plans page would open here');
-          break;
-        case 'attendance':
-          alert('Attendance page would open here');
-          break;
-        case 'trainers':
-          alert('Trainers page would open here');
-          break;
-        case 'addMember':
-          alert('Add Member form would open here');
-          break;
-        case 'logout':
-          logout();
-          break;
-      }
+      if (page === 'dashboard') { loadDashboard(); }
+      else if (page === 'members') { loadAllMembers(); }
+      else if (page === 'plans') { loadPlans(); }
+      else if (page === 'attendance') { loadAttendance(); }
+      else if (page === 'trainers') { loadTrainers(); }
     }
 
-    // Load Dashboard Stats
     async function loadDashboard() {
       try {
-        const res = await fetch(API_URL, {
-          headers: getAuthHeaders()
-        });
-        
-        if (res.status === 401) {
-          logout();
-          return;
-        }
-        
-        if (!res.ok) throw new Error('Failed to load members');
-        
+        const res = await fetch(API_URL, { headers: getAuthHeaders() });
+        if (res.status === 401) { logout(); return; }
         const members = await res.json();
         
-        // Calculate stats
-        const totalMembers = members.length;
-        const activeToday = members.filter(m => m.status === 'Active' || m.status === 'Trial').length;
+        document.getElementById('totalMembers').textContent = members.length;
+        document.getElementById('activeToday').textContent = members.filter(m => m.status === 'Active').length;
         
-        const amountMap = {
-          '1 Month Strength': 1000,
-          '1 Month Strength + Cardio': 1500,
-          '3 Months Strength': 2700,
-          '3 Months Strength + Cardio': 4000,
-          '6 Months Strength': 5000,
-          '6 Months Strength + Cardio': 7500,
-          '1 Year Strength': 9000,
-          '1 Year Strength + Cardio': 14000
-        };
+        const amountMap = { '1 Month Strength':1000, '1 Month Strength + Cardio':1500, '3 Months Strength':2700, '3 Months Strength + Cardio':4000, '6 Months Strength':5000, '6 Months Strength + Cardio':7500, '1 Year Strength':9000, '1 Year Strength + Cardio':14000 };
+        let revenue = 0;
+        members.forEach(m => { if(m.status === 'Active') revenue += amountMap[m.plan] || 0; });
+        document.getElementById('estimatedRevenue').textContent = `₹${revenue.toLocaleString('en-IN')}`;
         
-        let estimatedRevenue = 0;
-        members.forEach(m => {
-          if (m.status === 'Active') {
-            estimatedRevenue += amountMap[m.plan] || 0;
-          }
+        const tbody = document.getElementById('membersTableBody');
+        tbody.innerHTML = '';
+        members.slice(0,5).forEach(m => {
+          tbody.innerHTML += `<tr><td><strong>${m.name}</strong><br><small>${m.phone}</small></td><td>${m.plan}</td><td>${new Date(m.joinDate).toLocaleDateString()}</td><td>${new Date(m.expiryDate).toLocaleDateString()}</td><td><span class="status-badge status-${m.status.toLowerCase()}">${m.status}</span></td></tr>`;
         });
         
-        document.getElementById('totalMembers').textContent = totalMembers;
-        document.getElementById('activeToday').textContent = activeToday;
-        document.getElementById('estimatedRevenue').textContent = `₹${estimatedRevenue.toLocaleString('en-IN')}`;
-        
-        // Load recent members
-        loadRecentMembers(members);
-        
-        // Load payment reminders
-        loadPaymentReminders(members);
-        
-      } catch (e) {
-        console.error('Dashboard error:', e);
+        const dueCount = members.filter(m => new Date(m.expiryDate) < new Date(Date.now() + 7*86400000)).length;
+        const reminder = document.getElementById('reminderCard');
+        if(dueCount === 0) {
+          reminder.innerHTML = '<h3>✅ All Good!</h3><p>No pending payments!</p>';
+          reminder.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
+        } else {
+          reminder.innerHTML = `<h3>⚠️ Payment Reminders</h3><div style="font-size:2rem">${dueCount}</div><p>members have pending payments</p>`;
+          reminder.style.background = 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)';
+        }
+      } catch(e) { console.error(e); }
+    }
+
+    async function loadAllMembers() {
+      try {
+        const res = await fetch(API_URL, { headers: getAuthHeaders() });
+        const members = await res.json();
+        const tbody = document.getElementById('allMembersBody');
+        tbody.innerHTML = '';
+        members.forEach(m => {
+          tbody.innerHTML += `<tr><td>${m.name}</td><td>${m.phone}</td><td>${m.plan}</td><td>${new Date(m.expiryDate).toLocaleDateString()}</td><td><span class="status-badge status-${m.status.toLowerCase()}">${m.status}</span></td><td><button onclick="deleteMember('${m._id}')" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px;">Delete</button></td></tr>`;
+        });
+      } catch(e) { console.error(e); }
+    }
+
+    function loadPlans() {
+      const plans = [
+        { name: '1 Month Strength', price: 1000, type: 'Strength' },
+        { name: '1 Month Strength + Cardio', price: 1500, type: 'Strength + Cardio' },
+        { name: '3 Months Strength', price: 2700, type: 'Strength', save: 'Save ₹300' },
+        { name: '3 Months Strength + Cardio', price: 4000, type: 'Strength + Cardio', save: 'Save ₹500' },
+        { name: '6 Months Strength', price: 5000, type: 'Strength', save: 'Save ₹1000' },
+        { name: '6 Months Strength + Cardio', price: 7500, type: 'Strength + Cardio', save: 'Save ₹1500' },
+        { name: '1 Year Strength', price: 9000, type: 'Strength', save: 'Save ₹3000' },
+        { name: '1 Year Strength + Cardio', price: 14000, type: 'Strength + Cardio', save: 'Save ₹4000' }
+      ];
+      const grid = document.getElementById('plansGrid');
+      grid.innerHTML = plans.map(p => `
+        <div class="plan-card">
+          <h3>${p.name}</h3>
+          <div class="plan-price">₹${p.price.toLocaleString()}</div>
+          <p>${p.type}</p>
+          ${p.save ? `<p style="color:#4CAF50">${p.save}</p>` : ''}
+          <button class="plan-btn" onclick="selectPlan('${p.name}')">Select Plan</button>
+        </div>
+      `).join('');
+    }
+
+    function selectPlan(planName) {
+      document.getElementById('memberPlan').value = planName;
+      const expiry = new Date();
+      if(planName.includes('1 Month')) expiry.setMonth(expiry.getMonth() + 1);
+      else if(planName.includes('3 Months')) expiry.setMonth(expiry.getMonth() + 3);
+      else if(planName.includes('6 Months')) expiry.setMonth(expiry.getMonth() + 6);
+      else if(planName.includes('1 Year')) expiry.setFullYear(expiry.getFullYear() + 1);
+      document.getElementById('memberExpiry').value = expiry.toISOString().split('T')[0];
+      openAddMemberModal();
+    }
+
+    async function loadAttendance() {
+      const date = document.getElementById('attendanceDate').value || new Date().toISOString().split('T')[0];
+      document.getElementById('attendanceDate').value = date;
+      try {
+        const res = await fetch(API_URL, { headers: getAuthHeaders() });
+        const members = await res.json();
+        const activeMembers = members.filter(m => m.status === 'Active');
+        const tbody = document.getElementById('attendanceBody');
+        tbody.innerHTML = activeMembers.map(m => `
+          <tr>
+            <td>${m.name}</td>
+            <td>${m.plan}</td>
+            <td id="status-${m._id}">Not marked</td>
+            <td>
+              <button class="attendance-btn btn-present" onclick="markAttendance('${m._id}', '${date}', 'Present')">Present</button>
+              <button class="attendance-btn btn-absent" onclick="markAttendance('${m._id}', '${date}', 'Absent')">Absent</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch(e) { console.error(e); }
+    }
+
+    async function markAttendance(memberId, date, status) {
+      try {
+        await fetch(`${API_URL}/attendance`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ memberId, date, status })
+        });
+        document.getElementById(`status-${memberId}`).innerHTML = `<span class="status-badge status-${status.toLowerCase()}">${status}</span>`;
+        alert(`Marked as ${status}`);
+      } catch(e) { alert('Error marking attendance'); }
+    }
+
+    async function loadTrainers() {
+      try {
+        const res = await fetch(TRAINER_API_URL, { headers: getAuthHeaders() });
+        const trainers = await res.json();
+        const tbody = document.getElementById('trainersBody');
+        tbody.innerHTML = trainers.map(t => `
+          <tr>
+            <td>${t.name}</td>
+            <td>${t.specialty}</td>
+            <td>${t.phone}</td>
+            <td><span class="status-badge status-${t.status.toLowerCase()}">${t.status}</span></td>
+            <td><button onclick="deleteTrainer('${t._id}')" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px;">Delete</button></td>
+          </tr>
+        `).join('');
+      } catch(e) { console.error(e); }
+    }
+
+    async function deleteMember(id) {
+      if(confirm('Delete this member?')) {
+        await fetch(`${API_URL}/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+        loadAllMembers();
+        loadDashboard();
       }
     }
 
-    // Load Recent Members
-    function loadRecentMembers(members) {
-      const tbody = document.getElementById('membersTableBody');
-      if (!tbody) return;
-      
-      if (!members || members.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:#777;">No members found. Add your first member!</td></tr>`;
-        return;
-      }
-      
-      tbody.innerHTML = '';
-      members.slice(0, 5).forEach(m => {
-        const initials = m.name.charAt(0).toUpperCase();
-        const statusClass = m.status === 'Active' ? 'status-active' : (m.status === 'Trial' ? 'status-trial' : 'status-inactive');
-        
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>
-            <div class="member-info">
-              <div class="member-avatar">${escapeHtml(initials)}</div>
-              <div>
-                <div class="member-name">${escapeHtml(m.name)}</div>
-                <div class="member-phone">${escapeHtml(m.phone)}</div>
-              </div>
-            </div>
-          </td>
-          <td>${escapeHtml(m.plan)}</td>
-          <td>${new Date(m.joinDate).toLocaleDateString('en-IN')}</td>
-          <td>${new Date(m.expiryDate).toLocaleDateString('en-IN')}</td>
-          <td><span class="status-badge ${statusClass}">${m.status}</span></td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
-
-    // Load Payment Reminders
-    function loadPaymentReminders(members) {
-      const today = new Date();
-      const sevenDaysFromNow = new Date(today);
-      sevenDaysFromNow.setDate(today.getDate() + 7);
-      
-      const dueMembers = members.filter(m => {
-        const expiryDate = new Date(m.expiryDate);
-        return m.status === 'Active' && expiryDate <= sevenDaysFromNow;
-      });
-      
-      const reminderCard = document.getElementById('reminderCard');
-      if (dueMembers.length === 0) {
-        reminderCard.innerHTML = `
-          <h3>✅ All Good!</h3>
-          <p>No pending payments! All members are up to date.</p>
-        `;
-        reminderCard.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
-      } else {
-        reminderCard.innerHTML = `
-          <h3>⚠️ Payment Reminders</h3>
-          <div class="due-count">${dueMembers.length} members</div>
-          <p>have pending payments due within 7 days</p>
-        `;
-        reminderCard.style.background = 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)';
+    async function deleteTrainer(id) {
+      if(confirm('Delete this trainer?')) {
+        await fetch(`${TRAINER_API_URL}/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+        loadTrainers();
       }
     }
 
-    // Initialize Dashboard
-    window.onload = async () => {
-      if (!checkAuth()) return;
-      
-      console.log('Dashboard initializing...');
-      await loadDashboard();
+    function openAddMemberModal() { document.getElementById('addMemberModal').style.display = 'flex'; }
+    function closeAddMemberModal() { document.getElementById('addMemberModal').style.display = 'none'; }
+    function openAddTrainerModal() { document.getElementById('addTrainerModal').style.display = 'flex'; }
+    function closeAddTrainerModal() { document.getElementById('addTrainerModal').style.display = 'none'; }
+
+    document.getElementById('addMemberForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const newMember = {
+        name: document.getElementById('memberName').value,
+        phone: document.getElementById('memberPhone').value,
+        email: document.getElementById('memberEmail').value,
+        plan: document.getElementById('memberPlan').value,
+        expiryDate: document.getElementById('memberExpiry').value,
+        status: 'Active'
+      };
+      const res = await fetch(API_URL, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(newMember) });
+      if(res.ok) {
+        alert('Member added successfully!');
+        closeAddMemberModal();
+        loadDashboard();
+        loadAllMembers();
+      } else alert('Error adding member');
+    });
+
+    document.getElementById('addTrainerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const newTrainer = {
+        name: document.getElementById('trainerName').value,
+        phone: document.getElementById('trainerPhone').value,
+        specialty: document.getElementById('trainerSpecialty').value,
+        status: 'Active'
+      };
+      const res = await fetch(TRAINER_API_URL, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(newTrainer) });
+      if(res.ok) {
+        alert('Trainer added successfully!');
+        closeAddTrainerModal();
+        loadTrainers();
+      } else alert('Error adding trainer');
+    });
+
+    document.getElementById('attendanceDate').valueAsDate = new Date();
+
+    window.onload = () => {
+      if(!checkAuth()) return;
+      loadDashboard();
     };
   </script>
 </body>
