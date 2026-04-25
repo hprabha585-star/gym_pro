@@ -345,6 +345,7 @@
       display: flex;
       gap: 10px;
       margin-bottom: 10px;
+      flex-wrap: wrap;
     }
 
     .discount-type label {
@@ -392,7 +393,7 @@
       background: white;
       padding: 30px;
       border-radius: 16px;
-      max-width: 500px;
+      max-width: 550px;
       width: 90%;
       max-height: 90vh;
       overflow-y: auto;
@@ -481,6 +482,19 @@
       margin-top: 10px;
     }
 
+    .price-display {
+      background: #e8f5e9;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .saved-amount {
+      color: #4CAF50;
+      font-weight: bold;
+    }
+
     @media (max-width: 768px) {
       .dashboard-container { padding: 15px; }
       .menu-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
@@ -525,7 +539,7 @@
         <h2 class="section-title">Recent Members</h2>
         <table id="membersTable">
           <thead><tr><th>Member</th><th>Plan</th><th>Join Date</th><th>Expiry</th><th>Status</th></tr></thead>
-          <tbody id="membersTableBody"><tr><td colspan="5" class="loading">Loading...</tr</tbody>
+          <tbody id="membersTableBody"><tr><td colspan="5" class="loading">Loading...</td</tr</tbody>
         </table>
       </div>
     </div>
@@ -535,8 +549,8 @@
       <div class="table-container">
         <h2 class="section-title">All Members</h2>
         <table style="width:100%">
-          <thead><tr><th>Name</th><th>Phone</th><th>Plan</th><th>Original Price</th><th>Paid Amount</th><th>Discount</th><th>Expiry</th><th>Status</th><th>Action</th></tr></thead>
-          <tbody id="allMembersBody"><tr><td colspan="9">Loading...</td</tr</tbody>
+          <thead><tr><th>Name</th><th>Phone</th><th>Plan</th><th>Expiry</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="allMembersBody"><tr><td colspan="6">Loading...</td</tr</tbody>
         </table>
       </div>
     </div>
@@ -573,7 +587,7 @@
         </div>
         <table style="width:100%; margin-top:15px">
           <thead><tr><th>Member</th><th>Plan</th><th>Phone</th><th>Status</th><th>Action</th></tr></thead>
-          <tbody id="attendanceBody"><tr><td colspan="5">Select date to view attendance</tr</tbody>
+          <tbody id="attendanceBody"><tr><td colspan="5">Select date to view attendance</td</tr</tbody>
         </table>
       </div>
     </div>
@@ -645,12 +659,12 @@
           </div>
         </div>
         
-        <div class="form-group"><label>Original Price</label>
-          <input type="text" id="originalPrice" readonly style="background:#f0f0f0; text-decoration:line-through;">
+        <div class="price-display">
+          <div><strong>Original Price:</strong> <span id="displayOriginalPrice">₹0</span></div>
+          <div class="saved-amount" id="displaySavedAmount"></div>
+          <div><strong>Final Price:</strong> <span id="displayFinalPrice" style="font-size:1.2rem; color:#4CAF50;">₹0</span></div>
         </div>
-        <div class="form-group"><label>Final Price (After Discount)</label>
-          <input type="text" id="finalPrice" readonly style="background:#e8f5e9; color:#4CAF50; font-weight:bold;">
-        </div>
+        
         <div class="form-group"><label>Expiry Date</label><input type="date" id="memberExpiry"></div>
         <div class="form-group"><label>Status</label>
           <select id="memberStatus">
@@ -752,6 +766,9 @@
     }
 
     // Calculate discounted price
+    let currentDiscountAmount = 0;
+    let currentFinalPrice = 0;
+    
     function calculateDiscountedPrice() {
       const planSelect = document.getElementById('memberPlan');
       const selectedOption = planSelect.options[planSelect.selectedIndex];
@@ -762,10 +779,8 @@
       
       let finalPrice = originalPrice;
       let discountAmount = 0;
-      let discountPercent = 0;
       
       if (discountType === 'percentage' && discountValue > 0) {
-        discountPercent = discountValue;
         discountAmount = (originalPrice * discountValue) / 100;
         finalPrice = originalPrice - discountAmount;
       } else if (discountType === 'fixed' && discountValue > 0) {
@@ -773,10 +788,18 @@
         finalPrice = Math.max(0, originalPrice - discountValue);
       }
       
-      document.getElementById('originalPrice').value = `₹${originalPrice.toLocaleString()}`;
-      document.getElementById('finalPrice').value = `₹${Math.round(finalPrice).toLocaleString()}`;
+      currentDiscountAmount = discountAmount;
+      currentFinalPrice = finalPrice;
       
-      return { originalPrice, finalPrice, discountAmount, discountPercent, discountType: discountType === 'none' ? 'none' : discountType };
+      document.getElementById('displayOriginalPrice').innerHTML = `₹${originalPrice.toLocaleString()}`;
+      if (discountAmount > 0) {
+        document.getElementById('displaySavedAmount').innerHTML = `🎉 You save: ₹${Math.round(discountAmount).toLocaleString()}`;
+      } else {
+        document.getElementById('displaySavedAmount').innerHTML = '';
+      }
+      document.getElementById('displayFinalPrice').innerHTML = `₹${Math.round(finalPrice).toLocaleString()}`;
+      
+      return { originalPrice, finalPrice, discountAmount, discountType: discountType === 'none' ? 'none' : discountType };
     }
 
     function loadPlans() {
@@ -791,7 +814,7 @@
         { name: '1 Year Strength + Cardio', price: 14000, duration: '1 Year', save: 'Save ₹4000', originalPrice: 14000 }
       ];
       
-      // Apply active discounts to plans
+      // Apply active discounts to plans for display only
       const discountedPlans = plans.map(plan => {
         let discountedPrice = plan.price;
         let discountInfo = null;
@@ -815,7 +838,7 @@
       
       const grid = document.getElementById('plansGrid');
       grid.innerHTML = discountedPlans.map(p => `
-        <div class="plan-card" onclick="selectPlan('${p.name}', ${p.discountedPrice})">
+        <div class="plan-card" onclick="selectPlan('${p.name}')">
           ${p.discountInfo ? `<div class="discount-badge">${p.discountInfo.type === 'percentage' ? p.discountInfo.value + '% OFF' : '₹' + p.discountInfo.value + ' OFF'}</div>` : ''}
           <h3>${p.name}</h3>
           ${p.discountInfo ? `<div class="original-price">₹${p.price.toLocaleString()}</div>` : ''}
@@ -855,12 +878,12 @@
           <tbody>
             ${activeDiscounts.map((d, index) => `
               <tr>
-                <td>${d.name}</td>
-                <td>${d.appliesTo === 'all' ? 'All Plans' : d.planName}</td>
-                <td>${d.type === 'percentage' ? 'Percentage (%)' : 'Fixed Amount (₹)'}</td>
-                <td>${d.type === 'percentage' ? d.value + '%' : '₹' + d.value.toLocaleString()}</td>
-                <td>${d.validUntil ? new Date(d.validUntil).toLocaleDateString() : 'No expiry'}</td>
-                <td><button onclick="removeDiscount(${index})" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Remove</button></td>
+                <td>${d.name}</td
+                <td>${d.appliesTo === 'all' ? 'All Plans' : d.planName}</td
+                <td>${d.type === 'percentage' ? 'Percentage (%)' : 'Fixed Amount (₹)'}</td
+                <td>${d.type === 'percentage' ? d.value + '%' : '₹' + d.value.toLocaleString()}</td
+                <td>${d.validUntil ? new Date(d.validUntil).toLocaleDateString() : 'No expiry'}</td
+                <td><button onclick="removeDiscount(${index})" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Remove</button></td
               </tr>
             `).join('')}
           </tbody>
@@ -918,7 +941,6 @@
         </div>
       `;
       
-      // Remove existing modal if any
       const existingModal = document.getElementById('discountModal');
       if (existingModal) existingModal.remove();
       
@@ -962,7 +984,7 @@
       localStorage.setItem('activeDiscounts', JSON.stringify(activeDiscounts));
       closeDiscountModal();
       renderDiscountsTable();
-      loadPlans(); // Refresh plans with new discounts
+      loadPlans();
       alert('✅ Discount added successfully!');
     }
 
@@ -981,15 +1003,13 @@
       if (modal) modal.remove();
     }
 
-    function selectPlan(planName, price) {
+    function selectPlan(planName) {
       document.getElementById('memberPlan').value = planName;
       
-      // Set discount to none by default
       document.querySelector('input[value="none"]').checked = true;
       document.getElementById('discountValue').value = '';
       document.getElementById('discountReason').value = '';
       
-      // Calculate expiry date
       const expiry = new Date();
       if(planName.includes('1 Month')) expiry.setMonth(expiry.getMonth() + 1);
       else if(planName.includes('3 Months')) expiry.setMonth(expiry.getMonth() + 3);
@@ -1012,13 +1032,13 @@
         
         const amountMap = { '1 Month Strength':1000, '1 Month Strength + Cardio':1500, '3 Months Strength':2700, '3 Months Strength + Cardio':4000, '6 Months Strength':5000, '6 Months Strength + Cardio':7500, '1 Year Strength':9000, '1 Year Strength + Cardio':14000 };
         let revenue = 0;
-        members.forEach(m => { if(m.status === 'Active') revenue += (m.paidAmount || amountMap[m.plan] || 0); });
+        members.forEach(m => { if(m.status === 'Active') revenue += amountMap[m.plan] || 0; });
         document.getElementById('estimatedRevenue').textContent = `₹${revenue.toLocaleString('en-IN')}`;
         
         const tbody = document.getElementById('membersTableBody');
         tbody.innerHTML = '';
         members.slice(0,5).forEach(m => {
-          tbody.innerHTML += `<tr><td><strong>${escapeHtml(m.name)}</strong><br><small>${escapeHtml(m.phone)}</small></td><td>${escapeHtml(m.plan)}${m.discount ? `<br><small style="color:#4CAF50">${m.discount}</small>` : ''}</td><td>${new Date(m.joinDate).toLocaleDateString()}</td><td>${new Date(m.expiryDate).toLocaleDateString()}</td><td><span class="status-badge status-${m.status.toLowerCase()}">${m.status}</span></td></tr>`;
+          tbody.innerHTML += `<tr><td><strong>${escapeHtml(m.name)}</strong><br><small>${escapeHtml(m.phone)}</small></td><td>${escapeHtml(m.plan)}</td><td>${new Date(m.joinDate).toLocaleDateString()}</td><td>${new Date(m.expiryDate).toLocaleDateString()}</td><td><span class="status-badge status-${m.status.toLowerCase()}">${m.status}</span></td></tr>`;
         });
         
         const dueCount = members.filter(m => new Date(m.expiryDate) < new Date(Date.now() + 7*86400000)).length;
@@ -1040,22 +1060,7 @@
         const tbody = document.getElementById('allMembersBody');
         tbody.innerHTML = '';
         members.forEach(m => {
-          const amountMap = { '1 Month Strength':1000, '1 Month Strength + Cardio':1500, '3 Months Strength':2700, '3 Months Strength + Cardio':4000, '6 Months Strength':5000, '6 Months Strength + Cardio':7500, '1 Year Strength':9000, '1 Year Strength + Cardio':14000 };
-          const originalPrice = amountMap[m.plan] || 0;
-          const paidAmount = m.paidAmount || originalPrice;
-          const discountAmount = originalPrice - paidAmount;
-          
-          tbody.innerHTML += `<tr>
-            <td>${escapeHtml(m.name)}</td
-            <td>${escapeHtml(m.phone)}</td
-            <td>${escapeHtml(m.plan)}</td
-            <td>₹${originalPrice.toLocaleString()}</td
-            <td>₹${paidAmount.toLocaleString()}</td
-            <td>${discountAmount > 0 ? `₹${discountAmount.toLocaleString()} (${m.discountReason || 'Discount'})` : '-'}</td
-            <td>${new Date(m.expiryDate).toLocaleDateString()}</td
-            <td><span class="status-badge status-${m.status.toLowerCase()}">${m.status}</span></td
-            <td><button onclick="deleteMember('${m._id}')" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Delete</button></td
-          一筹`;
+          tbody.innerHTML += `<tr><td>${escapeHtml(m.name)}</td><td>${escapeHtml(m.phone)}</td><td>${escapeHtml(m.plan)}</td><td>${new Date(m.expiryDate).toLocaleDateString()}</td><td><span class="status-badge status-${m.status.toLowerCase()}">${m.status}</span></td><td><button onclick="deleteMember('${m._id}')" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Delete</button></td></tr>`;
         });
       } catch(e) { console.error(e); }
     }
@@ -1084,13 +1089,13 @@
           tbody.innerHTML += `
             <tr>
               <td><strong>${escapeHtml(member.name)}</strong></td>
-              <td>${escapeHtml(member.plan)}</td
-              <td>${escapeHtml(member.phone)}</td
-              <td><span class="status-badge status-${currentStatus.toLowerCase()}" id="status-${member._id}">${currentStatus}</span></td
+              <td>${escapeHtml(member.plan)}</td>
+              <td>${escapeHtml(member.phone)}</td>
+              <td><span class="status-badge status-${currentStatus.toLowerCase()}" id="status-${member._id}">${currentStatus}</span></td>
               <td>
                 <button class="attendance-btn btn-present" onclick="markAttendance('${member._id}', '${date}', 'Present')">Present</button>
                 <button class="attendance-btn btn-absent" onclick="markAttendance('${member._id}', '${date}', 'Absent')">Absent</button>
-               </td
+              </td>
             </tr>
           `;
         }
@@ -1099,7 +1104,7 @@
         const percent = activeMembers.length > 0 ? Math.round((presentCount / activeMembers.length) * 100) : 0;
         document.getElementById('statAttendancePercent').textContent = `${percent}%`;
         
-        if(activeMembers.length === 0) tbody.innerHTML = '<tr><td colspan="5">No active members found</tr</tbody>';
+        if(activeMembers.length === 0) tbody.innerHTML = '<tr><td colspan="5">No active members found</td></tr>';
       } catch(e) { console.error(e); }
     }
 
@@ -1167,17 +1172,9 @@
         const tbody = document.getElementById('trainersBody');
         tbody.innerHTML = '';
         trainers.forEach(t => {
-          tbody.innerHTML += `
-            <tr>
-              <td>${escapeHtml(t.name)}</td
-              <td>${escapeHtml(t.specialty)}</td
-              <td>${escapeHtml(t.phone)}</td
-              <td><span class="status-badge status-${t.status.toLowerCase()}">${t.status}</span></td
-              <td><button onclick="deleteTrainer('${t._id}')" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Delete</button></td
-            </tr>
-          `;
+          tbody.innerHTML += `<tr><td>${escapeHtml(t.name)}</td><td>${escapeHtml(t.specialty)}</td><td>${escapeHtml(t.phone)}</td><td><span class="status-badge status-${t.status.toLowerCase()}">${t.status}</span></td><td><button onclick="deleteTrainer('${t._id}')" style="background:#dc3545; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Delete</button></td></tr>`;
         });
-        if(trainers.length === 0) tbody.innerHTML = '<tr><td colspan="5">No trainers added yet. Click "Add Trainer" to get started.</tr</tbody>';
+        if(trainers.length === 0) tbody.innerHTML = '<tr><td colspan="5">No trainers added yet. Click "Add Trainer" to get started.</td></tr>';
       } catch(e) { console.error(e); }
     }
 
@@ -1228,18 +1225,6 @@
       currentPaymentMember = { id: memberId, name: memberName, plan: plan };
       const amountMap = { '1 Month Strength':1000, '1 Month Strength + Cardio':1500, '3 Months Strength':2700, '3 Months Strength + Cardio':4000, '6 Months Strength':5000, '6 Months Strength + Cardio':7500, '1 Year Strength':9000, '1 Year Strength + Cardio':14000 };
       let amount = amountMap[plan] || 1000;
-      
-      // Apply any active discount for this plan
-      for (const discount of activeDiscounts) {
-        if (discount.appliesTo === 'all' || discount.planName === plan) {
-          if (discount.type === 'percentage') {
-            amount = amount - (amount * discount.value) / 100;
-          } else if (discount.type === 'fixed') {
-            amount = Math.max(0, amount - discount.value);
-          }
-          break;
-        }
-      }
       
       document.getElementById('paymentDetails').innerHTML = `
         <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
@@ -1304,7 +1289,15 @@
       }
     }
 
-    function openAddMemberModal() { document.getElementById('addMemberModal').style.display = 'flex'; }
+    function openAddMemberModal() { 
+      // Reset discount fields
+      document.querySelector('input[value="none"]').checked = true;
+      document.getElementById('discountValue').value = '';
+      document.getElementById('discountReason').value = '';
+      calculateDiscountedPrice();
+      document.getElementById('addMemberModal').style.display = 'flex'; 
+    }
+    
     function closeAddMemberModal() { document.getElementById('addMemberModal').style.display = 'none'; }
     function openAddTrainerModal() { document.getElementById('addTrainerModal').style.display = 'flex'; }
     function closeAddTrainerModal() { document.getElementById('addTrainerModal').style.display = 'none'; }
@@ -1319,39 +1312,16 @@
       });
     }
 
+    // Update form submission to only send fields backend expects
     document.getElementById('addMemberForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      
-      const planSelect = document.getElementById('memberPlan');
-      const selectedOption = planSelect.options[planSelect.selectedIndex];
-      const originalPrice = parseInt(selectedOption.getAttribute('data-price')) || 0;
-      
-      const discountType = document.querySelector('input[name="discountType"]:checked').value;
-      const discountValue = parseFloat(document.getElementById('discountValue').value) || 0;
-      const discountReason = document.getElementById('discountReason').value;
-      
-      let finalPrice = originalPrice;
-      let discountInfo = null;
-      
-      if (discountType === 'percentage' && discountValue > 0) {
-        const discountAmount = (originalPrice * discountValue) / 100;
-        finalPrice = originalPrice - discountAmount;
-        discountInfo = { type: 'percentage', value: discountValue, amount: discountAmount, reason: discountReason };
-      } else if (discountType === 'fixed' && discountValue > 0) {
-        finalPrice = Math.max(0, originalPrice - discountValue);
-        discountInfo = { type: 'fixed', value: discountValue, amount: discountValue, reason: discountReason };
-      }
       
       const newMember = {
         name: document.getElementById('memberName').value.trim(),
         phone: document.getElementById('memberPhone').value.trim(),
         email: document.getElementById('memberEmail').value.trim(),
         age: parseInt(document.getElementById('memberAge').value) || null,
-        plan: planSelect.value,
-        originalPrice: originalPrice,
-        paidAmount: finalPrice,
-        discount: discountInfo ? `${discountInfo.type === 'percentage' ? discountInfo.value + '%' : '₹' + discountInfo.value} off` : null,
-        discountReason: discountReason || null,
+        plan: document.getElementById('memberPlan').value,
         expiryDate: document.getElementById('memberExpiry').value,
         status: document.getElementById('memberStatus').value
       };
@@ -1361,18 +1331,42 @@
         return;
       }
       
+      // Store discount info in localStorage for display purposes
+      if (currentDiscountAmount > 0) {
+        const discountReason = document.getElementById('discountReason').value || 'Discount applied';
+        const discountInfo = {
+          memberName: newMember.name,
+          plan: newMember.plan,
+          originalPrice: parseInt(document.getElementById('memberPlan').options[document.getElementById('memberPlan').selectedIndex].getAttribute('data-price')),
+          discountAmount: currentDiscountAmount,
+          finalPrice: currentFinalPrice,
+          reason: discountReason,
+          date: new Date().toISOString()
+        };
+        
+        // Store discount record
+        const discountRecords = JSON.parse(localStorage.getItem('discountRecords') || '[]');
+        discountRecords.push(discountInfo);
+        localStorage.setItem('discountRecords', JSON.stringify(discountRecords));
+      }
+      
       try {
         const res = await fetch(API_URL, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(newMember) });
         if(res.ok) {
           const addedMember = await res.json();
-          if(discountInfo) {
-            alert(`✅ Member added with discount!\nOriginal: ₹${originalPrice}\nFinal: ₹${Math.round(finalPrice)}\nYou saved: ${discountInfo.type === 'percentage' ? discountInfo.value + '%' : '₹' + discountInfo.value}`);
+          
+          if (currentDiscountAmount > 0) {
+            const originalPrice = parseInt(document.getElementById('memberPlan').options[document.getElementById('memberPlan').selectedIndex].getAttribute('data-price'));
+            alert(`✅ Member added with discount!\n\nOriginal: ₹${originalPrice.toLocaleString()}\nFinal: ₹${Math.round(currentFinalPrice).toLocaleString()}\nYou saved: ₹${Math.round(currentDiscountAmount).toLocaleString()}\nReason: ${document.getElementById('discountReason').value || 'Special offer'}`);
           } else {
             alert('✅ Member added successfully!');
           }
+          
           closeAddMemberModal();
           document.getElementById('addMemberForm').reset();
           document.querySelector('input[value="none"]').checked = true;
+          document.getElementById('discountValue').value = '';
+          document.getElementById('discountReason').value = '';
           
           openPaymentModal(addedMember._id, addedMember.name, addedMember.plan);
           
@@ -1380,7 +1374,7 @@
           loadAllMembers();
         } else {
           const error = await res.json();
-          alert('Error: ' + (error.message || 'Could not add member'));
+          alert('Error: ' + (error.message || error.error || 'Could not add member'));
         }
       } catch(err) {
         alert('Error adding member: ' + err.message);
