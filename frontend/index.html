@@ -4,512 +4,662 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GymPro - Dashboard</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+
+    /* Modern Dashboard Layout */
+    .dashboard-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* Header Section */
+    .dashboard-header {
+      background: white;
+      border-radius: 20px;
+      padding: 25px 30px;
+      margin-bottom: 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .logo-section h1 {
+      color: #7B61FF;
+      font-size: 2rem;
+      margin-bottom: 5px;
+    }
+
+    .logo-section p {
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .menu-toggle-btn {
+      background: #7B61FF;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .menu-toggle-btn:hover {
+      background: #6b4fff;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(123, 97, 255, 0.3);
+    }
+
+    /* Sidebar Menu - Hidden by default */
+    .sidebar-menu {
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      display: none;
+      animation: slideDown 0.3s ease;
+    }
+
+    .sidebar-menu.show {
+      display: block;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+
+    .menu-item {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+
+    .menu-item:hover {
+      background: #7B61FF10;
+      border-color: #7B61FF;
+      transform: translateY(-3px);
+    }
+
+    .menu-item.active {
+      background: #7B61FF;
+      color: white;
+    }
+
+    .menu-item .menu-icon {
+      font-size: 2rem;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .menu-item .menu-label {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .logout-item {
+      background: #dc3545;
+      color: white;
+    }
+
+    .logout-item:hover {
+      background: #c82333;
+      border-color: #dc3545;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 25px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .stat-card h3 {
+      color: #666;
+      font-size: 1rem;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-number {
+      font-size: 3rem;
+      font-weight: 700;
+      color: #7B61FF;
+      margin-bottom: 10px;
+    }
+
+    .stat-trend {
+      color: #4CAF50;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Revenue Card Special Style */
+    .revenue-card .stat-number {
+      color: #FF6B6B;
+    }
+
+    /* Members Table */
+    .members-table-container {
+      background: white;
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 4px;
+      height: 25px;
+      background: #7B61FF;
+      border-radius: 2px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 15px 12px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      background: #f8f9fa;
+      color: #555;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .member-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .member-avatar {
+      width: 45px;
+      height: 45px;
+      background: #7B61FF;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+
+    .member-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .member-phone {
+      font-size: 0.8rem;
+      color: #888;
+    }
+
+    .status-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    .status-active {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status-trial {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .status-inactive {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    /* Payment Reminder Card */
+    .reminder-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 20px;
+      padding: 25px;
+      margin-bottom: 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .reminder-card h3 {
+      margin-bottom: 10px;
+      font-size: 1.3rem;
+    }
+
+    .reminder-card .due-count {
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 10px 0;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .dashboard-container {
+        padding: 15px;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+
+      .menu-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      }
+
+      th, td {
+        padding: 10px 8px;
+        font-size: 0.85rem;
+      }
+
+      .member-avatar {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+      }
+    }
+
+    /* Loading State */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px;
+      color: #999;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <h2>GymPro</h2>
-      <nav>
-        <a href="#" class="nav-link active" data-page="dashboard">Dashboard</a>
-        <a href="#" class="nav-link" data-page="members">Members</a>
-        <a href="#" class="nav-link" data-page="plans">Plans</a>
-        <a href="#" class="nav-link" data-page="attendance">Attendance</a>
-        <a href="#" class="nav-link" data-page="trainers">Trainers</a>
-      </nav>
-
-      <button id="add-member-btn" class="add-btn">
-        + Add New Member
+  <div class="dashboard-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+      <div class="logo-section">
+        <h1>🏋️ GymPro</h1>
+        <p>Management Dashboard</p>
+      </div>
+      <button class="menu-toggle-btn" onclick="toggleMenu()">
+        ☰ Menu
       </button>
-    </aside>
+    </div>
 
-    <!-- Main Content -->
-    <main class="main-content">
-      <header>
-        <h1 id="page-title">Management Dashboard</h1>
-      </header>
-
-      <!-- Dashboard Content -->
-      <div id="dashboard-content">
-        <!-- Payment Reminders Card - MOVED OUTSIDE stats-grid -->
-        <div class="card" id="payment-reminders-container" style="margin-bottom: 1.5rem;">
-          <div style="text-align:center; padding: 20px;">
-            <p>Loading payment reminders...</p>
-          </div>
+    <!-- Sidebar Menu (Hidden by default) -->
+    <div id="sidebarMenu" class="sidebar-menu">
+      <div class="menu-grid">
+        <div class="menu-item" onclick="handleMenuClick('dashboard')">
+          <span class="menu-icon">📊</span>
+          <span class="menu-label">Dashboard</span>
         </div>
-
-        <div class="stats-grid">
-          <div class="card">
-            <h3>Total Members</h3>
-            <p id="total-members" class="number">0</p>
-          </div>
-          <div class="card">
-            <h3>Active Today</h3>
-            <p id="active-today" class="number">0</p>
-          </div>
-          <div class="card">
-            <h3>Est. Revenue</h3>
-            <p id="estimated-revenue" class="number">₹0</p>
-          </div>
+        <div class="menu-item" onclick="handleMenuClick('members')">
+          <span class="menu-icon">👥</span>
+          <span class="menu-label">Members</span>
         </div>
-
-        <div class="card">
-          <h2>Recent Members</h2>
-          <table id="members-table">
-            <thead>
-              <tr>
-                <th>Member</th>
-                <th>Plan</th>
-                <th>Join Date</th>
-                <th>Expiry</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
+        <div class="menu-item" onclick="handleMenuClick('plans')">
+          <span class="menu-icon">💎</span>
+          <span class="menu-label">Plans</span>
+        </div>
+        <div class="menu-item" onclick="handleMenuClick('attendance')">
+          <span class="menu-icon">📅</span>
+          <span class="menu-label">Attendance</span>
+        </div>
+        <div class="menu-item" onclick="handleMenuClick('trainers')">
+          <span class="menu-icon">🏋️‍♂️</span>
+          <span class="menu-label">Trainers</span>
+        </div>
+        <div class="menu-item" onclick="handleMenuClick('addMember')">
+          <span class="menu-icon">➕</span>
+          <span class="menu-label">Add Member</span>
+        </div>
+        <div class="menu-item logout-item" onclick="handleMenuClick('logout')">
+          <span class="menu-icon">🚪</span>
+          <span class="menu-label">Logout</span>
         </div>
       </div>
+    </div>
 
-      <!-- Members Content -->
-      <div id="members-content" style="display: none;">
-        <div class="card">
-          <h2>All Members</h2>
-          <table id="all-members-table" style="width:100%;">
-            <thead>
-              <tr>
-                <th>Photo</th>
-                <th>Member</th>
-                <th>Contact</th>
-                <th>Plan</th>
-                <th>Expiry</th>
-                <th>Health</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-          
-          <!-- Danger Zone -->
-          <div class="danger-zone" style="margin-top: 2rem; border: 2px solid #dc3545; border-radius: 12px; padding: 1.5rem; background: #fff5f5;">
-            <h3 style="color: #dc3545; margin-bottom: 1rem;">⚠️ Danger Zone</h3>
-            <p style="margin-bottom: 1rem; color: #666;">Permanently delete all member records. This action cannot be undone.</p>
-            <button id="delete-all-members-btn" class="danger-btn" style="background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600;">
-              🗑️ Delete All Members
-            </button>
-          </div>
-        </div>
+    <!-- Payment Reminder Card -->
+    <div id="reminderCard" class="reminder-card">
+      <h3>⚠️ Payment Reminders</h3>
+      <p>Loading payment reminders...</p>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>Total Members</h3>
+        <div class="stat-number" id="totalMembers">0</div>
+        <div class="stat-trend">📈 +12% this month</div>
       </div>
-
-      <!-- Plans Content -->
-      <div id="plans-content" style="display: none;">
-        <div class="card">
-          <h2>Membership Plans</h2>
-          <p style="color: #666; margin-bottom: 1.5rem;">* Admission Fee: ₹500 (one-time) included in all plans</p>
-          <div class="plans-grid">
-            
-            <!-- 1 MONTH PLANS -->
-            <div class="plan-card" data-plan="1M-Strength">
-              <h3>1 MONTH</h3>
-              <div class="plan-type">STRENGTH</div>
-              <div class="price">₹1,000<span>/month</span></div>
-              <ul>
-                <li>✓ Strength Training</li>
-                <li>✓ Equipment Access</li>
-                <li>✓ 1 Month Validity</li>
-                <li>₹500 Admission Fee Included</li>
-              </ul>
-              <button class="plan-btn select-plan-btn">Select Plan</button>
-            </div>
-
-            <div class="plan-card" data-plan="1M-Strength-Cardio">
-              <h3>1 MONTH</h3>
-              <div class="plan-type">STRENGTH + CARDIO</div>
-              <div class="price">₹1,500<span>/month</span></div>
-              <ul>
-                <li>✓ Strength Training</li>
-                <li>✓ Cardio Workouts</li>
-                <li>✓ Full Gym Access</li>
-                <li>✓ 1 Month Validity</li>
-              </ul>
-              <button class="plan-btn select-plan-btn">Select Plan</button>
-            </div>
-
-            <!-- 3 MONTHS PLANS -->
-            <div class="plan-card popular" data-plan="3M-Strength">
-              <h3>3 MONTHS</h3>
-              <div class="plan-type">STRENGTH</div>
-              <div class="price">₹2,700<span>/3 months</span></div>
-              <ul>
-                <li>✓ Strength Training</li>
-                <li>✓ Equipment Access</li>
-                <li>✓ Save ₹300</li>
-                <li>✓ 3 Months Validity</li>
-              </ul>
-              <button class="plan-btn select-plan-btn">Select Plan</button>
-            </div>
-
-            <div class="plan-card popular" data-plan="3M-Strength-Cardio">
-              <h3>3 MONTHS</h3>
-              <div class="plan-type">STRENGTH + CARDIO</div>
-              <div class="price">₹4,000<span>/3 months</span></div>
-              <ul>
-                <li>✓ Strength Training</li>
-                <li>✓ Cardio Workouts</li>
-                <li>✓ Save ₹500</li>
-                <li>✓ 3 Months Validity</li>
-              </ul>
-              <button class="plan-btn select-plan-btn">Select Plan</button>
-            </div>
-
-            <!-- 6 MONTHS PLANS -->
-            <div class="plan-card" data-plan="6M-Strength">
-              <h3>6 MONTHS</h3>
-              <div class="plan-type">STRENGTH</div>
-              <div class="price">₹5,000<span>/6 months</span></div>
-              <ul>
-                <li>✓ Strength Training</li>
-                <li>✓ Equipment Access</li>
-                <li>✓ Save ₹1,000</li>
-                <li>✓ 6 Months Validity</li>
-              </ul>
-              <button class="plan-btn select-plan-btn">Select Plan</button>
-            </div>
-
-            <div class="plan-card" data-plan="6M-Strength-Cardio">
-              <h3>6 MONTHS</h3>
-              <div class="plan-type">STRENGTH + CARDIO</div>
-              <div class="price">₹7,500<span>/6 months</span></div>
-              <ul>
-                <li>✓ Strength Training</li>
-                <li>✓ Cardio Workouts</li>
-                <li>✓ Save ₹1,500</li>
-                <li>✓ 6 Months Validity</li>
-              </ul>
-              <button class="plan-btn select-plan-btn">Select Plan</button>
-            </div>
-
-            <!-- 1 YEAR PLANS -->
-            <div class="plan-card" data-plan="1Y-Strength">
-              <h3>1 YEAR</h3>
-              <div class="plan-type">STRENGTH</div>
-              <div class="price">₹9,000<span>/year</span></div>
-              <ul>
-                <li>✓ Strength Training</li>
-                <li>✓ Equipment Access</li>
-                <li>✓ Best Value - Save ₹3,000</li>
-                <li>✓ 12 Months Validity</li>
-              </ul>
-              <button class="plan-btn select-plan-btn">Select Plan</button>
-            </div>
-
-            <div class="plan-card" data-plan="1Y-Strength-Cardio">
-              <h3>1 YEAR</h3>
-              <div class="plan-type">STRENGTH + CARDIO</div>
-              <div class="price">₹14,000<span>/year</span></div>
-              <ul>
-                <li>✓ Strength Training</li>
-                <li>✓ Cardio Workouts</li>
-                <li>✓ Best Value - Save ₹4,000</li>
-                <li>✓ 12 Months Validity</li>
-              </ul>
-              <button class="plan-btn select-plan-btn">Select Plan</button>
-            </div>
-
-          </div>
-          
-          <!-- Admission Fee Note -->
-          <div style="margin-top: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; text-align: center;">
-            <p style="color: #666;">📋 One-time Admission Fee: <strong style="color: #7B61FF;">₹500</strong> (included in all plan prices)</p>
-            <p style="color: #888; font-size: 0.9rem; margin-top: 0.5rem;">* Prices include GST and admission fee</p>
-          </div>
-        </div>
+      <div class="stat-card">
+        <h3>Active Today</h3>
+        <div class="stat-number" id="activeToday">0</div>
+        <div class="stat-trend">✅ Currently active</div>
       </div>
-
-      <!-- Attendance Content -->
-      <div id="attendance-content" style="display: none;">
-        <div class="card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h2>Attendance Management</h2>
-            <div>
-              <input type="date" id="attendance-date" style="padding:8px 12px; border-radius:8px; border:1px solid #ddd;">
-              <button id="mark-all-present" class="submit-btn" style="margin-left:10px; padding:8px 16px;">Mark All Present</button>
-            </div>
-          </div>
-
-          <!-- Statistics -->
-          <div class="stats-grid" style="margin-bottom: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
-            <div class="card" style="padding:1rem;">
-              <h4>Total Active</h4>
-              <p id="total-active" class="number" style="font-size:1.8rem;">0</p>
-            </div>
-            <div class="card" style="padding:1rem;">
-              <h4>Present Today</h4>
-              <p id="present-count" class="number" style="font-size:1.8rem; color:#4CAF50;">0</p>
-            </div>
-            <div class="card" style="padding:1rem;">
-              <h4>Attendance %</h4>
-              <p id="attendance-percentage" class="number" style="font-size:1.8rem; color:#7B61FF;">0%</p>
-            </div>
-          </div>
-
-          <table id="attendance-table" style="width:100%;">
-            <thead>
-              <tr>
-                <th>Member</th>
-                <th>Plan</th>
-                <th>Phone</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
+      <div class="stat-card revenue-card">
+        <h3>Est. Revenue</h3>
+        <div class="stat-number" id="estimatedRevenue">₹0</div>
+        <div class="stat-trend">💰 Monthly recurring</div>
       </div>
+    </div>
 
-      <!-- Trainers Content -->
-      <div id="trainers-content" style="display: none;">
-        <div class="card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <h2>Trainers Management</h2>
-            <button id="add-trainer-btn" class="submit-btn">+ Add New Trainer</button>
-          </div>
-
-          <table id="trainers-table" style="width:100%;">
-            <thead>
-              <tr>
-                <th>Trainer</th>
-                <th>Specialty</th>
-                <th>Phone</th>
-                <th>Join Date</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Other Pages Placeholder -->
-      <div id="other-pages" style="display: none; padding: 2rem;">
-        <h2 id="placeholder-title">Module</h2>
-        <p>This section will be implemented next.</p>
-      </div>
-    </main>
+    <!-- Recent Members Table -->
+    <div class="members-table-container">
+      <h2 class="section-title">Recent Members</h2>
+      <table id="membersTable">
+        <thead>
+          <tr>
+            <th>Member</th>
+            <th>Plan</th>
+            <th>Join Date</th>
+            <th>Expiry Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="membersTableBody">
+          <tr>
+            <td colspan="5" class="loading">Loading members...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <!-- Add Member Modal - With Camera -->
-  <div id="add-member-modal" class="modal">
-    <div class="modal-content" style="max-width: 650px; max-height: 85vh; overflow-y: auto;">
-      <h2>Add New Member</h2>
-      <form id="add-member-form">
+  <script>
+    // API Configuration
+    const BASE_URL = "https://gym-pro-mvyv.onrender.com/api";
+    const API_URL = `${BASE_URL}/members`;
+    const TRAINER_API_URL = `${BASE_URL}/trainers`;
+
+    // Helper function to get auth headers
+    function getAuthHeaders() {
+      const token = localStorage.getItem('token');
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      };
+    }
+
+    // Check if user is logged in
+    function checkAuth() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = '/login.html';
+        return false;
+      }
+      return true;
+    }
+
+    // Get current user
+    function getCurrentUser() {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          return JSON.parse(userStr);
+        } catch (e) {
+          console.error('Error parsing user data:', e);
+          return null;
+        }
+      }
+      return null;
+    }
+
+    // Logout function
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login.html';
+    }
+
+    // Escape HTML
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Toggle Menu
+    function toggleMenu() {
+      const menu = document.getElementById('sidebarMenu');
+      menu.classList.toggle('show');
+    }
+
+    // Handle Menu Click
+    function handleMenuClick(action) {
+      // Close menu
+      document.getElementById('sidebarMenu').classList.remove('show');
+      
+      switch(action) {
+        case 'dashboard':
+          // Already on dashboard
+          break;
+        case 'members':
+          alert('Members page would open here');
+          break;
+        case 'plans':
+          alert('Plans page would open here');
+          break;
+        case 'attendance':
+          alert('Attendance page would open here');
+          break;
+        case 'trainers':
+          alert('Trainers page would open here');
+          break;
+        case 'addMember':
+          alert('Add Member form would open here');
+          break;
+        case 'logout':
+          logout();
+          break;
+      }
+    }
+
+    // Load Dashboard Stats
+    async function loadDashboard() {
+      try {
+        const res = await fetch(API_URL, {
+          headers: getAuthHeaders()
+        });
         
-        <!-- Photo Capture Section -->
-        <div class="form-section">
-          <h3>Member Photo</h3>
-          <div class="photo-capture-container">
-            <div class="photo-preview">
-              <img id="member-photo-preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%237B61FF'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" alt="Profile Preview">
-            </div>
-            <div class="photo-actions">
-              <button type="button" id="open-camera-btn" class="camera-btn">📸 Take Photo</button>
-              <button type="button" id="upload-photo-btn" class="upload-btn">📁 Upload Photo</button>
-              <input type="file" id="photo-upload" accept="image/*" style="display: none;">
-              <button type="button" id="clear-photo-btn" class="clear-btn" style="display: none;">🗑️ Clear</button>
-            </div>
-            <input type="hidden" id="photo-data" value="">
-          </div>
-        </div>
+        if (res.status === 401) {
+          logout();
+          return;
+        }
+        
+        if (!res.ok) throw new Error('Failed to load members');
+        
+        const members = await res.json();
+        
+        // Calculate stats
+        const totalMembers = members.length;
+        const activeToday = members.filter(m => m.status === 'Active' || m.status === 'Trial').length;
+        
+        const amountMap = {
+          '1 Month Strength': 1000,
+          '1 Month Strength + Cardio': 1500,
+          '3 Months Strength': 2700,
+          '3 Months Strength + Cardio': 4000,
+          '6 Months Strength': 5000,
+          '6 Months Strength + Cardio': 7500,
+          '1 Year Strength': 9000,
+          '1 Year Strength + Cardio': 14000
+        };
+        
+        let estimatedRevenue = 0;
+        members.forEach(m => {
+          if (m.status === 'Active') {
+            estimatedRevenue += amountMap[m.plan] || 0;
+          }
+        });
+        
+        document.getElementById('totalMembers').textContent = totalMembers;
+        document.getElementById('activeToday').textContent = activeToday;
+        document.getElementById('estimatedRevenue').textContent = `₹${estimatedRevenue.toLocaleString('en-IN')}`;
+        
+        // Load recent members
+        loadRecentMembers(members);
+        
+        // Load payment reminders
+        loadPaymentReminders(members);
+        
+      } catch (e) {
+        console.error('Dashboard error:', e);
+      }
+    }
 
-        <!-- Camera Modal -->
-        <div id="camera-modal" class="modal">
-          <div class="modal-content" style="max-width: 500px; text-align: center;">
-            <h3>Take a Photo</h3>
-            <video id="camera-video" autoplay playsinline style="width: 100%; border-radius: 8px;"></video>
-            <canvas id="camera-canvas" style="display: none;"></canvas>
-            <div class="modal-buttons" style="margin-top: 1rem;">
-              <button type="button" id="capture-photo-btn" class="submit-btn">📸 Capture</button>
-              <button type="button" id="close-camera-btn" class="cancel-btn">Close</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Basic Information -->
-        <div class="form-section">
-          <h3>Basic Information</h3>
-          <div class="form-row">
-            <div class="form-group" style="flex: 2;">
-              <label>Full Name *</label>
-              <input type="text" id="name" placeholder="John Doe" required>
-            </div>
-            <div class="form-group" style="flex: 1;">
-              <label>Age</label>
-              <input type="number" id="age" placeholder="25" min="12" max="100">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group" style="flex: 1;">
-              <label>Phone Number *</label>
-              <input type="tel" id="phone" placeholder="9876543210" required>
-            </div>
-            <div class="form-group" style="flex: 1;">
-              <label>Email Address</label>
-              <input type="email" id="email" placeholder="john@example.com">
-            </div>
-          </div>
-        </div>
-
-        <!-- Health Information -->
-        <div class="form-section">
-          <h3>Health Information</h3>
-          <div class="form-group">
-            <label>Health Conditions</label>
-            <div id="health-conditions-container">
-              <div class="condition-row">
-                <select class="condition-type" style="width: 35%;">
-                  <option value="">Select Condition</option>
-                  <option value="Diabetes">Diabetes</option>
-                  <option value="Asthma">Asthma</option>
-                  <option value="High Blood Pressure">High Blood Pressure</option>
-                  <option value="Heart Condition">Heart Condition</option>
-                  <option value="Back Pain">Back Pain</option>
-                  <option value="Knee Injury">Knee Injury</option>
-                  <option value="Other">Other</option>
-                </select>
-                <select class="condition-severity" style="width: 25%;">
-                  <option value="Mild">Mild</option>
-                  <option value="Moderate">Moderate</option>
-                  <option value="Severe">Severe</option>
-                </select>
-                <input type="text" class="condition-notes" placeholder="Notes" style="width: 30%;">
-                <button type="button" class="remove-condition" onclick="this.parentElement.remove()">❌</button>
+    // Load Recent Members
+    function loadRecentMembers(members) {
+      const tbody = document.getElementById('membersTableBody');
+      if (!tbody) return;
+      
+      if (!members || members.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:#777;">No members found. Add your first member!</td></tr>`;
+        return;
+      }
+      
+      tbody.innerHTML = '';
+      members.slice(0, 5).forEach(m => {
+        const initials = m.name.charAt(0).toUpperCase();
+        const statusClass = m.status === 'Active' ? 'status-active' : (m.status === 'Trial' ? 'status-trial' : 'status-inactive');
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>
+            <div class="member-info">
+              <div class="member-avatar">${escapeHtml(initials)}</div>
+              <div>
+                <div class="member-name">${escapeHtml(m.name)}</div>
+                <div class="member-phone">${escapeHtml(m.phone)}</div>
               </div>
             </div>
-            <button type="button" id="add-condition-btn" class="small-btn">+ Add Condition</button>
-          </div>
-          <div class="form-group">
-            <label>Medical Notes</label>
-            <textarea id="medicalNotes" rows="2" placeholder="Any additional medical information..."></textarea>
-          </div>
-        </div>
+          </td>
+          <td>${escapeHtml(m.plan)}</td>
+          <td>${new Date(m.joinDate).toLocaleDateString('en-IN')}</td>
+          <td>${new Date(m.expiryDate).toLocaleDateString('en-IN')}</td>
+          <td><span class="status-badge ${statusClass}">${m.status}</span></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
 
-        <!-- Emergency Contact -->
-        <div class="form-section">
-          <h3>Emergency Contact</h3>
-          <div class="form-row">
-            <div class="form-group" style="flex: 2;">
-              <label>Contact Name</label>
-              <input type="text" id="emergency-name" placeholder="Emergency contact person">
-            </div>
-            <div class="form-group" style="flex: 1;">
-              <label>Relationship</label>
-              <input type="text" id="emergency-relationship" placeholder="e.g., Spouse">
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Contact Phone</label>
-            <input type="tel" id="emergency-phone" placeholder="Emergency phone number">
-          </div>
-        </div>
-
-        <!-- Membership Details -->
-        <div class="form-section">
-          <h3>Membership Details</h3>
-          <div class="form-group">
-            <label>Plan *</label>
-            <select id="plan" required>
-              <option value="">Select Plan</option>
-              <option value="1 Month Strength">1 Month Strength - ₹1,000</option>
-              <option value="1 Month Strength + Cardio">1 Month Strength + Cardio - ₹1,500</option>
-              <option value="3 Months Strength">3 Months Strength - ₹2,700</option>
-              <option value="3 Months Strength + Cardio">3 Months Strength + Cardio - ₹4,000</option>
-              <option value="6 Months Strength">6 Months Strength - ₹5,000</option>
-              <option value="6 Months Strength + Cardio">6 Months Strength + Cardio - ₹7,500</option>
-              <option value="1 Year Strength">1 Year Strength - ₹9,000</option>
-              <option value="1 Year Strength + Cardio">1 Year Strength + Cardio - ₹14,000</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <div class="form-group" style="flex: 1;">
-              <label>Expiry Date *</label>
-              <input type="date" id="expiryDate" required>
-            </div>
-            <div class="form-group" style="flex: 1;">
-              <label>Status *</label>
-              <select id="status" required>
-                <option value="Active">Active</option>
-                <option value="Trial">Trial</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="modal-buttons">
-          <button type="button" id="cancel-btn" class="cancel-btn">Cancel</button>
-          <button type="submit" class="submit-btn">Add Member</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- QR Payment Modal -->
-  <div id="payment-modal" class="modal">
-    <div class="modal-content" style="max-width: 450px;">
-      <h2 style="text-align:center; color:#7B61FF;">Complete Payment</h2>
-      <p id="payment-member-info" style="text-align:center; margin:15px 0; font-weight:600;"></p>
+    // Load Payment Reminders
+    function loadPaymentReminders(members) {
+      const today = new Date();
+      const sevenDaysFromNow = new Date(today);
+      sevenDaysFromNow.setDate(today.getDate() + 7);
       
-      <div style="text-align:center; margin:20px 0;">
-        <p>Scan QR Code to Pay</p>
-        <img id="qr-code" src="" alt="Payment QR" 
-             style="width:250px; height:250px; border:8px solid #7B61FF; border-radius:12px;">
-      </div>
+      const dueMembers = members.filter(m => {
+        const expiryDate = new Date(m.expiryDate);
+        return m.status === 'Active' && expiryDate <= sevenDaysFromNow;
+      });
+      
+      const reminderCard = document.getElementById('reminderCard');
+      if (dueMembers.length === 0) {
+        reminderCard.innerHTML = `
+          <h3>✅ All Good!</h3>
+          <p>No pending payments! All members are up to date.</p>
+        `;
+        reminderCard.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
+      } else {
+        reminderCard.innerHTML = `
+          <h3>⚠️ Payment Reminders</h3>
+          <div class="due-count">${dueMembers.length} members</div>
+          <p>have pending payments due within 7 days</p>
+        `;
+        reminderCard.style.background = 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)';
+      }
+    }
 
-      <div style="background:#f8f9fa; padding:15px; border-radius:8px; margin:15px 0;">
-        <strong>Amount to Pay:</strong> <span id="payment-amount" style="color:#7B61FF; font-size:1.3rem;"></span>
-      </div>
-
-      <button id="payment-done-btn" class="submit-btn" style="width:100%; margin-top:10px;">
-        ✅ Payment Received - Activate Member
-      </button>
-    </div>
-  </div>
-
-  <script src="script.js"></script>
- <!-- Add Trainer Modal -->
-<div id="add-trainer-modal" class="modal">
-  <div class="modal-content">
-    <h2>Add New Trainer</h2>
-    <form id="add-trainer-form">
-      <div class="form-group">
-        <label>Full Name *</label>
-        <input type="text" id="trainer-name" required>
-      </div>
-      <div class="form-group">
-        <label>Phone Number *</label>
-        <input type="tel" id="trainer-phone" required>
-      </div>
-      <div class="form-group">
-        <label>Specialty *</label>
-        <input type="text" id="trainer-specialty" placeholder="e.g., Weight Training, Yoga, Cardio" required>
-      </div>
-      <div class="form-group">
-        <label>Status</label>
-        <select id="trainer-status">
-          <option value="Active">Active</option>
-          <option value="Inactive">Inactive</option>
-        </select>
-      </div>
-      <div class="modal-buttons">
-        <button type="button" id="cancel-trainer-btn" class="cancel-btn">Cancel</button>
-        <button type="submit" class="submit-btn">Add Trainer</button>
-      </div>
-    </form>
-  </div>
-</div>
+    // Initialize Dashboard
+    window.onload = async () => {
+      if (!checkAuth()) return;
+      
+      console.log('Dashboard initializing...');
+      await loadDashboard();
+    };
+  </script>
 </body>
 </html>
