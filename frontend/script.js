@@ -54,59 +54,65 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+// Helper function to safely parse JSON response
+async function safeJsonResponse(res) {
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error('Failed to parse JSON. Response was:', text.substring(0, 200));
+    return null;
+  }
+}
+
 // ==================== DASHBOARD FUNCTIONS ====================
 async function loadDashboard() {
   try {
-    let res;
-    let stats;
-    
-    // Try /api/members/stats first (API_URL/stats)
-    try {
-      res = await fetch(`${API_URL}/stats`, {
-        headers: getAuthHeaders()
-      });
-      
-      if (res.ok) {
-        stats = await res.json();
-        console.log('Using /api/members/stats endpoint');
-      } else {
-        throw new Error('First endpoint failed');
-      }
-    } catch (err) {
-      // Fallback to /api/stats (BASE_URL/stats)
-      console.log('Trying fallback stats endpoint /api/stats...');
-      res = await fetch(`${BASE_URL}/stats`, {
-        headers: getAuthHeaders()
-      });
-      
-      if (!res.ok) throw new Error('Both stats endpoints failed');
-      stats = await res.json();
-      console.log('Using /api/stats endpoint');
-    }
+    // First try to get stats from members endpoint
+    const res = await fetch(API_URL, {
+      headers: getAuthHeaders()
+    });
     
     if (res.status === 401) {
       logout();
       return;
     }
-
+    
+    if (!res.ok) throw new Error('Failed to load members');
+    
+    const members = await res.json();
+    
+    // Calculate stats manually
+    const totalMembers = members.length;
+    const activeToday = members.filter(m => m.status === 'Active' || m.status === 'Trial').length;
+    
+    const amountMap = {
+      '1 Month Strength': 1000,
+      '1 Month Strength + Cardio': 1500,
+      '3 Months Strength': 2700,
+      '3 Months Strength + Cardio': 4000,
+      '6 Months Strength': 5000,
+      '6 Months Strength + Cardio': 7500,
+      '1 Year Strength': 9000,
+      '1 Year Strength + Cardio': 14000
+    };
+    
+    let estimatedRevenue = 0;
+    members.forEach(m => {
+      if (m.status === 'Active') {
+        estimatedRevenue += amountMap[m.plan] || 0;
+      }
+    });
+    
     const totalMembersEl = document.getElementById('total-members');
     const activeTodayEl = document.getElementById('active-today');
     const estimatedRevenueEl = document.getElementById('estimated-revenue');
     
-    if (totalMembersEl) totalMembersEl.textContent = stats.totalMembers || 0;
-    if (activeTodayEl) activeTodayEl.textContent = stats.activeToday || 0;
-    
-    const revenue = Number(stats.estimatedRevenue) || 0;
-    if (estimatedRevenueEl) estimatedRevenueEl.textContent = `₹${revenue.toLocaleString('en-IN')}`;
+    if (totalMembersEl) totalMembersEl.textContent = totalMembers;
+    if (activeTodayEl) activeTodayEl.textContent = activeToday;
+    if (estimatedRevenueEl) estimatedRevenueEl.textContent = `₹${estimatedRevenue.toLocaleString('en-IN')}`;
   } catch (e) { 
     console.error('Dashboard error:', e);
-    const totalMembersEl = document.getElementById('total-members');
-    const activeTodayEl = document.getElementById('active-today');
-    const estimatedRevenueEl = document.getElementById('estimated-revenue');
-    
-    if (totalMembersEl) totalMembersEl.textContent = '0';
-    if (activeTodayEl) activeTodayEl.textContent = '0';
-    if (estimatedRevenueEl) estimatedRevenueEl.textContent = '₹0';
   }
 }
 
@@ -149,16 +155,16 @@ async function loadMembers() {
               <small>${escapeHtml(m.phone)}</small>
             </div>
           </div>
-         </td>
-         <td>${escapeHtml(m.plan)}</td>
-         <td>${new Date(m.joinDate).toLocaleDateString('en-IN')}</td>
-         <td>${new Date(m.expiryDate).toLocaleDateString('en-IN')}</td>
-         <td><span class="status ${(m.status || 'active').toLowerCase()}">${m.status || 'Active'}</span></td>
-         <td>
+        </td>
+        <td>${escapeHtml(m.plan)}</td>
+        <td>${new Date(m.joinDate).toLocaleDateString('en-IN')}</td>
+        <td>${new Date(m.expiryDate).toLocaleDateString('en-IN')}</td>
+        <td><span class="status ${(m.status || 'active').toLowerCase()}">${m.status || 'Active'}</span></td>
+        <td>
           <button class="delete-member-btn" onclick="deleteMember('${m._id}', '${escapeHtml(m.name).replace(/'/g, "\\'")}')">
             🗑️ Delete
           </button>
-         </td>
+        </td>
       `;
       tbody.appendChild(row);
     });
@@ -166,7 +172,7 @@ async function loadMembers() {
     console.error('Load members error:', e);
     const tbody = document.querySelector('#members-table tbody');
     if (tbody && tbody.innerHTML === '') {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#dc3545;">Error loading members. Please refresh the page.</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#dc3545;">Error loading members. Please refresh the page.</td></tr>`;
     }
   }
 }
@@ -191,7 +197,7 @@ async function loadAllMembers() {
     tbody.innerHTML = '';
 
     if (!members || members.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;">No members found. Add your first member!</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;">No members found. Add your first member!</td></tr>`;
       return;
     }
 
@@ -228,7 +234,7 @@ async function loadAllMembers() {
     console.error('Load all members error:', e);
     const tbody = document.querySelector('#all-members-table tbody');
     if (tbody && tbody.innerHTML === '') {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:#dc3545;">Error loading members. Please refresh the page.</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:#dc3545;">Error loading members. Please refresh the page.</td></tr>`;
     }
   }
 }
@@ -242,54 +248,54 @@ async function loadAttendance(selectedDate = null) {
   dateInput.value = date;
 
   try {
-    const statsRes = await fetch(`${BASE_URL}/attendance/stats/${date}`, {
-      headers: getAuthHeaders()
-    });
-    
-    if (statsRes.status === 401) {
-      logout();
-      return;
-    }
-    
-    if (!statsRes.ok) throw new Error('Failed to load attendance stats');
-    
-    const stats = await statsRes.json();
-
-    const totalActiveEl = document.getElementById('total-active');
-    const presentCountEl = document.getElementById('present-count');
-    const percentageEl = document.getElementById('attendance-percentage');
-    
-    if (totalActiveEl) totalActiveEl.textContent = stats.totalActive || 0;
-    if (presentCountEl) presentCountEl.textContent = stats.presentCount || 0;
-    if (percentageEl) percentageEl.textContent = (stats.attendancePercentage || 0) + '%';
-
-    const res = await fetch(`${BASE_URL}/attendance/${date}`, {
-      headers: getAuthHeaders()
-    });
-    
-    if (!res.ok) throw new Error('Failed to load attendance');
-    
-    const attendances = await res.json();
-
-    const tbody = document.querySelector('#attendance-table tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
+    // Get all members first
     const membersRes = await fetch(API_URL, {
       headers: getAuthHeaders()
     });
     
     if (!membersRes.ok) throw new Error('Failed to load members');
     
-    let members = await membersRes.json();
-    members = members.filter(m => m.status === 'Active' || m.status === 'Trial');
+    const allMembers = await membersRes.json();
+    const activeMembers = allMembers.filter(m => m.status === 'Active' || m.status === 'Trial');
+    
+    // Calculate stats from active members
+    const totalActive = activeMembers.length;
+    
+    // Get today's attendance (try to load from localStorage or API)
+    let attendances = [];
+    try {
+      const attendanceRes = await fetch(`${API_URL}/attendance/${date}`, {
+        headers: getAuthHeaders()
+      });
+      if (attendanceRes.ok) {
+        attendances = await attendanceRes.json();
+      }
+    } catch (err) {
+      console.log('No attendance records found for this date');
+    }
+    
+    const presentCount = attendances.filter(a => a.status === 'Present').length;
+    const attendancePercentage = totalActive > 0 ? Math.round((presentCount / totalActive) * 100) : 0;
+    
+    // Update stats display
+    const totalActiveEl = document.getElementById('total-active');
+    const presentCountEl = document.getElementById('present-count');
+    const percentageEl = document.getElementById('attendance-percentage');
+    
+    if (totalActiveEl) totalActiveEl.textContent = totalActive;
+    if (presentCountEl) presentCountEl.textContent = presentCount;
+    if (percentageEl) percentageEl.textContent = attendancePercentage + '%';
 
-    if (members.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#777;">No active members found.</td></tr>';
+    const tbody = document.querySelector('#attendance-table tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (activeMembers.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:#777;">No active members found.</td></tr>`;
       return;
     }
 
-    members.forEach(member => {
+    activeMembers.forEach(member => {
       const existing = attendances.find(a => a.memberId && (a.memberId._id || a.memberId) === member._id);
       const currentStatus = existing ? existing.status : 'Absent';
       const initials = member.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
@@ -311,14 +317,14 @@ async function loadAttendance(selectedDate = null) {
     console.error('Attendance error:', err);
     const tbody = document.querySelector('#attendance-table tbody');
     if (tbody && tbody.innerHTML === '') {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#dc3545;">Error loading attendance data</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:#dc3545;">Error loading attendance data</td></tr>`;
     }
   }
 }
 
 window.markAttendance = async function(memberId, date, status) {
   try {
-    const res = await fetch(`${BASE_URL}/attendance`, {
+    const res = await fetch(`${API_URL}/attendance`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify({ memberId, date, status })
@@ -327,6 +333,7 @@ window.markAttendance = async function(memberId, date, status) {
     if (!res.ok) throw new Error('Failed to mark attendance');
     
     await loadAttendance(date);
+    alert(`Attendance marked as ${status} successfully!`);
   } catch (err) {
     alert('Failed to mark attendance: ' + err.message);
     console.error(err);
@@ -390,6 +397,7 @@ async function deleteAllMembers() {
         headers: getAuthHeaders()
       });
       if (response.ok) deletedCount++;
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
     
     alert(`✅ Successfully deleted ${deletedCount} members!`);
@@ -409,10 +417,8 @@ async function deleteAllMembers() {
 
 // ==================== TRAINERS FUNCTIONS ====================
 
-// Load trainers from MongoDB
 async function loadTrainers() {
   try {
-    console.log('Loading trainers...');
     const res = await fetch(TRAINER_API_URL, {
       headers: getAuthHeaders()
     });
@@ -424,14 +430,13 @@ async function loadTrainers() {
     
     if (!res.ok) throw new Error('Failed to load trainers');
     const trainers = await res.json();
-    console.log('Trainers loaded:', trainers.length);
     
     const tbody = document.querySelector('#trainers-table tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
 
     if (!trainers || trainers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:60px;color:#777;">No trainers added yet. Click "Add New Trainer" to get started.</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:60px;color:#777;">No trainers added yet. Click "Add New Trainer" to get started.</td></tr>`;
       return;
     }
 
@@ -458,12 +463,11 @@ async function loadTrainers() {
     console.error('Load trainers error:', err);
     const tbody = document.querySelector('#trainers-table tbody');
     if (tbody && tbody.innerHTML === '') {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:60px;color:#dc3545;">Error loading trainers. Please refresh the page.</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:60px;color:#dc3545;">Error loading trainers. Please refresh the page.</td></tr>`;
     }
   }
 }
 
-// Edit Trainer
 window.editTrainer = async function(id) {
   try {
     const res = await fetch(`${TRAINER_API_URL}/${id}`, {
@@ -513,7 +517,6 @@ window.editTrainer = async function(id) {
   }
 };
 
-// Delete Trainer
 window.deleteTrainer = async function(id) {
   if (!confirm("⚠️ Delete this trainer?\n\nThis action cannot be undone!")) return;
   
@@ -536,67 +539,25 @@ window.deleteTrainer = async function(id) {
   }
 };
 
-// Setup Trainer Modal
 function setupTrainerModal() {
-  console.log('Setting up trainer modal...');
-  
   const addTrainerBtn = document.getElementById('add-trainer-btn');
   if (!addTrainerBtn) {
     console.error('Add trainer button not found!');
     return;
   }
 
-  // Remove existing listener to prevent duplicates
   const newAddTrainerBtn = addTrainerBtn.cloneNode(true);
   addTrainerBtn.parentNode.replaceChild(newAddTrainerBtn, addTrainerBtn);
   
   newAddTrainerBtn.addEventListener('click', () => {
-    console.log('Add trainer button clicked');
-    let modal = document.getElementById('add-trainer-modal');
-    if (!modal) {
-      const html = `
-        <div id="add-trainer-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
-          <div class="modal-content" style="background:white; padding:30px; border-radius:12px; max-width:500px; width:90%;">
-            <h2>Add New Trainer</h2>
-            <form id="add-trainer-form">
-              <div class="form-group">
-                <label>Full Name *</label>
-                <input type="text" id="trainer-name" required>
-              </div>
-              <div class="form-group">
-                <label>Phone *</label>
-                <input type="tel" id="trainer-phone" required>
-              </div>
-              <div class="form-group">
-                <label>Specialty *</label>
-                <input type="text" id="trainer-specialty" required>
-              </div>
-              <div class="form-group">
-                <label>Status</label>
-                <select id="trainer-status">
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
-              </div>
-              <div class="modal-buttons" style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
-                <button type="button" id="cancel-trainer-btn" class="cancel-btn" style="padding:10px 20px; background:#6c757d; color:white; border:none; border-radius:6px; cursor:pointer;">Cancel</button>
-                <button type="submit" class="submit-btn" style="padding:10px 20px; background:#7B61FF; color:white; border:none; border-radius:6px; cursor:pointer;">Add Trainer</button>
-              </div>
-            </form>
-          </div>
-        </div>`;
-      document.body.insertAdjacentHTML('beforeend', html);
-      modal = document.getElementById('add-trainer-modal');
-    }
-    modal.style.display = 'flex';
+    const modal = document.getElementById('add-trainer-modal');
+    if (modal) modal.style.display = 'flex';
   });
 }
 
-// Handle trainer form submission
 document.addEventListener('submit', async (e) => {
   if (e.target.id === 'add-trainer-form') {
     e.preventDefault();
-    console.log('Trainer form submitted');
     
     const nameInput = document.getElementById('trainer-name');
     const phoneInput = document.getElementById('trainer-phone');
@@ -634,7 +595,6 @@ document.addEventListener('submit', async (e) => {
         const modal = document.getElementById('add-trainer-modal');
         if (modal) modal.style.display = 'none';
         
-        // Reset form
         const form = document.getElementById('add-trainer-form');
         if (form) form.reset();
         
@@ -650,7 +610,6 @@ document.addEventListener('submit', async (e) => {
   }
 });
 
-// Cancel button handler for trainer modal
 document.addEventListener('click', (e) => {
   if (e.target.id === 'cancel-trainer-btn') {
     const modal = document.getElementById('add-trainer-modal');
@@ -658,15 +617,12 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Add logout button and user info to sidebar
 function addUserInterface() {
   const user = getCurrentUser();
   if (user && user.name) {
     const sidebar = document.querySelector('.sidebar');
     if (sidebar) {
-      // Check if user info already exists
       if (!sidebar.querySelector('.user-info')) {
-        // Add user info at the top of sidebar
         const userInfo = document.createElement('div');
         userInfo.className = 'user-info';
         userInfo.innerHTML = `
@@ -684,7 +640,6 @@ function addUserInterface() {
         sidebar.insertBefore(userInfo, sidebar.firstChild);
       }
       
-      // Add logout button at bottom if not exists
       if (!sidebar.querySelector('.logout-btn')) {
         const logoutBtn = document.createElement('button');
         logoutBtn.innerHTML = '🚪 Logout';
@@ -714,7 +669,8 @@ function addUserInterface() {
 // ==================== PAYMENT FUNCTIONS ====================
 async function loadPaymentReminders() {
   try {
-    const res = await fetch(`${BASE_URL}/payment-reminders`, {
+    // Get all members and check expiry dates
+    const res = await fetch(API_URL, {
       headers: getAuthHeaders()
     });
     
@@ -726,38 +682,60 @@ async function loadPaymentReminders() {
       return;
     }
     
-    const data = await res.json();
+    const members = await res.json();
+    const today = new Date();
+    const sevenDaysFromNow = new Date(today);
+    sevenDaysFromNow.setDate(today.getDate() + 7);
+    
+    const dueMembers = members.filter(m => {
+      const expiryDate = new Date(m.expiryDate);
+      return m.status === 'Active' && expiryDate <= sevenDaysFromNow;
+    });
+    
     const reminderContainer = document.getElementById('payment-reminders-container');
     if (!reminderContainer) return;
     
-    if (data.dueCount === 0) {
+    if (dueMembers.length === 0) {
       reminderContainer.innerHTML = '<p style="text-align:center; color:#4CAF50;">✅ No pending payments! All members are up to date.</p>';
     } else {
       reminderContainer.innerHTML = `
         <div class="payment-reminder-card" style="padding:15px; background:#fff3cd; border-left:4px solid #ffc107; border-radius:8px;">
           <h4 style="margin:0 0 10px 0;">⚠️ Payment Reminders</h4>
-          <p><strong>${data.dueCount}</strong> members have pending payments</p>
+          <p><strong>${dueMembers.length}</strong> members have pending payments</p>
           <button onclick="showDueMembers()" class="small-btn" style="padding:8px 16px; background:#7B61FF; color:white; border:none; border-radius:6px; cursor:pointer;">View Details</button>
         </div>
       `;
     }
   } catch (err) {
     console.error('Payment reminders error:', err);
+    const reminderContainer = document.getElementById('payment-reminders-container');
+    if (reminderContainer) {
+      reminderContainer.innerHTML = '<p style="text-align:center; color:#666;">Payment reminders</p>';
+    }
   }
 }
 
 async function showDueMembers() {
   try {
-    const res = await fetch(`${BASE_URL}/payment-reminders`, {
+    const res = await fetch(API_URL, {
       headers: getAuthHeaders()
     });
     
-    if (!res.ok) throw new Error('Failed to load payment data');
+    if (!res.ok) throw new Error('Failed to load members');
     
-    const data = await res.json();
+    const members = await res.json();
+    const today = new Date();
+    const sevenDaysFromNow = new Date(today);
+    sevenDaysFromNow.setDate(today.getDate() + 7);
+    
+    const dueMembers = members.filter(m => {
+      const expiryDate = new Date(m.expiryDate);
+      return m.status === 'Active' && expiryDate <= sevenDaysFromNow;
+    });
+    
     let message = '📋 PENDING PAYMENTS:\n\n';
-    if (data.dueMembers && data.dueMembers.length > 0) {
-      data.dueMembers.forEach(m => {
+    if (dueMembers.length > 0) {
+      dueMembers.forEach(m => {
         const dueDate = new Date(m.expiryDate).toLocaleDateString();
         message += `${m.name} - Due on ${dueDate}\n`;
       });
@@ -773,22 +751,41 @@ async function showDueMembers() {
 
 async function showMonthlyDue(memberId, memberName) {
   try {
-    const res = await fetch(`${BASE_URL}/monthly-due/${memberId}`, {
+    const res = await fetch(API_URL, {
       headers: getAuthHeaders()
     });
     
-    if (!res.ok) throw new Error('Failed to load monthly due');
+    if (!res.ok) throw new Error('Failed to load members');
     
-    const data = await res.json();
-    const status = data.isOverdue ? '⚠️ OVERDUE' : '✅ Up to Date';
-    alert(`📊 MONTHLY DUE SUMMARY\nMember: ${data.memberName}\nMonthly Amount: ₹${data.monthlyAmount}\nStatus: ${status}\nNext Due Date: ${new Date(data.nextDueDate).toLocaleDateString()}`);
+    const members = await res.json();
+    const member = members.find(m => m._id === memberId);
+    
+    if (!member) {
+      alert('Member not found');
+      return;
+    }
+    
+    const planPrices = {
+      '1 Month Strength': 1000,
+      '1 Month Strength + Cardio': 1500,
+      '3 Months Strength': 900,
+      '3 Months Strength + Cardio': 1333,
+      '6 Months Strength': 833,
+      '6 Months Strength + Cardio': 1250,
+      '1 Year Strength': 750,
+      '1 Year Strength + Cardio': 1167
+    };
+    
+    const monthlyAmount = planPrices[member.plan] || 0;
+    const isOverdue = new Date(member.expiryDate) < new Date();
+    
+    alert(`📊 MONTHLY DUE SUMMARY\nMember: ${member.name}\nMonthly Amount: ₹${Math.round(monthlyAmount)}\nStatus: ${isOverdue ? '⚠️ OVERDUE' : '✅ Up to Date'}\nNext Due Date: ${new Date(member.expiryDate).toLocaleDateString()}`);
   } catch (err) {
     console.error('Error:', err);
     alert('Monthly due calculation will be available soon');
   }
 }
 
-// ==================== PAYMENT MODAL ====================
 function showPaymentQR(member) {
   const paymentModal = document.getElementById('payment-modal');
   if (!paymentModal) return;
@@ -971,7 +968,6 @@ function setupAddMemberForm() {
     });
   }
 
-  // Health conditions add button
   const addConditionBtn = document.getElementById('add-condition-btn');
   if (addConditionBtn) {
     addConditionBtn.addEventListener('click', () => {
@@ -1004,7 +1000,6 @@ function setupAddMemberForm() {
     });
   }
 
-  // Form submit
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1108,12 +1103,13 @@ if (markAllPresentBtn) {
 
       let successCount = 0;
       for (let m of members) {
-        const attendanceRes = await fetch(`${BASE_URL}/attendance`, {
+        const attendanceRes = await fetch(`${API_URL}/attendance`, {
           method: 'POST',
           headers: getAuthHeaders(),
           body: JSON.stringify({ memberId: m._id, date, status: 'Present' })
         });
         if (attendanceRes.ok) successCount++;
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
       
       alert(`${successCount} out of ${members.length} members marked Present!`);
@@ -1204,12 +1200,10 @@ window.addEventListener('click', (e) => {
 
 // ==================== INITIALIZATION ====================
 window.onload = async () => {
-  // Check authentication first
   if (!checkAuth()) return;
   
   console.log('App initializing...');
   
-  // Setup all features
   addUserInterface();
   setupNavigation();
   setupTrainerModal();
@@ -1217,13 +1211,11 @@ window.onload = async () => {
   setupPlanSelection();
   setupAddMemberForm();
   
-  // Load initial data
   await loadDashboard();
   await loadMembers();
   await loadTrainers();
   await loadPaymentReminders();
   
-  // Set default attendance date
   const dateInput = document.getElementById('attendance-date');
   if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 };
