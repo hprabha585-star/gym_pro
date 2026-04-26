@@ -49,9 +49,12 @@
       z-index: 200;
       overflow-y: auto;
       transition: transform var(--transition);
+      transform: translateX(-100%);
     }
 
-    .sidebar.collapsed { transform: translateX(-100%); }
+    .sidebar.open {
+      transform: translateX(0);
+    }
 
     .sidebar-brand {
       display: flex;
@@ -149,7 +152,7 @@
     .topbar {
       position: fixed;
       top: 0;
-      left: var(--sidebar-w);
+      left: 0;
       right: 0;
       height: 60px;
       background: white;
@@ -159,23 +162,26 @@
       padding: 0 1.5rem;
       gap: 1rem;
       z-index: 100;
-      transition: left var(--transition);
     }
 
-    .topbar.full { left: 0; }
-
     .menu-toggle {
-      display: none;
-      width: 36px; height: 36px;
-      background: var(--primary-light);
+      width: 40px;
+      height: 40px;
+      background: var(--primary);
       border: none;
-      border-radius: 8px;
-      color: var(--primary);
-      font-size: 1.1rem;
+      border-radius: 10px;
+      color: white;
+      font-size: 1.2rem;
       cursor: pointer;
+      display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
+      transition: all var(--transition);
+    }
+
+    .menu-toggle:hover {
+      background: var(--primary-dark);
+      transform: scale(1.02);
     }
 
     .topbar-title {
@@ -191,17 +197,6 @@
       color: var(--muted);
     }
 
-    /* ===== MAIN ===== */
-    .main-content {
-      margin-left: var(--sidebar-w);
-      margin-top: 60px;
-      padding: 1.5rem;
-      min-height: calc(100vh - 60px);
-      transition: margin-left var(--transition);
-    }
-
-    .main-content.full { margin-left: 0; }
-
     /* ===== OVERLAY ===== */
     .overlay {
       display: none;
@@ -211,6 +206,13 @@
       z-index: 150;
     }
     .overlay.show { display: block; }
+
+    /* ===== MAIN ===== */
+    .main-content {
+      margin-top: 60px;
+      padding: 1.5rem;
+      min-height: calc(100vh - 60px);
+    }
 
     /* ===== PAGE SECTIONS ===== */
     .page { display: none; }
@@ -432,31 +434,51 @@
     .form-group textarea { resize: vertical; min-height: 80px; }
     .form-section-title { font-size: 0.82rem; font-weight: 700; color: var(--primary); margin: 1.25rem 0 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    /* ===== DISCOUNT BOX ===== */
-    .discount-box {
-      background: #faf9ff;
-      border: 1.5px dashed #c4b5fd;
-      border-radius: 10px;
+    /* ===== PHOTO CAPTURE ===== */
+    .photo-section {
+      background: var(--primary-light);
+      border-radius: 12px;
       padding: 1rem;
       margin-bottom: 1rem;
+      text-align: center;
     }
 
-    .discount-box h4 { font-size: 0.85rem; color: var(--primary); margin-bottom: 0.75rem; font-weight: 700; }
-
-    .radio-group { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
-    .radio-group label { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
-
-    .price-summary {
-      background: var(--primary-light);
-      border-radius: 8px;
-      padding: 10px 14px;
-      margin-bottom: 1rem;
-      font-size: 0.88rem;
+    .photo-preview {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      margin: 0 auto 10px;
+      overflow: hidden;
+      border: 3px solid var(--primary);
+      background: white;
     }
 
-    .price-summary .line { display: flex; justify-content: space-between; margin-bottom: 4px; }
-    .price-summary .line:last-child { margin-bottom: 0; font-weight: 700; font-size: 1rem; color: var(--success); }
-    .price-saved { color: var(--success); font-weight: 700; font-size: 0.82rem; margin-top: 4px; }
+    .photo-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .photo-buttons {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Camera Modal */
+    .camera-modal .modal-content {
+      max-width: 500px;
+      text-align: center;
+    }
+    
+    .camera-video {
+      width: 100%;
+      border-radius: 12px;
+      background: #000;
+      margin-bottom: 10px;
+    }
 
     /* ===== MODAL ===== */
     .modal {
@@ -478,7 +500,7 @@
       border-radius: var(--radius);
       padding: 1.5rem;
       width: 100%;
-      max-width: 520px;
+      max-width: 550px;
       max-height: 90vh;
       overflow-y: auto;
       box-shadow: 0 24px 48px rgba(0,0,0,0.25);
@@ -626,19 +648,11 @@
 
     /* ===== RESPONSIVE ===== */
     @media (max-width: 768px) {
-      .sidebar { transform: translateX(-100%); }
-      .sidebar.open { transform: none; }
-
-      .topbar { left: 0; }
-      .menu-toggle { display: flex; }
-      .main-content { margin-left: 0; }
-
       .stats-grid { grid-template-columns: 1fr 1fr; }
       .att-stats { grid-template-columns: 1fr 1fr 1fr; }
       .form-grid { grid-template-columns: 1fr; }
       .plans-grid { grid-template-columns: 1fr; }
       .discount-form-group { grid-template-columns: 1fr; }
-
       .stat-value { font-size: 1.5rem; }
       .modal-content { padding: 1.25rem; }
     }
@@ -742,7 +756,7 @@
       <div class="table-wrap">
         <table>
           <thead><tr><th>Member</th><th>Plan</th><th>Joined</th><th>Expires</th><th>Status</th></tr></thead>
-          <tbody id="dashMembersBody"><tr><td colspan="5" class="empty"><div class="e-icon">⏳</div><p>Loading…</p></td></tr></tbody>
+          <tbody id="dashMembersBody"><tr><td colspan="5" class="empty"><div class="e-icon">⏳</div><p>Loading…</p></div></td></tr></tbody>
         </table>
       </div>
     </div>
@@ -784,7 +798,7 @@
         <div class="att-stat"><div class="num" id="statPct">0%</div><div class="lbl">Attendance</div></div>
       </div>
       <div class="table-wrap">
-        <table>
+        <tr>
           <thead><tr><th>Member</th><th>Plan</th><th>Phone</th><th>Status</th><th>Action</th></tr></thead>
           <tbody id="attendanceBody"><tr><td colspan="5"><div class="empty"><p>Select a date and press Load</p></div></td></tr></tbody>
         </table>
@@ -800,7 +814,7 @@
         <button class="btn btn-primary btn-sm" onclick="openModal('addTrainerModal')">+ Add Trainer</button>
       </div>
       <div class="table-wrap">
-        <table>
+        <tr>
           <thead><tr><th>Name</th><th>Specialty</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody id="trainersBody"><tr><td colspan="5"><div class="empty"><div class="e-icon">⏳</div><p>Loading…</p></div></td></tr></tbody>
         </table>
@@ -839,7 +853,7 @@
 
 <!-- ===== MODALS ===== -->
 
-<!-- Add Member Modal -->
+<!-- Add Member Modal with Photo Capture -->
 <div class="modal" id="addMemberModal">
   <div class="modal-content">
     <div class="modal-header">
@@ -847,6 +861,20 @@
       <button class="modal-close" onclick="closeModal('addMemberModal')">✕</button>
     </div>
     <form id="addMemberForm">
+      <!-- Photo Capture Section -->
+      <div class="photo-section">
+        <div class="photo-preview">
+          <img id="photoPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%236C47FF'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" alt="Profile">
+        </div>
+        <div class="photo-buttons">
+          <button type="button" class="btn btn-primary btn-sm" onclick="openCameraModal()">📸 Take Photo</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="uploadPhoto()">📁 Upload</button>
+          <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="handlePhotoUpload(this)">
+          <button type="button" class="btn btn-danger btn-sm" id="clearPhotoBtn" style="display:none" onclick="clearPhoto()">🗑 Clear</button>
+        </div>
+        <input type="hidden" id="photoData" value="">
+      </div>
+
       <div class="form-grid">
         <div class="form-group"><label>Full Name *</label><input type="text" id="mName" required placeholder="e.g. Arjun Reddy"></div>
         <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="mPhone" required placeholder="9876543210" maxlength="10" pattern="\d{10}"></div>
@@ -914,6 +942,22 @@
         <button type="submit" class="btn btn-primary">Add Member</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Camera Modal -->
+<div class="modal camera-modal" id="cameraModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <span class="modal-title">Take Photo</span>
+      <button class="modal-close" onclick="closeCameraModal()">✕</button>
+    </div>
+    <video id="cameraVideo" class="camera-video" autoplay playsinline></video>
+    <canvas id="cameraCanvas" style="display:none"></canvas>
+    <div style="display:flex;gap:10px;margin-top:1rem">
+      <button class="btn btn-primary" style="flex:1" onclick="capturePhoto()">📸 Capture</button>
+      <button class="btn" style="flex:1;background:var(--bg)" onclick="closeCameraModal()">Close</button>
+    </div>
   </div>
 </div>
 
@@ -1025,6 +1069,7 @@ let activeDiscounts = JSON.parse(localStorage.getItem('gympro_discounts') || '[]
 let memberDiscounts = JSON.parse(localStorage.getItem('gympro_member_discounts') || '{}');
 let currentPaymentMember = null;
 let currentFinalPrice = 0;
+let cameraStream = null;
 
 // ===== AUTH =====
 function headers() {
@@ -1071,6 +1116,64 @@ function avatar(name) {
 function badge(status) {
   const cls = `badge-${(status||'inactive').toLowerCase()}`;
   return `<span class="badge ${cls}">${esc(status)}</span>`;
+}
+
+// ===== PHOTO CAPTURE FUNCTIONS =====
+async function openCameraModal() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    cameraStream = stream;
+    const video = document.getElementById('cameraVideo');
+    video.srcObject = stream;
+    openModal('cameraModal');
+  } catch(err) {
+    toast('Unable to access camera. Please use upload option.', 'error');
+  }
+}
+
+function closeCameraModal() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(track => track.stop());
+    cameraStream = null;
+  }
+  closeModal('cameraModal');
+}
+
+function capturePhoto() {
+  const video = document.getElementById('cameraVideo');
+  const canvas = document.getElementById('cameraCanvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const photoData = canvas.toDataURL('image/jpeg', 0.7);
+  document.getElementById('photoPreview').src = photoData;
+  document.getElementById('photoData').value = photoData;
+  document.getElementById('clearPhotoBtn').style.display = 'inline-block';
+  closeCameraModal();
+  toast('Photo captured!', 'success');
+}
+
+function uploadPhoto() {
+  document.getElementById('photoInput').click();
+}
+
+function handlePhotoUpload(input) {
+  const file = input.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      document.getElementById('photoPreview').src = e.target.result;
+      document.getElementById('photoData').value = e.target.result;
+      document.getElementById('clearPhotoBtn').style.display = 'inline-block';
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function clearPhoto() {
+  document.getElementById('photoPreview').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%236C47FF'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+  document.getElementById('photoData').value = '';
+  document.getElementById('clearPhotoBtn').style.display = 'none';
 }
 
 // ===== SIDEBAR =====
@@ -1137,10 +1240,10 @@ async function loadDashboard() {
       tbody.innerHTML = members.slice(0,5).map(m => `
         <tr>
           <td style="display:flex;align-items:center;gap:8px">${avatar(m.name)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.phone)}</small></div></td>
-          <td style="font-size:0.82rem">${esc(m.plan)}</td>
-          <td>${fmtDate(m.joinDate)}</td>
-          <td>${fmtDate(m.expiryDate)}</td>
-          <td>${badge(m.status)}</td>
+          <td style="font-size:0.82rem">${esc(m.plan)}</td
+          <td>${fmtDate(m.joinDate)}</td
+          <td>${fmtDate(m.expiryDate)}</td
+          <td>${badge(m.status)}</td
         </tr>
       `).join('');
     }
@@ -1174,17 +1277,17 @@ async function loadAllMembers() {
 
     tbody.innerHTML = members.map(m => `
       <tr>
-        <td style="display:flex;align-items:center;gap:8px">${avatar(m.name)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.email||'')}</small></div></td>
-        <td>${esc(m.phone)}</td>
-        <td style="font-size:0.82rem">${esc(m.plan)}</td>
-        <td>${fmtDate(m.expiryDate)}</td>
-        <td>${badge(m.status)}</td>
+        <td style="display:flex;align-items:center;gap:8px">${avatar(m.name)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.email||'')}</small></div></td
+        <td>${esc(m.phone)}</td
+        <td style="font-size:0.82rem">${esc(m.plan)}</td
+        <td>${fmtDate(m.expiryDate)}</td
+        <td>${badge(m.status)}</td
         <td>
           <button class="btn btn-danger btn-sm" onclick="deleteMember('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\\'"))}')">Delete</button>
-        </td>
+         </td
       </tr>
     `).join('');
-  } catch(e) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><p style="color:var(--danger)">Error loading members</p></div></td></tr>`; }
+  } catch(e) { tbody.innerHTML = `<td><td colspan="6"><div class="empty"><p style="color:var(--danger)">Error loading members</p></div></td></table>`; }
 }
 
 async function deleteMember(id, name) {
@@ -1239,7 +1342,7 @@ async function loadAttendance() {
     document.getElementById('statPct').textContent = active.length ? `${Math.min(100,Math.round(presentCount/active.length*100))}%` : '0%';
 
     if (!active.length) {
-      tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><p>No active members found</p></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><p>No active members found</p></div></td></td>`;
       return;
     }
 
@@ -1251,18 +1354,18 @@ async function loadAttendance() {
           <td style="display:flex;align-items:center;gap:8px">
             <div class="avatar" style="background:${avatarBg(m.name)}">${esc(initials)}</div>
             <strong>${esc(m.name)}</strong>
-          </td>
-          <td style="font-size:0.82rem">${esc(m.plan)}</td>
-          <td>${esc(m.phone)}</td>
-          <td><span id="attbadge-${m._id}" class="badge ${st==='Present'?'badge-present':'badge-absent'}">${st}</span></td>
+           </td
+          <td style="font-size:0.82rem">${esc(m.plan)}</td
+          <td>${esc(m.phone)}</td
+          <td><span id="attbadge-${m._id}" class="badge ${st==='Present'?'badge-present':'badge-absent'}">${st}</span></td
           <td>
             <button class="att-btn att-btn-present" onclick="markAtt('${m._id}','${date}','Present')">Present</button>
             <button class="att-btn att-btn-absent" onclick="markAtt('${m._id}','${date}','Absent')">Absent</button>
-          </td>
+           </td
         </tr>
       `;
     }).join('');
-  } catch(e) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading attendance</p></div></td></tr>`; }
+  } catch(e) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading attendance</p></div></td</tr</tbody>`; }
 }
 
 function markAtt(memberId, date, status) {
@@ -1272,14 +1375,12 @@ function markAtt(memberId, date, status) {
   saved[memberId] = status;
   localStorage.setItem(attKey, JSON.stringify(saved));
 
-  // Update badge inline
   const badge = document.getElementById(`attbadge-${memberId}`);
   if (badge) {
     badge.textContent = status;
     badge.className = `badge ${status==='Present'?'badge-present':'badge-absent'}`;
   }
 
-  // Recalc stats
   const total = parseInt(document.getElementById('statTotal').textContent) || 0;
   const presentCount = Object.values(saved).filter(s=>s==='Present').length;
   document.getElementById('statPresent').textContent = presentCount;
@@ -1322,14 +1423,14 @@ async function loadTrainers() {
 
     tbody.innerHTML = trainers.map(t => `
       <tr>
-        <td style="display:flex;align-items:center;gap:8px">${avatar(t.name)}<strong>${esc(t.name)}</strong></td>
-        <td>${esc(t.specialty)}</td>
-        <td>${esc(t.phone)}</td>
-        <td>${badge(t.status)}</td>
+        <td style="display:flex;align-items:center;gap:8px">${avatar(t.name)}<strong>${esc(t.name)}</strong></td
+        <td>${esc(t.specialty)}</td
+        <td>${esc(t.phone)}</td
+        <td>${badge(t.status)}</td
         <td>
           <button class="btn btn-sm btn-outline" onclick="editTrainer('${esc(t._id)}')">Edit</button>
           <button class="btn btn-sm btn-danger" onclick="deleteTrainer('${esc(t._id)}','${esc(t.name.replace(/'/g,"\\\'"))}')">Delete</button>
-        </td>
+         </td
       </tr>
     `).join('');
   } catch(e) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading trainers</p></div></td></tr>`; }
@@ -1392,7 +1493,6 @@ function loadPlans() {
 
 function selectPlan(name) {
   document.getElementById('mPlan').value = name;
-  // Auto-set expiry
   const expiry = new Date();
   const months = PLAN_MONTHS[name] || 1;
   expiry.setMonth(expiry.getMonth() + months);
@@ -1414,12 +1514,12 @@ function renderDiscounts() {
       <tbody>
         ${activeDiscounts.map((d,i) => `
           <tr>
-            <td><strong>${esc(d.name)}</strong></td>
-            <td>${d.appliesTo==='all'?'All Plans':esc(d.planName)}</td>
-            <td>${d.type==='percentage'?'Percentage':'Fixed'}</td>
-            <td>${d.type==='percentage'?`${d.value}%`:`₹${d.value.toLocaleString('en-IN')}`}</td>
-            <td>${d.validUntil ? fmtDate(d.validUntil) : 'No expiry'}</td>
-            <td><button class="btn btn-danger btn-sm" onclick="removeDiscount(${i})">Remove</button></td>
+            <td><strong>${esc(d.name)}</strong></td
+            <td>${d.appliesTo==='all'?'All Plans':esc(d.planName)}</td
+            <td>${d.type==='percentage'?'Percentage':'Fixed'}</td
+            <td>${d.type==='percentage'?`${d.value}%`:`₹${d.value.toLocaleString('en-IN')}`}</td
+            <td>${d.validUntil ? fmtDate(d.validUntil) : 'No expiry'}</td
+            <td><button class="btn btn-danger btn-sm" onclick="removeDiscount(${i})">Remove</button></td
           </tr>
         `).join('')}
       </tbody>
@@ -1521,7 +1621,6 @@ async function confirmPayment() {
   expiry.setMonth(expiry.getMonth() + months);
 
   try {
-    // Try updating expiry on backend (PUT endpoint may not exist, we gracefully handle)
     await fetch(`${API}/${currentPaymentMember.id}`, {
       method: 'PUT', headers: headers(),
       body: JSON.stringify({ expiryDate: expiry.toISOString().split('T')[0], status:'Active' })
@@ -1597,6 +1696,7 @@ document.getElementById('addMemberForm').addEventListener('submit', async (e) =>
     plan: sel.value,
     expiryDate: document.getElementById('mExpiry').value,
     status: document.getElementById('mStatus').value,
+    photo: document.getElementById('photoData').value || '',
     emergencyContact: {
       name: document.getElementById('mEcName').value.trim(),
       phone: document.getElementById('mEcPhone').value.trim(),
@@ -1623,10 +1723,10 @@ document.getElementById('addMemberForm').addEventListener('submit', async (e) =>
       closeModal('addMemberModal');
       e.target.reset();
       document.getElementById('condContainer').innerHTML = '';
+      clearPhoto();
       recalcPrice();
       toast(`${added.name} added!`, 'success');
       loadDashboard();
-      // Show payment QR
       openPaymentFor(added._id, added.name, added.plan);
     } else {
       const err = await res.json();
@@ -1671,18 +1771,13 @@ document.getElementById('addTrainerForm').addEventListener('submit', async (e) =
 window.addEventListener('DOMContentLoaded', () => {
   if (!checkAuth()) return;
 
-  // Set topbar date
   document.getElementById('topbarDate').textContent = new Date().toLocaleDateString('en-IN', {weekday:'short',year:'numeric',month:'short',day:'numeric'});
-
-  // Set attendance date to today
   document.getElementById('attendanceDate').value = new Date().toISOString().split('T')[0];
 
-  // Set plan expiry default
   const expiry = new Date();
   expiry.setMonth(expiry.getMonth() + 1);
   document.getElementById('mExpiry').value = expiry.toISOString().split('T')[0];
 
-  // User info in sidebar
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     if (user.name) {
@@ -1697,7 +1792,6 @@ window.addEventListener('DOMContentLoaded', () => {
   loadDashboard();
 });
 
-// Recalc on plan change
 document.getElementById('mPlan').addEventListener('change', () => {
   const months = PLAN_MONTHS[document.getElementById('mPlan').value] || 1;
   const expiry = new Date();
