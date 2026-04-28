@@ -23,7 +23,6 @@
       --border: #e8e8f0;
       --bg: #f4f3ff;
       --card: #ffffff;
-      --sidebar-w: 240px;
       --radius: 14px;
       --transition: 0.22s ease;
     }
@@ -35,11 +34,12 @@
       min-height: 100vh;
     }
 
-    /* ===== SIDEBAR ===== */
+    /* SIDEBAR - Hidden by default */
     .sidebar {
       position: fixed;
-      top: 0; left: 0;
-      width: var(--sidebar-w);
+      top: 0;
+      left: -280px;
+      width: 280px;
       height: 100vh;
       background: white;
       border-right: 1px solid var(--border);
@@ -48,10 +48,13 @@
       padding: 1.25rem 1rem;
       z-index: 200;
       overflow-y: auto;
-      transition: transform var(--transition);
+      transition: left 0.3s ease;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
     }
 
-    .sidebar.collapsed { transform: translateX(-100%); }
+    .sidebar.open {
+      left: 0;
+    }
 
     .sidebar-brand {
       display: flex;
@@ -66,9 +69,10 @@
       width: 36px; height: 36px;
       background: var(--primary);
       border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-size: 1.1rem;
-      flex-shrink: 0;
     }
 
     .brand-name {
@@ -118,7 +122,7 @@
 
     .nav-link:hover { background: var(--primary-light); color: var(--primary); }
     .nav-link.active { background: var(--primary); color: white; }
-    .nav-link .nav-icon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
+    .nav-link .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
 
     .sidebar-footer {
       margin-top: auto;
@@ -145,11 +149,21 @@
 
     .logout-btn:hover { background: var(--danger); color: white; }
 
-    /* ===== TOPBAR ===== */
+    /* OVERLAY */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 150;
+    }
+    .overlay.show { display: block; }
+
+    /* TOPBAR */
     .topbar {
       position: fixed;
       top: 0;
-      left: var(--sidebar-w);
+      left: 0;
       right: 0;
       height: 60px;
       background: white;
@@ -159,23 +173,26 @@
       padding: 0 1.5rem;
       gap: 1rem;
       z-index: 100;
-      transition: left var(--transition);
     }
 
-    .topbar.full { left: 0; }
-
     .menu-toggle {
-      display: none;
-      width: 36px; height: 36px;
-      background: var(--primary-light);
+      width: 40px;
+      height: 40px;
+      background: var(--primary);
       border: none;
-      border-radius: 8px;
-      color: var(--primary);
-      font-size: 1.1rem;
+      border-radius: 10px;
+      color: white;
+      font-size: 1.2rem;
       cursor: pointer;
+      display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
+      transition: all var(--transition);
+    }
+
+    .menu-toggle:hover {
+      background: var(--primary-dark);
+      transform: scale(1.02);
     }
 
     .topbar-title {
@@ -191,32 +208,18 @@
       color: var(--muted);
     }
 
-    /* ===== MAIN ===== */
+    /* MAIN CONTENT */
     .main-content {
-      margin-left: var(--sidebar-w);
       margin-top: 60px;
       padding: 1.5rem;
       min-height: calc(100vh - 60px);
-      transition: margin-left var(--transition);
     }
 
-    .main-content.full { margin-left: 0; }
-
-    /* ===== OVERLAY ===== */
-    .overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.4);
-      z-index: 150;
-    }
-    .overlay.show { display: block; }
-
-    /* ===== PAGE SECTIONS ===== */
+    /* PAGE SECTIONS */
     .page { display: none; }
     .page.active { display: block; }
 
-    /* ===== STATS GRID ===== */
+    /* STATS GRID */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -251,9 +254,7 @@
       line-height: 1;
     }
 
-    .stat-sub { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
-
-    /* ===== REMINDER CARD ===== */
+    /* REMINDER CARD */
     .reminder {
       border-radius: var(--radius);
       padding: 1.1rem 1.25rem;
@@ -270,11 +271,8 @@
     .reminder-text { flex: 1; }
     .reminder-text h3 { font-size: 0.95rem; font-weight: 700; }
     .reminder-text p { font-size: 0.82rem; margin-top: 2px; }
-    .reminder.green h3, .reminder.green p { color: var(--success); }
-    .reminder.orange h3 { color: var(--warning); }
-    .reminder.orange p { color: #92400e; }
 
-    /* ===== CARD ===== */
+    /* CARD */
     .card {
       background: var(--card);
       border-radius: var(--radius);
@@ -299,50 +297,29 @@
       color: var(--text);
     }
 
-    /* ===== TABLE ===== */
-    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-
-    table { width: 100%; border-collapse: collapse; min-width: 480px; }
-
-    th {
-      text-align: left;
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--muted);
-      padding: 8px 12px;
-      border-bottom: 2px solid var(--border);
-      white-space: nowrap;
-    }
-
-    td {
-      padding: 12px;
-      border-bottom: 1px solid #f0eff8;
-      font-size: 0.88rem;
-      vertical-align: middle;
-    }
-
-    tr:last-child td { border-bottom: none; }
+    /* TABLE */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 600px; }
+    th { text-align: left; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); padding: 14px 12px; border-bottom: 2px solid var(--border); }
+    td { padding: 12px; border-bottom: 1px solid #f0eff8; font-size: 0.88rem; vertical-align: middle; }
     tr:hover td { background: #faf9ff; }
 
-    /* ===== BADGES ===== */
+    /* BADGES */
     .badge {
       display: inline-block;
-      padding: 3px 10px;
+      padding: 4px 12px;
       border-radius: 20px;
       font-size: 0.75rem;
       font-weight: 700;
       white-space: nowrap;
     }
-
     .badge-active { background: var(--success-bg); color: var(--success); }
     .badge-trial { background: #fffbeb; color: var(--warning); }
     .badge-inactive, .badge-expired { background: var(--danger-bg); color: var(--danger); }
     .badge-present { background: var(--success-bg); color: var(--success); }
     .badge-absent { background: var(--danger-bg); color: var(--danger); }
 
-    /* ===== AVATAR ===== */
+    /* AVATAR */
     .avatar {
       width: 32px; height: 32px;
       border-radius: 50%;
@@ -355,7 +332,7 @@
       flex-shrink: 0;
     }
 
-    /* ===== BUTTONS ===== */
+    /* BUTTONS */
     .btn {
       display: inline-flex;
       align-items: center;
@@ -370,7 +347,6 @@
       transition: all var(--transition);
       white-space: nowrap;
     }
-
     .btn-primary { background: var(--primary); color: white; }
     .btn-primary:hover { background: var(--primary-dark); }
     .btn-success { background: var(--success); color: white; }
@@ -381,9 +357,9 @@
     .btn-outline { background: transparent; border: 1.5px solid var(--primary); color: var(--primary); }
     .btn-outline:hover { background: var(--primary); color: white; }
 
-    /* ===== ATTENDANCE BUTTONS ===== */
+    /* ATTENDANCE BUTTONS */
     .att-btn {
-      padding: 5px 10px;
+      padding: 6px 14px;
       border: none;
       border-radius: 6px;
       font-family: 'DM Sans', sans-serif;
@@ -392,47 +368,28 @@
       cursor: pointer;
       transition: all 0.15s;
       margin: 2px;
+      white-space: nowrap;
     }
+    .att-btn-present { background: var(--success); color: white; }
+    .att-btn-present:hover { background: #15803d; }
+    .att-btn-absent { background: var(--danger); color: white; }
+    .att-btn-absent:hover { background: #b91c1c; }
 
-    .att-btn-present { background: var(--success-bg); color: var(--success); border: 1px solid #86efac; }
-    .att-btn-present:hover { background: var(--success); color: white; }
-    .att-btn-absent { background: var(--danger-bg); color: var(--danger); border: 1px solid #fca5a5; }
-    .att-btn-absent:hover { background: var(--danger); color: white; }
-
-    /* ===== FORM ===== */
+    /* FORM */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-
     .form-group { margin-bottom: 1rem; }
     .form-group label { display: block; font-size: 0.82rem; font-weight: 700; color: var(--text); margin-bottom: 5px; }
-
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
+    .form-group input, .form-group select, .form-group textarea {
       width: 100%;
       padding: 10px 12px;
       border: 1.5px solid var(--border);
       border-radius: 9px;
       font-family: 'DM Sans', sans-serif;
       font-size: 0.9rem;
-      color: var(--text);
-      background: white;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      -webkit-appearance: none;
-      appearance: none;
     }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary); }
 
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px #6C47FF15;
-    }
-
-    .form-group textarea { resize: vertical; min-height: 80px; }
-    .form-section-title { font-size: 0.82rem; font-weight: 700; color: var(--primary); margin: 1.25rem 0 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
-
-    /* ===== PHOTO CAPTURE SECTION ===== */
+    /* PHOTO CAPTURE */
     .photo-section {
       background: var(--primary-light);
       border-radius: 12px;
@@ -440,88 +397,11 @@
       margin-bottom: 1rem;
       text-align: center;
     }
+    .photo-preview { width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 10px; overflow: hidden; border: 3px solid var(--primary); background: white; }
+    .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-buttons { display: flex; gap: 8px; justify-content: center; margin-top: 8px; flex-wrap: wrap; }
 
-    .photo-preview {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      margin: 0 auto 10px;
-      overflow: hidden;
-      border: 3px solid var(--primary);
-      background: white;
-    }
-
-    .photo-preview img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .photo-buttons {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      margin-top: 8px;
-      flex-wrap: wrap;
-    }
-
-    .camera-btn, .upload-btn, .clear-photo-btn {
-      padding: 6px 12px;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .camera-btn { background: var(--primary); color: white; }
-    .camera-btn:hover { background: var(--primary-dark); }
-    .upload-btn { background: #4CAF50; color: white; }
-    .upload-btn:hover { background: #45a049; }
-    .clear-photo-btn { background: var(--danger); color: white; }
-    .clear-photo-btn:hover { background: #b91c1c; }
-
-    /* Camera Modal */
-    .camera-modal .modal-content {
-      max-width: 500px;
-      text-align: center;
-    }
-
-    .camera-video {
-      width: 100%;
-      border-radius: 12px;
-      background: #000;
-      margin-bottom: 10px;
-    }
-
-    /* ===== DISCOUNT BOX ===== */
-    .discount-box {
-      background: #faf9ff;
-      border: 1.5px dashed #c4b5fd;
-      border-radius: 10px;
-      padding: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    .discount-box h4 { font-size: 0.85rem; color: var(--primary); margin-bottom: 0.75rem; font-weight: 700; }
-
-    .radio-group { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
-    .radio-group label { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
-
-    .price-summary {
-      background: var(--primary-light);
-      border-radius: 8px;
-      padding: 10px 14px;
-      margin-bottom: 1rem;
-      font-size: 0.88rem;
-    }
-
-    .price-summary .line { display: flex; justify-content: space-between; margin-bottom: 4px; }
-    .price-summary .line:last-child { margin-bottom: 0; font-weight: 700; font-size: 1rem; color: var(--success); }
-    .price-saved { color: var(--success); font-weight: 700; font-size: 0.82rem; margin-top: 4px; }
-
-    /* ===== MODAL ===== */
+    /* MODAL */
     .modal {
       display: none;
       position: fixed;
@@ -531,11 +411,8 @@
       align-items: center;
       justify-content: center;
       padding: 1rem;
-      backdrop-filter: blur(2px);
     }
-
     .modal.open { display: flex; }
-
     .modal-content {
       background: white;
       border-radius: var(--radius);
@@ -544,106 +421,54 @@
       max-width: 550px;
       max-height: 90vh;
       overflow-y: auto;
-      box-shadow: 0 24px 48px rgba(0,0,0,0.25);
-      animation: modalIn 0.22s ease;
     }
-
-    @keyframes modalIn {
-      from { opacity: 0; transform: translateY(16px) scale(0.97); }
-      to { opacity: 1; transform: none; }
-    }
-
-    .modal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1.25rem;
-    }
-
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
     .modal-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 700; }
-
-    .modal-close {
-      width: 32px; height: 32px;
-      background: var(--bg);
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--muted);
-      transition: all 0.15s;
-    }
-
-    .modal-close:hover { background: var(--danger-bg); color: var(--danger); }
-
+    .modal-close { width: 32px; height: 32px; background: var(--bg); border: none; border-radius: 8px; cursor: pointer; }
     .modal-footer { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
     .modal-footer .btn { flex: 1; justify-content: center; padding: 11px; }
 
-    /* ===== PLANS ===== */
-    .plans-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 1rem;
-    }
-
+    /* PLANS */
+    .plans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
     .plan-card {
       background: white;
       border: 1.5px solid var(--border);
       border-radius: var(--radius);
       padding: 1.25rem;
       text-align: center;
-      transition: all var(--transition);
       cursor: pointer;
+      transition: all var(--transition);
       position: relative;
     }
-
-    .plan-card:hover { border-color: var(--primary); transform: translateY(-3px); box-shadow: 0 8px 24px #6C47FF18; }
-    .plan-card h3 { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.5rem; }
-
-    .plan-price { font-family: 'Space Grotesk', sans-serif; font-size: 1.7rem; font-weight: 700; color: var(--primary); margin: 0.75rem 0; }
+    .plan-card:hover { border-color: var(--primary); transform: translateY(-3px); }
+    .plan-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .plan-price { font-size: 1.7rem; font-weight: 700; color: var(--primary); margin: 0.75rem 0; }
     .plan-original { text-decoration: line-through; color: var(--muted); font-size: 0.88rem; }
-    .plan-discount-badge { position: absolute; top: 10px; right: 10px; background: #ff9800; color: white; padding: 3px 8px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; }
+    .plan-discount-badge { position: absolute; top: 10px; right: 10px; background: #ff9800; color: white; padding: 3px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
 
-    /* ===== ATTENDANCE STATS ===== */
+    /* ATTENDANCE STATS */
     .att-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.25rem; }
     .att-stat { background: white; border-radius: 10px; padding: 1rem; text-align: center; border: 1px solid var(--border); }
-    .att-stat .num { font-family: 'Space Grotesk', sans-serif; font-size: 1.75rem; font-weight: 700; color: var(--primary); }
+    .att-stat .num { font-size: 1.75rem; font-weight: 700; color: var(--primary); }
     .att-stat .lbl { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 4px; }
+    .att-controls { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .att-controls input[type="date"] { padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 9px; }
 
-    /* ===== PAYMENT ===== */
-    .payment-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 0;
-      border-bottom: 1px solid var(--border);
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-
-    .payment-row:last-child { border-bottom: none; }
-
-    .qr-box {
-      background: var(--bg);
-      border-radius: 12px;
-      padding: 1.25rem;
-      text-align: center;
-      margin: 1rem 0;
-    }
-
+    /* QR BOX */
+    .qr-box { background: var(--bg); border-radius: 12px; padding: 1.25rem; text-align: center; margin: 1rem 0; }
     .qr-box img { width: 180px; height: 180px; border-radius: 8px; border: 3px solid var(--primary); }
-    .upi-id { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; display: inline-block; font-family: monospace; font-size: 0.9rem; margin-top: 10px; }
+    .upi-id { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; display: inline-block; font-family: monospace; margin-top: 10px; }
 
-    /* ===== DISCOUNTS ===== */
-    .discount-form-group { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    /* DISCOUNT TABLE */
+    .discount-table { width: 100%; border-collapse: collapse; }
+    .discount-table th, .discount-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+    .discount-table th { background: #f8f9fa; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; }
 
-    /* ===== CONDITION ROW ===== */
+    /* CONDITION ROW */
     .condition-row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
-    .condition-row select, .condition-row input { padding: 7px 10px; font-size: 0.85rem; border: 1.5px solid var(--border); border-radius: 7px; font-family: 'DM Sans', sans-serif; }
-    .condition-row select { flex: 1; min-width: 130px; }
-    .condition-row input { flex: 1; min-width: 100px; }
+    .condition-row select, .condition-row input { padding: 7px 10px; font-size: 0.85rem; border: 1.5px solid var(--border); border-radius: 7px; }
 
-    /* ===== ALERTS ===== */
+    /* TOAST */
     .toast {
       position: fixed;
       bottom: 1.5rem;
@@ -658,78 +483,39 @@
       transform: translateY(80px);
       opacity: 0;
       transition: all 0.3s;
-      max-width: 300px;
     }
-
     .toast.show { transform: none; opacity: 1; }
     .toast.success { background: var(--success); }
     .toast.error { background: var(--danger); }
 
-    /* ===== DATE FILTER ===== */
-    .att-controls { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem; }
-    .att-controls input[type="date"] { padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 9px; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; }
-
-    /* ===== EMPTY STATE ===== */
     .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); }
-    .empty .e-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
-    .empty p { font-size: 0.9rem; }
 
-    /* ===== HEALTH BADGE ===== */
-    .h-badge { display: inline-block; background: #fff7ed; color: #c2410c; padding: 2px 7px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; margin: 2px; }
-
-    /* ===== DANGER ZONE ===== */
-    .danger-zone { border: 2px solid var(--danger); border-radius: var(--radius); padding: 1.25rem; background: #fff8f8; }
-    .danger-zone h3 { color: var(--danger); margin-bottom: 0.5rem; font-size: 0.95rem; }
-    .danger-zone p { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.75rem; }
-
-    /* ===== SCROLLBAR ===== */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 6px; }
-
-    /* ===== RESPONSIVE ===== */
+    /* RESPONSIVE */
     @media (max-width: 768px) {
-      .sidebar { transform: translateX(-100%); }
-      .sidebar.open { transform: none; }
-
-      .topbar { left: 0; }
-      .menu-toggle { display: flex; }
-      .main-content { margin-left: 0; }
-
       .stats-grid { grid-template-columns: 1fr 1fr; }
-      .att-stats { grid-template-columns: 1fr 1fr 1fr; }
+      .att-stats { grid-template-columns: 1fr; }
       .form-grid { grid-template-columns: 1fr; }
       .plans-grid { grid-template-columns: 1fr; }
-      .discount-form-group { grid-template-columns: 1fr; }
-
-      .stat-value { font-size: 1.5rem; }
-      .modal-content { padding: 1.25rem; }
     }
-
     @media (max-width: 480px) {
       .stats-grid { grid-template-columns: 1fr; }
-      .att-stats { grid-template-columns: 1fr; }
       .main-content { padding: 1rem; }
-      .plan-price { font-size: 1.4rem; }
     }
   </style>
 </head>
 <body>
 
-<!-- Sidebar -->
+<!-- Sidebar (Hidden by default - only shows when clicking Menu button) -->
 <nav class="sidebar" id="sidebar">
   <div class="sidebar-brand">
     <div class="brand-icon">🏋️</div>
     <span class="brand-name">GymPro</span>
   </div>
-
   <div class="user-info" id="userInfo">
     <div class="u-name">Loading...</div>
     <div class="u-role">—</div>
   </div>
-
   <span class="nav-section-label">Main</span>
-
   <button class="nav-link active" onclick="showPage('dashboard', this)" data-page="dashboard">
     <span class="nav-icon">📊</span> Dashboard
   </button>
@@ -739,9 +525,7 @@
   <button class="nav-link" onclick="showPage('attendance', this)" data-page="attendance">
     <span class="nav-icon">📅</span> Attendance
   </button>
-
   <span class="nav-section-label">Manage</span>
-
   <button class="nav-link" onclick="showPage('trainers', this)" data-page="trainers">
     <span class="nav-icon">🏋️</span> Trainers
   </button>
@@ -754,49 +538,32 @@
   <button class="nav-link" onclick="showPage('payments', this)" data-page="payments">
     <span class="nav-icon">💰</span> Payments
   </button>
-
   <div class="sidebar-footer">
     <button class="logout-btn" onclick="logout()">🚪 Logout</button>
   </div>
 </nav>
 
-<!-- Overlay for mobile -->
+<!-- Overlay -->
 <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
 <!-- Topbar -->
-<div class="topbar" id="topbar">
-  <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">☰</button>
+<div class="topbar">
+  <button class="menu-toggle" onclick="toggleSidebar()">☰ Menu</button>
   <span class="topbar-title" id="pageTitle">Dashboard</span>
   <span class="topbar-date" id="topbarDate"></span>
 </div>
 
 <!-- Main Content -->
-<main class="main-content" id="mainContent">
+<main class="main-content">
 
-  <!-- === DASHBOARD PAGE === -->
+  <!-- Dashboard Page -->
   <div id="page-dashboard" class="page active">
-    <div id="reminderCard" class="reminder green">
-      <div class="reminder-text"><h3>✅ All Good!</h3><p>No pending payments</p></div>
-    </div>
-
+    <div id="reminderCard" class="reminder green">Loading...</div>
     <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-label">Total Members</div>
-        <div class="stat-value" id="totalMembers">—</div>
-        <div class="stat-sub">registered</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Active Members</div>
-        <div class="stat-value" id="activeMembers">—</div>
-        <div class="stat-sub">currently active</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Est. Revenue</div>
-        <div class="stat-value" id="estimatedRevenue">—</div>
-        <div class="stat-sub">active plans</div>
-      </div>
+      <div class="stat-card"><div class="stat-label">Total Members</div><div class="stat-value" id="totalMembers">—</div></div>
+      <div class="stat-card"><div class="stat-label">Active Members</div><div class="stat-value" id="activeMembers">—</div></div>
+      <div class="stat-card"><div class="stat-label">Est. Revenue</div><div class="stat-value" id="estimatedRevenue">—</div></div>
     </div>
-
     <div class="card">
       <div class="card-header">
         <span class="card-title">Recent Members</span>
@@ -805,102 +572,83 @@
       <div class="table-wrap">
         <table>
           <thead><tr><th>Member</th><th>Plan</th><th>Joined</th><th>Expires</th><th>Status</th></tr></thead>
-          <tbody id="dashMembersBody"><tr><td colspan="5" class="empty"><div class="e-icon">⏳</div><p>Loading…</p></td></tr></tbody>
+          <tbody id="dashMembersBody"><tr><td colspan="5" class="empty">Loading...</td</tr</tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- === MEMBERS PAGE === -->
+  <!-- Members Page -->
   <div id="page-members" class="page">
     <div class="card">
       <div class="card-header">
         <span class="card-title">All Members</span>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-primary btn-sm" onclick="openModal('addMemberModal')">+ Add Member</button>
-          <button class="btn btn-danger btn-sm" onclick="confirmDeleteAll()">🗑 Delete All</button>
-        </div>
+        <div><button class="btn btn-primary btn-sm" onclick="openModal('addMemberModal')">+ Add Member</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmDeleteAll()">Delete All</button></div>
       </div>
       <div class="table-wrap">
-        </tr>
-          <thead><tr><th>Name</th><th>Phone</th><th>Plan</th><th>Expires</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="allMembersBody"><tr><td colspan="6"><div class="empty"><div class="e-icon">⏳</div><p>Loading…</p></div></td></tr></tbody>
+        <table>
+          <thead><tr><th>Name</th><th>Phone</th><th>Plan</th><th>Expires</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="allMembersBody"><tr><td colspan="6" class="empty">Loading...</td</tr</tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- === ATTENDANCE PAGE === -->
+  <!-- Attendance Page -->
   <div id="page-attendance" class="page">
     <div class="card">
-      <div class="card-header">
-        <span class="card-title">Attendance</span>
-      </div>
+      <div class="card-header"><span class="card-title">Attendance</span></div>
       <div class="att-controls">
         <input type="date" id="attendanceDate">
         <button class="btn btn-primary btn-sm" onclick="loadAttendance()">Load</button>
-        <button class="btn btn-success btn-sm" onclick="markAllPresent()">✔ All Present</button>
+        <button class="btn btn-success btn-sm" onclick="markAllPresent()">Mark All Present</button>
       </div>
       <div class="att-stats">
         <div class="att-stat"><div class="num" id="statTotal">0</div><div class="lbl">Total Active</div></div>
-        <div class="att-stat"><div class="num" id="statPresent">0</div><div class="lbl">Present</div></div>
-        <div class="att-stat"><div class="num" id="statPct">0%</div><div class="lbl">Attendance</div></div>
+        <div class="att-stat"><div class="num" id="statPresent">0</div><div class="lbl">Present Today</div></div>
+        <div class="att-stat"><div class="num" id="statPct">0%</div><div class="lbl">Attendance %</div></div>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Member</th><th>Plan</th><th>Phone</th><th>Status</th><th>Action</th></tr></thead>
-          <tbody id="attendanceBody"><tr><td colspan="5"><div class="empty"><p>Select a date and press Load</p></div></td></tr></tbody>
+          <thead><tr><th>Member</th><th>Plan</th><th>Phone</th><th>Status</th><th>Action</th></td></thead>
+          <tbody id="attendanceBody"><tr><td colspan="5" class="empty">Select a date and click Load</td</tr</tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- === TRAINERS PAGE === -->
+  <!-- Trainers Page -->
   <div id="page-trainers" class="page">
     <div class="card">
-      <div class="card-header">
-        <span class="card-title">Trainers</span>
-        <button class="btn btn-primary btn-sm" onclick="openModal('addTrainerModal')">+ Add Trainer</button>
-      </div>
+      <div class="card-header"><span class="card-title">Trainers</span><button class="btn btn-primary btn-sm" onclick="openModal('addTrainerModal')">+ Add Trainer</button></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Name</th><th>Specialty</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="trainersBody"><tr><td colspan="5"><div class="empty"><div class="e-icon">⏳</div><p>Loading…</p></div></td></tr></tbody>
+          <thead><tr><th>Name</th><th>Specialty</th><th>Phone</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="trainersBody"><tr><td colspan="5" class="empty">Loading...</td</tr</tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- === PLANS PAGE === -->
+  <!-- Plans Page -->
   <div id="page-plans" class="page">
-    <div class="card">
-      <div class="card-header"><span class="card-title">Membership Plans</span></div>
-      <div class="plans-grid" id="plansGrid"></div>
-    </div>
+    <div class="card"><div class="card-header"><span class="card-title">Membership Plans</span></div><div class="plans-grid" id="plansGrid"></div></div>
   </div>
 
-  <!-- === DISCOUNTS PAGE === -->
+  <!-- Discounts Page -->
   <div id="page-discounts" class="page">
     <div class="card">
-      <div class="card-header">
-        <span class="card-title">Discount Management</span>
-        <button class="btn btn-primary btn-sm" onclick="openModal('addDiscountModal')">+ Add Discount</button>
-      </div>
+      <div class="card-header"><span class="card-title">Discount Management</span><button class="btn btn-primary btn-sm" onclick="openModal('addDiscountModal')">+ Add Discount</button></div>
       <div id="discountsTable"></div>
     </div>
   </div>
 
-  <!-- === PAYMENTS PAGE === -->
+  <!-- Payments Page -->
   <div id="page-payments" class="page">
-    <div class="card">
-      <div class="card-header"><span class="card-title">Upcoming & Overdue Payments</span></div>
-      <div id="paymentsList"><div class="empty"><div class="e-icon">⏳</div><p>Loading…</p></div></div>
-    </div>
+    <div class="card"><div class="card-header"><span class="card-title">Payments Due</span></div><div id="paymentsList"><div class="empty">Loading...</div></div></div>
   </div>
-
 </main>
-
-<!-- ===== MODALS ===== -->
 
 <!-- Add Member Modal with Camera -->
 <div class="modal" id="addMemberModal">
@@ -913,35 +661,35 @@
       <!-- Photo Capture Section -->
       <div class="photo-section">
         <div class="photo-preview">
-          <img id="photoPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%236C47FF'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" alt="Profile Preview">
+          <img id="photoPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%236C47FF'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E">
         </div>
         <div class="photo-buttons">
-          <button type="button" class="camera-btn" onclick="openCameraModal()">📸 Take Photo</button>
-          <button type="button" class="upload-btn" onclick="uploadPhoto()">📁 Upload Photo</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="openCameraModal()">📸 Take Photo</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="uploadPhoto()">📁 Upload</button>
           <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="handlePhotoUpload(this)">
-          <button type="button" class="clear-photo-btn" id="clearPhotoBtn" style="display:none" onclick="clearPhoto()">🗑 Clear</button>
+          <button type="button" class="btn btn-danger btn-sm" id="clearPhotoBtn" style="display:none" onclick="clearPhoto()">🗑 Clear</button>
         </div>
         <input type="hidden" id="photoData" value="">
       </div>
 
       <div class="form-grid">
-        <div class="form-group"><label>Full Name *</label><input type="text" id="mName" required placeholder="e.g. Arjun Reddy"></div>
-        <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="mPhone" required placeholder="9876543210" maxlength="10" pattern="\d{10}"></div>
-        <div class="form-group"><label>Email</label><input type="email" id="mEmail" placeholder="optional"></div>
-        <div class="form-group"><label>Age</label><input type="number" id="mAge" min="12" max="100" placeholder="18-80"></div>
+        <div class="form-group"><label>Full Name *</label><input type="text" id="mName" required></div>
+        <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="mPhone" maxlength="10" required></div>
+        <div class="form-group"><label>Email</label><input type="email" id="mEmail"></div>
+        <div class="form-group"><label>Age</label><input type="number" id="mAge" min="12" max="100"></div>
       </div>
 
       <div class="form-group">
         <label>Plan *</label>
         <select id="mPlan" required onchange="recalcPrice()">
-          <option value="1 Month Strength" data-price="1000">1 Month – Strength (₹1,000)</option>
-          <option value="1 Month Strength + Cardio" data-price="1500">1 Month – Strength + Cardio (₹1,500)</option>
-          <option value="3 Months Strength" data-price="2700">3 Months – Strength (₹2,700)</option>
-          <option value="3 Months Strength + Cardio" data-price="4000">3 Months – Strength + Cardio (₹4,000)</option>
-          <option value="6 Months Strength" data-price="5000">6 Months – Strength (₹5,000)</option>
-          <option value="6 Months Strength + Cardio" data-price="7500">6 Months – Strength + Cardio (₹7,500)</option>
-          <option value="1 Year Strength" data-price="9000">1 Year – Strength (₹9,000)</option>
-          <option value="1 Year Strength + Cardio" data-price="14000">1 Year – Strength + Cardio (₹14,000)</option>
+          <option value="1 Month Strength" data-price="1000">1 Month Strength - ₹1,000</option>
+          <option value="1 Month Strength + Cardio" data-price="1500">1 Month Strength + Cardio - ₹1,500</option>
+          <option value="3 Months Strength" data-price="2700">3 Months Strength - ₹2,700</option>
+          <option value="3 Months Strength + Cardio" data-price="4000">3 Months Strength + Cardio - ₹4,000</option>
+          <option value="6 Months Strength" data-price="5000">6 Months Strength - ₹5,000</option>
+          <option value="6 Months Strength + Cardio" data-price="7500">6 Months Strength + Cardio - ₹7,500</option>
+          <option value="1 Year Strength" data-price="9000">1 Year Strength - ₹9,000</option>
+          <option value="1 Year Strength + Cardio" data-price="14000">1 Year Strength + Cardio - ₹14,000</option>
         </select>
       </div>
 
@@ -965,29 +713,25 @@
       <div class="form-grid">
         <div class="form-group"><label>Expiry Date *</label><input type="date" id="mExpiry" required></div>
         <div class="form-group"><label>Status</label>
-          <select id="mStatus">
-            <option value="Active">Active</option>
-            <option value="Trial">Trial</option>
-            <option value="Inactive">Inactive</option>
-          </select>
+          <select id="mStatus"><option value="Active">Active</option><option value="Trial">Trial</option><option value="Inactive">Inactive</option></select>
         </div>
       </div>
 
       <div class="form-section-title">Emergency Contact</div>
       <div class="form-grid">
-        <div class="form-group"><label>Contact Name</label><input type="text" id="mEcName" placeholder="Name"></div>
-        <div class="form-group"><label>Contact Phone</label><input type="tel" id="mEcPhone" placeholder="Phone"></div>
-        <div class="form-group"><label>Relationship</label><input type="text" id="mEcRel" placeholder="e.g. Father"></div>
+        <div class="form-group"><label>Contact Name</label><input type="text" id="mEcName"></div>
+        <div class="form-group"><label>Contact Phone</label><input type="tel" id="mEcPhone"></div>
+        <div class="form-group"><label>Relationship</label><input type="text" id="mEcRel"></div>
       </div>
 
       <div class="form-section-title">Health</div>
       <div id="condContainer"></div>
-      <button type="button" class="btn btn-outline btn-sm" style="margin-bottom:1rem" onclick="addCondition()">+ Add Condition</button>
+      <button type="button" class="btn btn-outline btn-sm" onclick="addCondition()">+ Add Condition</button>
 
-      <div class="form-group"><label>Medical Notes</label><textarea id="mNotes" placeholder="Any notes..."></textarea></div>
+      <div class="form-group"><label>Medical Notes</label><textarea id="mNotes" rows="2"></textarea></div>
 
       <div class="modal-footer">
-        <button type="button" class="btn" style="background:var(--bg);color:var(--muted)" onclick="closeModal('addMemberModal')">Cancel</button>
+        <button type="button" class="btn" style="background:var(--bg)" onclick="closeModal('addMemberModal')">Cancel</button>
         <button type="submit" class="btn btn-primary">Add Member</button>
       </div>
     </form>
@@ -995,13 +739,13 @@
 </div>
 
 <!-- Camera Modal -->
-<div class="modal camera-modal" id="cameraModal">
-  <div class="modal-content">
+<div class="modal" id="cameraModal">
+  <div class="modal-content" style="max-width:450px">
     <div class="modal-header">
       <span class="modal-title">Take Photo</span>
       <button class="modal-close" onclick="closeCameraModal()">✕</button>
     </div>
-    <video id="cameraVideo" class="camera-video" autoplay playsinline></video>
+    <video id="cameraVideo" autoplay playsinline style="width:100%;border-radius:12px;background:#000"></video>
     <canvas id="cameraCanvas" style="display:none"></canvas>
     <div style="display:flex;gap:10px;margin-top:1rem">
       <button class="btn btn-primary" style="flex:1" onclick="capturePhoto()">📸 Capture</button>
@@ -1012,20 +756,17 @@
 
 <!-- Add Trainer Modal -->
 <div class="modal" id="addTrainerModal">
-  <div class="modal-content" style="max-width:400px">
+  <div class="modal-content">
     <div class="modal-header">
-      <span class="modal-title">Add New Trainer</span>
+      <span class="modal-title">Add Trainer</span>
       <button class="modal-close" onclick="closeModal('addTrainerModal')">✕</button>
     </div>
     <form id="addTrainerForm">
-      <div class="form-group"><label>Full Name *</label><input type="text" id="tName" required placeholder="Trainer name"></div>
-      <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="tPhone" required placeholder="9876543210" maxlength="10" pattern="\d{10}"></div>
-      <div class="form-group"><label>Specialty *</label><input type="text" id="tSpecialty" required placeholder="e.g. Yoga, HIIT"></div>
-      <div class="form-group"><label>Status</label>
-        <select id="tStatus"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
-      </div>
+      <div class="form-group"><label>Full Name *</label><input type="text" id="tName" required></div>
+      <div class="form-group"><label>Phone *</label><input type="tel" id="tPhone" maxlength="10" required></div>
+      <div class="form-group"><label>Specialty *</label><input type="text" id="tSpecialty" required></div>
       <div class="modal-footer">
-        <button type="button" class="btn" style="background:var(--bg);color:var(--muted)" onclick="closeModal('addTrainerModal')">Cancel</button>
+        <button type="button" class="btn" style="background:var(--bg)" onclick="closeModal('addTrainerModal')">Cancel</button>
         <button type="submit" class="btn btn-primary">Add Trainer</button>
       </div>
     </form>
@@ -1034,19 +775,19 @@
 
 <!-- Add Discount Modal -->
 <div class="modal" id="addDiscountModal">
-  <div class="modal-content" style="max-width:420px">
+  <div class="modal-content">
     <div class="modal-header">
       <span class="modal-title">Add Discount</span>
       <button class="modal-close" onclick="closeModal('addDiscountModal')">✕</button>
     </div>
-    <div class="form-group"><label>Discount Name *</label><input type="text" id="discName" placeholder="e.g. Festival Offer"></div>
+    <div class="form-group"><label>Discount Name</label><input type="text" id="discName"></div>
     <div class="form-group"><label>Applies To</label>
       <select id="discApplies" onchange="toggleDiscPlan()">
         <option value="all">All Plans</option>
         <option value="specific">Specific Plan</option>
       </select>
     </div>
-    <div class="form-group" id="discPlanGroup" style="display:none">
+    <div class="form-group" id="planSelectGroup" style="display:none">
       <label>Select Plan</label>
       <select id="discPlan">
         <option>1 Month Strength</option>
@@ -1060,12 +801,12 @@
       </select>
     </div>
     <div class="form-group"><label>Discount Type</label>
-      <select id="discType"><option value="percentage">Percentage (%)</option><option value="fixed">Fixed Amount (₹)</option></select>
+      <select id="discType"><option value="percentage">Percentage (%)</option><option value="fixed">Fixed (₹)</option></select>
     </div>
-    <div class="form-group"><label>Value *</label><input type="number" id="discVal" min="0" placeholder="Enter value"></div>
+    <div class="form-group"><label>Discount Value</label><input type="number" id="discVal"></div>
     <div class="form-group"><label>Valid Until</label><input type="date" id="discExpiry"></div>
     <div class="modal-footer">
-      <button class="btn" style="background:var(--bg);color:var(--muted)" onclick="closeModal('addDiscountModal')">Cancel</button>
+      <button class="btn" style="background:var(--bg)" onclick="closeModal('addDiscountModal')">Cancel</button>
       <button class="btn btn-primary" onclick="addDiscount()">Add Discount</button>
     </div>
   </div>
@@ -1073,20 +814,19 @@
 
 <!-- Payment Modal -->
 <div class="modal" id="paymentModal">
-  <div class="modal-content" style="max-width:420px">
+  <div class="modal-content">
     <div class="modal-header">
-      <span class="modal-title">💳 Payment</span>
+      <span class="modal-title">Payment</span>
       <button class="modal-close" onclick="closeModal('paymentModal')">✕</button>
     </div>
     <div id="paymentInfo"></div>
     <div class="qr-box">
-      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:10px">Scan to pay via UPI</p>
-      <img id="payQR" src="" alt="QR Code">
+      <img id="payQR" src="">
       <div class="upi-id">8688631823-2@ybl</div>
     </div>
     <div class="modal-footer">
-      <button class="btn" style="background:var(--bg);color:var(--muted)" onclick="closeModal('paymentModal')">Close</button>
-      <button class="btn btn-success" onclick="confirmPayment()">✅ Confirm Payment</button>
+      <button class="btn" style="background:var(--bg)" onclick="closeModal('paymentModal')">Close</button>
+      <button class="btn btn-success" onclick="confirmPayment()">Confirm Payment</button>
     </div>
   </div>
 </div>
@@ -1097,7 +837,7 @@
 <script>
 // ===== CONFIG =====
 const BASE = 'https://gym-pro-mvyv.onrender.com/api';
-const API  = `${BASE}/members`;
+const API = `${BASE}/members`;
 const TAPI = `${BASE}/trainers`;
 
 const PLAN_PRICES = {
@@ -1121,92 +861,40 @@ let currentFinalPrice = 0;
 let cameraStream = null;
 
 // ===== AUTH =====
-function headers() {
-  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` };
-}
-
-function checkAuth() {
-  if (!localStorage.getItem('token')) { window.location.href = '/login.html'; return false; }
-  return true;
-}
-
-function logout() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  window.location.href = '/login.html';
-}
-
-function toast(msg, type = '') {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = `toast show ${type}`;
-  setTimeout(() => el.className = 'toast', 3000);
-}
-
-function esc(s) {
-  if (!s) return '';
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
+function headers() { return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` }; }
+function checkAuth() { if (!localStorage.getItem('token')) { window.location.href = '/login.html'; return false; } return true; }
+function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login.html'; }
+function toast(msg, type = '') { const el = document.getElementById('toast'); el.textContent = msg; el.className = `toast show ${type}`; setTimeout(() => el.className = 'toast', 3000); }
+function esc(s) { if (!s) return ''; return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-IN') : '—'; }
-
-function avatarBg(name) {
-  const colors = ['#6C47FF','#16a34a','#dc2626','#d97706','#0891b2','#9333ea'];
-  return colors[(name.charCodeAt(0) || 0) % colors.length];
-}
-
-function avatar(name) {
-  const initials = (name||'?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-  return `<div class="avatar" style="background:${avatarBg(name)}">${esc(initials)}</div>`;
-}
-
-function badge(status) {
-  const cls = `badge-${(status||'inactive').toLowerCase()}`;
-  return `<span class="badge ${cls}">${esc(status)}</span>`;
-}
+function avatarBg(name) { const colors = ['#6C47FF','#16a34a','#dc2626','#d97706','#0891b2','#9333ea']; return colors[(name.charCodeAt(0) || 0) % colors.length]; }
+function avatar(name) { const initials = (name||'?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2); return `<div class="avatar" style="background:${avatarBg(name)}">${esc(initials)}</div>`; }
+function badge(status) { const cls = `badge-${(status||'inactive').toLowerCase()}`; return `<span class="badge ${cls}">${esc(status)}</span>`; }
 
 // ===== CAMERA FUNCTIONS =====
 async function openCameraModal() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
     cameraStream = stream;
-    const video = document.getElementById('cameraVideo');
-    video.srcObject = stream;
+    document.getElementById('cameraVideo').srcObject = stream;
     openModal('cameraModal');
-  } catch(err) {
-    toast('Unable to access camera. Please use upload option.', 'error');
-  }
+  } catch(err) { toast('Cannot access camera', 'error'); }
 }
-
-function closeCameraModal() {
-  if (cameraStream) {
-    cameraStream.getTracks().forEach(track => track.stop());
-    cameraStream = null;
-  }
-  closeModal('cameraModal');
-}
-
+function closeCameraModal() { if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; } closeModal('cameraModal'); }
 function capturePhoto() {
   const video = document.getElementById('cameraVideo');
   const canvas = document.getElementById('cameraCanvas');
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
-  const context = canvas.getContext('2d');
-  context.drawImage(video, 0, 0);
+  canvas.getContext('2d').drawImage(video, 0, 0);
   const photoData = canvas.toDataURL('image/jpeg', 0.7);
-  
   document.getElementById('photoPreview').src = photoData;
   document.getElementById('photoData').value = photoData;
   document.getElementById('clearPhotoBtn').style.display = 'inline-block';
-  
   closeCameraModal();
-  toast('Photo captured successfully!', 'success');
+  toast('Photo captured!', 'success');
 }
-
-function uploadPhoto() {
-  document.getElementById('photoInput').click();
-}
-
+function uploadPhoto() { document.getElementById('photoInput').click(); }
 function handlePhotoUpload(input) {
   const file = input.files[0];
   if (file) {
@@ -1219,7 +907,6 @@ function handlePhotoUpload(input) {
     reader.readAsDataURL(file);
   }
 }
-
 function clearPhoto() {
   document.getElementById('photoPreview').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%236C47FF'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
   document.getElementById('photoData').value = '';
@@ -1227,41 +914,30 @@ function clearPhoto() {
 }
 
 // ===== SIDEBAR =====
-function toggleSidebar() {
-  const sb = document.getElementById('sidebar');
-  const ov = document.getElementById('overlay');
-  sb.classList.toggle('open');
-  ov.classList.toggle('show');
-}
-
-function closeSidebar() {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('overlay').classList.remove('show');
-}
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('show'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
 
 // ===== MODALS =====
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-document.addEventListener('click', (e) => {
-  if (e.target.classList.contains('modal')) closeModal(e.target.id);
-});
+document.addEventListener('click', (e) => { if (e.target.classList.contains('modal')) closeModal(e.target.id); });
 
 // ===== NAVIGATION =====
 function showPage(page, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-
   document.getElementById(`page-${page}`).classList.add('active');
   if (btn) btn.classList.add('active');
-
-  const titles = { dashboard:'Dashboard', members:'Members', attendance:'Attendance', trainers:'Trainers', plans:'Plans', discounts:'Discounts', payments:'Payments' };
-  document.getElementById('pageTitle').textContent = titles[page] || page;
-
+  document.getElementById('pageTitle').textContent = page.charAt(0).toUpperCase() + page.slice(1);
   closeSidebar();
-
-  const loaders = { dashboard: loadDashboard, members: loadAllMembers, attendance: () => loadAttendance(), trainers: loadTrainers, plans: loadPlans, discounts: renderDiscounts, payments: loadPayments };
-  if (loaders[page]) loaders[page]();
+  
+  if (page === 'dashboard') loadDashboard();
+  else if (page === 'members') loadAllMembers();
+  else if (page === 'attendance') { document.getElementById('attendanceDate').value = new Date().toISOString().split('T')[0]; loadAttendance(); }
+  else if (page === 'trainers') loadTrainers();
+  else if (page === 'plans') loadPlans();
+  else if (page === 'discounts') renderDiscounts();
+  else if (page === 'payments') loadPayments();
 }
 
 // ===== DASHBOARD =====
@@ -1270,246 +946,121 @@ async function loadDashboard() {
     const res = await fetch(API, { headers: headers() });
     if (res.status === 401) { logout(); return; }
     const members = await res.json();
-
     document.getElementById('totalMembers').textContent = members.length;
     const active = members.filter(m => m.status === 'Active');
     document.getElementById('activeMembers').textContent = active.length;
-
     let rev = 0;
-    active.forEach(m => {
-      rev += memberDiscounts[m._id] || PLAN_PRICES[m.plan] || 0;
-    });
+    active.forEach(m => rev += memberDiscounts[m._id] || PLAN_PRICES[m.plan] || 0);
     document.getElementById('estimatedRevenue').textContent = `₹${Math.round(rev).toLocaleString('en-IN')}`;
-
+    
     const tbody = document.getElementById('dashMembersBody');
-    if (!members.length) {
-      tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="e-icon">👥</div><p>No members yet. Add your first member!</p></div></td></tr>`;
-    } else {
-      tbody.innerHTML = members.slice(0,5).map(m => `
-        <tr>
-          <td style="display:flex;align-items:center;gap:8px">${avatar(m.name)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.phone)}</small></div></td>
-          <td style="font-size:0.82rem">${esc(m.plan)}</td
-          <td>${fmtDate(m.joinDate)}</td
-          <td>${fmtDate(m.expiryDate)}</td
-          <td>${badge(m.status)}</td
-        </tr>
-      `).join('');
-    }
-
-    const due = members.filter(m => m.status==='Active' && new Date(m.expiryDate) <= new Date(Date.now()+7*86400000));
+    if (!members.length) tbody.innerHTML = '<tr><td colspan="5" class="empty">No members yet</td</tr>';
+    else tbody.innerHTML = members.slice(0,5).map(m => `<tr><td style="display:flex;align-items:center;gap:8px">${avatar(m.name)}<div><strong>${esc(m.name)}</strong><br><small>${esc(m.phone)}</small></div></td><td>${esc(m.plan)}</td
+      <td>${fmtDate(m.joinDate)}</td
+      <td>${fmtDate(m.expiryDate)}</td
+      <td>${badge(m.status)}</td
+    </tr>`).join('');
+    
+    const due = members.filter(m => m.status === 'Active' && new Date(m.expiryDate) <= new Date(Date.now() + 7*86400000));
     const rc = document.getElementById('reminderCard');
-    if (due.length === 0) {
-      rc.className = 'reminder green';
-      rc.innerHTML = `<div class="reminder-text"><h3>✅ All Good!</h3><p>No payments due in the next 7 days</p></div>`;
-    } else {
-      rc.className = 'reminder orange';
-      rc.innerHTML = `<div class="reminder-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due Soon</h3><p>Members expiring within 7 days</p></div>
-        <button class="btn btn-sm" style="background:white;color:var(--warning);font-weight:700" onclick="showPage('payments', document.querySelector('[data-page=payments]'))">View →</button>`;
-    }
-  } catch(e) { console.error(e); toast('Error loading dashboard','error'); }
+    if (due.length === 0) rc.innerHTML = '<div class="reminder-text"><h3>✅ All Good!</h3><p>No pending payments</p></div>';
+    else rc.innerHTML = `<div class="reminder-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due Soon</h3></div><button class="btn btn-sm" style="background:white;color:var(--warning)" onclick="showPage('payments')">View →</button>`;
+  } catch(e) { toast('Error loading dashboard', 'error'); }
 }
 
-// ===== ALL MEMBERS =====
+// ===== MEMBERS =====
 async function loadAllMembers() {
-  const tbody = document.getElementById('allMembersBody');
   try {
     const res = await fetch(API, { headers: headers() });
     if (res.status === 401) { logout(); return; }
     const members = await res.json();
-
-    if (!members.length) {
-      tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="e-icon">👥</div><p>No members yet.</p></div></td></tr>`;
-      return;
-    }
-
-    tbody.innerHTML = members.map(m => `
-      <tr>
-        <td style="display:flex;align-items:center;gap:8px">${avatar(m.name)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.email||'')}</small></div></td
-        <td>${esc(m.phone)}</td
-        <td style="font-size:0.82rem">${esc(m.plan)}</td
-        <td>${fmtDate(m.expiryDate)}</td
-        <td>${badge(m.status)}</td
-        <td>
-          <button class="btn btn-danger btn-sm" onclick="deleteMember('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\\'"))}')">Delete</button>
-         </td
-      </tr>
-    `).join('');
-  } catch(e) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><p style="color:var(--danger)">Error loading members</p></div></td></tr>`; }
+    const tbody = document.getElementById('allMembersBody');
+    if (!members.length) tbody.innerHTML = '<tr><td colspan="6" class="empty">No members yet</td</tr>';
+    else tbody.innerHTML = members.map(m => `<td><td style="display:flex;align-items:center;gap:8px">${avatar(m.name)}<strong>${esc(m.name)}</strong></td
+      <td>${esc(m.phone)}</td
+      <td>${esc(m.plan)}</td
+      <td>${fmtDate(m.expiryDate)}</td
+      <td>${badge(m.status)}</td
+      <td><button class="btn btn-danger btn-sm" onclick="deleteMember('${m._id}','${esc(m.name)}')">Delete</button></td
+    </tr>`).join('');
+  } catch(e) { toast('Error loading members', 'error'); }
 }
-
-async function deleteMember(id, name) {
-  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
-  try {
-    const res = await fetch(`${API}/${id}`, { method:'DELETE', headers: headers() });
-    if (res.ok) {
-      toast(`${name} deleted`, 'success');
-      loadAllMembers();
-      loadDashboard();
-    } else toast('Error deleting member','error');
-  } catch(e) { toast('Network error','error'); }
-}
-
-async function confirmDeleteAll() {
-  const v = prompt('⚠️ Type DELETE ALL to confirm deleting every member:');
-  if (v !== 'DELETE ALL') return;
-  try {
-    const res = await fetch(API, { headers: headers() });
-    const members = await res.json();
-    for (const m of members) {
-      await fetch(`${API}/${m._id}`, { method:'DELETE', headers: headers() });
-    }
-    toast('All members deleted');
-    loadAllMembers();
-    loadDashboard();
-  } catch(e) { toast('Error','error'); }
-}
+async function deleteMember(id, name) { if (!confirm(`Delete "${name}"?`)) return; try { await fetch(`${API}/${id}`, { method: 'DELETE', headers: headers() }); toast(`${name} deleted`, 'success'); loadAllMembers(); loadDashboard(); } catch(e) { toast('Error', 'error'); } }
+async function confirmDeleteAll() { if (prompt('Type DELETE ALL to confirm:') !== 'DELETE ALL') return; try { const res = await fetch(API, { headers: headers() }); const members = await res.json(); for (const m of members) await fetch(`${API}/${m._id}`, { method: 'DELETE', headers: headers() }); toast('All members deleted', 'success'); loadAllMembers(); loadDashboard(); } catch(e) { toast('Error', 'error'); } }
 
 // ===== ATTENDANCE =====
 async function loadAttendance() {
-  const dateEl = document.getElementById('attendanceDate');
-  const date = dateEl.value || new Date().toISOString().split('T')[0];
-  dateEl.value = date;
-
-  const tbody = document.getElementById('attendanceBody');
-
+  const date = document.getElementById('attendanceDate').value || new Date().toISOString().split('T')[0];
+  document.getElementById('attendanceDate').value = date;
   try {
     const res = await fetch(API, { headers: headers() });
     if (res.status === 401) { logout(); return; }
     const members = await res.json();
-    const active = members.filter(m => m.status==='Active' || m.status==='Trial');
-
-    const attKey = `gympro_att_${date}`;
-    let saved = {};
-    try { saved = JSON.parse(localStorage.getItem(attKey) || '{}'); } catch(e) {}
-
-    let presentCount = Object.values(saved).filter(s=>s==='Present').length;
-
+    const active = members.filter(m => m.status === 'Active');
+    const attKey = `att_${date}`;
+    let saved = JSON.parse(localStorage.getItem(attKey) || '{}');
+    let present = Object.values(saved).filter(s => s === 'Present').length;
     document.getElementById('statTotal').textContent = active.length;
-    document.getElementById('statPresent').textContent = presentCount;
-    document.getElementById('statPct').textContent = active.length ? `${Math.min(100,Math.round(presentCount/active.length*100))}%` : '0%';
-
-    if (!active.length) {
-      tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><p>No active members found</p></div></td</tr</tbody>`;
-      return;
-    }
-
-    tbody.innerHTML = active.map(m => {
-      const st = saved[m._id] || 'Absent';
-      const initials = (m.name||'?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-      return `
-        <tr id="attrow-${m._id}">
-          <td style="display:flex;align-items:center;gap:8px">
-            <div class="avatar" style="background:${avatarBg(m.name)}">${esc(initials)}</div>
-            <strong>${esc(m.name)}</strong>
-           </td
-          <td style="font-size:0.82rem">${esc(m.plan)}</td
-          <td>${esc(m.phone)}</td
-          <td><span id="attbadge-${m._id}" class="badge ${st==='Present'?'badge-present':'badge-absent'}">${st}</span></td
-          <td>
-            <button class="att-btn att-btn-present" onclick="markAtt('${m._id}','${date}','Present')">Present</button>
-            <button class="att-btn att-btn-absent" onclick="markAtt('${m._id}','${date}','Absent')">Absent</button>
-           </td
-        </tr>
-      `;
-    }).join('');
-  } catch(e) { tbody.innerHTML = `<table><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading attendance</p></div></td</tr</tbody>`; }
+    document.getElementById('statPresent').textContent = present;
+    document.getElementById('statPct').textContent = active.length ? `${Math.round(present/active.length*100)}%` : '0%';
+    const tbody = document.getElementById('attendanceBody');
+    if (!active.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">No active members found</td</tr>'; return; }
+    tbody.innerHTML = active.map(m => { const status = saved[m._id] || 'Absent'; return `<tr><td style="display:flex;align-items:center;gap:8px">${avatar(m.name)}<strong>${esc(m.name)}</strong></td
+      <td>${esc(m.plan)}</td
+      <td>${esc(m.phone)}</td
+      <td><span class="badge ${status === 'Present' ? 'badge-present' : 'badge-absent'}" id="status-${m._id}">${status}</span></td
+      <td><button class="att-btn att-btn-present" onclick="markAttendance('${m._id}','${date}','Present')">Present</button><button class="att-btn att-btn-absent" onclick="markAttendance('${m._id}','${date}','Absent')">Absent</button></td
+    </tr>`; }).join('');
+  } catch(e) { toast('Error loading attendance', 'error'); }
 }
-
-function markAtt(memberId, date, status) {
-  const attKey = `gympro_att_${date}`;
-  let saved = {};
-  try { saved = JSON.parse(localStorage.getItem(attKey) || '{}'); } catch(e) {}
+function markAttendance(memberId, date, status) {
+  const attKey = `att_${date}`;
+  let saved = JSON.parse(localStorage.getItem(attKey) || '{}');
   saved[memberId] = status;
   localStorage.setItem(attKey, JSON.stringify(saved));
-
-  const badge = document.getElementById(`attbadge-${memberId}`);
-  if (badge) {
-    badge.textContent = status;
-    badge.className = `badge ${status==='Present'?'badge-present':'badge-absent'}`;
-  }
-
+  const badgeSpan = document.getElementById(`status-${memberId}`);
+  if (badgeSpan) { badgeSpan.textContent = status; badgeSpan.className = `badge ${status === 'Present' ? 'badge-present' : 'badge-absent'}`; }
   const total = parseInt(document.getElementById('statTotal').textContent) || 0;
-  const presentCount = Object.values(saved).filter(s=>s==='Present').length;
-  document.getElementById('statPresent').textContent = presentCount;
-  document.getElementById('statPct').textContent = total ? `${Math.min(100,Math.round(presentCount/total*100))}%` : '0%';
+  const present = Object.values(saved).filter(s => s === 'Present').length;
+  document.getElementById('statPresent').textContent = present;
+  document.getElementById('statPct').textContent = total ? `${Math.round(present/total*100)}%` : '0%';
+  toast(`Marked as ${status}`, 'success');
 }
-
 async function markAllPresent() {
-  const dateEl = document.getElementById('attendanceDate');
-  const date = dateEl.value || new Date().toISOString().split('T')[0];
-  if (!confirm(`Mark all active members as Present for ${new Date(date).toLocaleDateString('en-IN')}?`)) return;
-
+  const date = document.getElementById('attendanceDate').value;
+  if (!confirm(`Mark all active members as Present for ${new Date(date).toLocaleDateString()}?`)) return;
   try {
     const res = await fetch(API, { headers: headers() });
     const members = await res.json();
-    const active = members.filter(m => m.status==='Active'||m.status==='Trial');
-
-    const attKey = `gympro_att_${date}`;
-    let saved = {};
-    try { saved = JSON.parse(localStorage.getItem(attKey) || '{}'); } catch(e) {}
-    active.forEach(m => { saved[m._id] = 'Present'; });
+    const active = members.filter(m => m.status === 'Active');
+    const attKey = `att_${date}`;
+    let saved = JSON.parse(localStorage.getItem(attKey) || '{}');
+    active.forEach(m => saved[m._id] = 'Present');
     localStorage.setItem(attKey, JSON.stringify(saved));
-
+    document.getElementById('statPresent').textContent = active.length;
+    document.getElementById('statPct').textContent = '100%';
+    active.forEach(m => { const badgeSpan = document.getElementById(`status-${m._id}`); if (badgeSpan) { badgeSpan.textContent = 'Present'; badgeSpan.className = 'badge badge-present'; } });
     toast(`${active.length} members marked Present`, 'success');
-    loadAttendance();
-  } catch(e) { toast('Error','error'); }
+  } catch(e) { toast('Error', 'error'); }
 }
 
 // ===== TRAINERS =====
 async function loadTrainers() {
-  const tbody = document.getElementById('trainersBody');
   try {
     const res = await fetch(TAPI, { headers: headers() });
     if (res.status === 401) { logout(); return; }
     const trainers = await res.json();
-
-    if (!trainers.length) {
-      tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="e-icon">🏋️</div><p>No trainers yet.</p></div></table></tr>`;
-      return;
-    }
-
-    tbody.innerHTML = trainers.map(t => `
-      <tr>
-        <td style="display:flex;align-items:center;gap:8px">${avatar(t.name)}<strong>${esc(t.name)}</strong></td
-        <td>${esc(t.specialty)}</td
-        <td>${esc(t.phone)}</td
-        <td>${badge(t.status)}</td
-        <td>
-          <button class="btn btn-sm btn-outline" onclick="editTrainer('${esc(t._id)}')">Edit</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteTrainer('${esc(t._id)}','${esc(t.name.replace(/'/g,"\\\'"))}')">Delete</button>
-         </td
-      </tr>
-    `).join('');
-  } catch(e) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading trainers</p></div></tr></tr>`; }
+    const tbody = document.getElementById('trainersBody');
+    if (!trainers.length) tbody.innerHTML = '<tr><td colspan="5" class="empty">No trainers yet</td</tr>';
+    else tbody.innerHTML = trainers.map(t => `<tr><td style="display:flex;align-items:center;gap:8px">${avatar(t.name)}<strong>${esc(t.name)}</strong></td
+      <td>${esc(t.specialty)}</td
+      <td>${esc(t.phone)}</td
+      <td>${badge(t.status)}</td
+      <td><button class="btn btn-danger btn-sm" onclick="deleteTrainer('${t._id}','${esc(t.name)}')">Delete</button></td
+    </tr>`).join('');
+  } catch(e) { toast('Error loading trainers', 'error'); }
 }
-
-async function editTrainer(id) {
-  try {
-    const res = await fetch(`${TAPI}/${id}`, { headers: headers() });
-    const t = await res.json();
-    const n = prompt('Name:', t.name); if (!n) return;
-    const p = prompt('Phone:', t.phone); if (!p) return;
-    const s = prompt('Specialty:', t.specialty); if (!s) return;
-    const st = prompt('Status (Active/Inactive):', t.status);
-    if (!['Active','Inactive'].includes(st)) { toast('Invalid status','error'); return; }
-
-    const up = await fetch(`${TAPI}/${id}`, {
-      method:'PUT', headers: headers(),
-      body: JSON.stringify({name:n.trim(),phone:p.trim(),specialty:s.trim(),status:st})
-    });
-    if (up.ok) { toast('Trainer updated','success'); loadTrainers(); }
-    else toast('Update failed','error');
-  } catch(e) { toast('Error','error'); }
-}
-
-async function deleteTrainer(id, name) {
-  if (!confirm(`Delete trainer "${name}"?`)) return;
-  try {
-    const res = await fetch(`${TAPI}/${id}`, { method:'DELETE', headers: headers() });
-    if (res.ok) { toast('Trainer deleted','success'); loadTrainers(); }
-    else toast('Error deleting trainer','error');
-  } catch(e) { toast('Error','error'); }
-}
+async function deleteTrainer(id, name) { if (!confirm(`Delete trainer "${name}"?`)) return; try { await fetch(`${TAPI}/${id}`, { method: 'DELETE', headers: headers() }); toast('Trainer deleted', 'success'); loadTrainers(); } catch(e) { toast('Error', 'error'); } }
 
 // ===== PLANS =====
 function loadPlans() {
@@ -1518,167 +1069,81 @@ function loadPlans() {
     for (const d of activeDiscounts) {
       if (!d.validUntil || new Date(d.validUntil) >= new Date()) {
         if (d.appliesTo === 'all' || d.planName === name) {
-          if (d.type === 'percentage') { discounted = price - price*d.value/100; discInfo = `${d.value}% OFF`; }
-          else { discounted = Math.max(0, price-d.value); discInfo = `₹${d.value} OFF`; }
+          if (d.type === 'percentage') { discounted = price - price * d.value / 100; discInfo = `${d.value}% OFF`; }
+          else { discounted = Math.max(0, price - d.value); discInfo = `₹${d.value} OFF`; }
           break;
         }
       }
     }
     return { name, price, discounted: Math.round(discounted), discInfo };
   });
-
-  document.getElementById('plansGrid').innerHTML = plans.map(p => `
-    <div class="plan-card" onclick="selectPlan('${esc(p.name)}')">
-      ${p.discInfo ? `<div class="plan-discount-badge">${p.discInfo}</div>` : ''}
-      <h3>${esc(p.name)}</h3>
-      ${p.discInfo ? `<div class="plan-original">₹${p.price.toLocaleString('en-IN')}</div>` : ''}
-      <div class="plan-price">₹${p.discounted.toLocaleString('en-IN')}</div>
-      <button class="btn btn-primary" style="width:100%;margin-top:0.75rem" onclick="event.stopPropagation();selectPlan('${esc(p.name)}')">Select Plan</button>
-    </div>
-  `).join('');
+  document.getElementById('plansGrid').innerHTML = plans.map(p => `<div class="plan-card" onclick="selectPlan('${p.name}')">${p.discInfo ? `<div class="plan-discount-badge">${p.discInfo}</div>` : ''}<h3>${p.name}</h3>${p.discInfo ? `<div class="plan-original">₹${p.price.toLocaleString()}</div>` : ''}<div class="plan-price">₹${p.discounted.toLocaleString()}</div><button class="btn btn-primary" style="width:100%;margin-top:0.5rem">Select Plan</button></div>`).join('');
 }
-
 function selectPlan(name) {
   document.getElementById('mPlan').value = name;
   const expiry = new Date();
-  const months = PLAN_MONTHS[name] || 1;
-  expiry.setMonth(expiry.getMonth() + months);
+  expiry.setMonth(expiry.getMonth() + (PLAN_MONTHS[name] || 1));
   document.getElementById('mExpiry').value = expiry.toISOString().split('T')[0];
   recalcPrice();
   openModal('addMemberModal');
 }
 
 // ===== DISCOUNTS =====
+function toggleDiscPlan() { document.getElementById('planSelectGroup').style.display = document.getElementById('discApplies').value === 'specific' ? 'block' : 'none'; }
 function renderDiscounts() {
   const container = document.getElementById('discountsTable');
-  if (!activeDiscounts.length) {
-    container.innerHTML = `<div class="empty"><div class="e-icon">🏷️</div><p>No active discounts. Add one above.</p></div>`;
-    return;
-  }
-  container.innerHTML = `
-    <div class="table-wrap"><table>
-      <thead><tr><th>Name</th><th>Applies To</th><th>Type</th><th>Value</th><th>Valid Until</th><th>Action</th></tr></thead>
-      <tbody>
-        ${activeDiscounts.map((d,i) => `
-          <tr>
-            <td><strong>${esc(d.name)}</strong></td
-            <td>${d.appliesTo==='all'?'All Plans':esc(d.planName)}</td
-            <td>${d.type==='percentage'?'Percentage':'Fixed'}</td
-            <td>${d.type==='percentage'?`${d.value}%`:`₹${d.value.toLocaleString('en-IN')}`}</td
-            <td>${d.validUntil ? fmtDate(d.validUntil) : 'No expiry'}</td
-            <td><button class="btn btn-danger btn-sm" onclick="removeDiscount(${i})">Remove</button></td
-          </tr>
-        `).join('')}
-      </tbody>
-    </table></div>
-  `;
+  if (!activeDiscounts.length) { container.innerHTML = '<div class="empty">No active discounts. Click "Add Discount" to create one.</div>'; return; }
+  container.innerHTML = `<table class="discount-table"><thead><tr><th>Name</th><th>Applies To</th><th>Type</th><th>Value</th><th>Valid Until</th><th>Action</th></tr></thead><tbody>${activeDiscounts.map((d, i) => `<tr><td><strong>${esc(d.name)}</strong></td><td>${d.appliesTo === 'all' ? 'All Plans' : esc(d.planName)}</td
+      <td>${d.type === 'percentage' ? 'Percentage' : 'Fixed'}</td
+      <td>${d.type === 'percentage' ? d.value + '%' : '₹' + d.value.toLocaleString()}</td
+      <td>${d.validUntil ? fmtDate(d.validUntil) : 'No expiry'}</td
+      <td><button class="btn btn-danger btn-sm" onclick="removeDiscount(${i})">Remove</button></td
+    </tr>`).join('')}</tbody></table>`;
 }
-
-function toggleDiscPlan() {
-  document.getElementById('discPlanGroup').style.display = document.getElementById('discApplies').value==='specific' ? 'block' : 'none';
-}
-
 function addDiscount() {
   const name = document.getElementById('discName').value.trim();
-  const val = parseFloat(document.getElementById('discVal').value);
-  if (!name || !val || val <= 0) { toast('Please fill all required fields','error'); return; }
-  const type = document.getElementById('discType').value;
-  if (type==='percentage' && val > 100) { toast('Percentage cannot exceed 100%','error'); return; }
   const appliesTo = document.getElementById('discApplies').value;
-
-  activeDiscounts.push({
-    name, type, value: val, appliesTo,
-    planName: appliesTo==='specific' ? document.getElementById('discPlan').value : null,
-    validUntil: document.getElementById('discExpiry').value || null
-  });
+  const planName = appliesTo === 'specific' ? document.getElementById('discPlan').value : null;
+  const type = document.getElementById('discType').value;
+  const val = parseFloat(document.getElementById('discVal').value);
+  const validUntil = document.getElementById('discExpiry').value;
+  if (!name || !val || val <= 0) { toast('Please fill all fields', 'error'); return; }
+  if (type === 'percentage' && val > 100) { toast('Percentage cannot exceed 100%', 'error'); return; }
+  activeDiscounts.push({ name, appliesTo, planName, type, value: val, validUntil });
   localStorage.setItem('gympro_discounts', JSON.stringify(activeDiscounts));
   closeModal('addDiscountModal');
   renderDiscounts();
-  toast('Discount added','success');
+  loadPlans();
+  toast('Discount added!', 'success');
 }
-
-function removeDiscount(i) {
-  if (!confirm('Remove this discount?')) return;
-  activeDiscounts.splice(i, 1);
-  localStorage.setItem('gympro_discounts', JSON.stringify(activeDiscounts));
-  renderDiscounts();
-  toast('Discount removed');
-}
+function removeDiscount(i) { if (!confirm('Remove this discount?')) return; activeDiscounts.splice(i, 1); localStorage.setItem('gympro_discounts', JSON.stringify(activeDiscounts)); renderDiscounts(); loadPlans(); toast('Discount removed'); }
 
 // ===== PAYMENTS =====
 async function loadPayments() {
-  const container = document.getElementById('paymentsList');
   try {
     const res = await fetch(API, { headers: headers() });
     if (res.status === 401) { logout(); return; }
     const members = await res.json();
     const today = new Date();
-    const due = members.filter(m => m.status==='Active' && new Date(m.expiryDate) <= new Date(today.getTime()+14*86400000));
-
-    if (!due.length) {
-      container.innerHTML = `<div class="empty"><div class="e-icon">✅</div><p>No payments due in the next 14 days!</p></div>`;
-      return;
-    }
-
-    container.innerHTML = due.map(m => {
-      const exp = new Date(m.expiryDate);
-      const daysLeft = Math.ceil((exp-today)/(1000*60*60*24));
-      const overdue = daysLeft < 0;
-      return `
-        <div class="payment-row">
-          <div style="display:flex;align-items:center;gap:10px">
-            ${avatar(m.name)}
-            <div>
-              <strong>${esc(m.name)}</strong><br>
-              <small style="color:var(--muted)">${esc(m.plan)}</small><br>
-              <small style="color:var(--muted)">Expires: ${fmtDate(m.expiryDate)}</small>
-            </div>
-          </div>
-          <div>
-            ${overdue ? `<span class="badge badge-inactive">⚠️ Overdue ${Math.abs(daysLeft)}d</span>` : `<span class="badge badge-trial">${daysLeft}d left</span>`}
-          </div>
-          <button class="btn btn-success btn-sm" onclick="openPaymentFor('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\\'"))}','${esc(m.plan)}')">Pay Now</button>
-        </div>
-      `;
-    }).join('');
-  } catch(e) { container.innerHTML = `<div class="empty"><p style="color:var(--danger)">Error loading payments</p></div>`; }
+    const due = members.filter(m => m.status === 'Active' && new Date(m.expiryDate) <= new Date(today.getTime() + 14 * 86400000));
+    const container = document.getElementById('paymentsList');
+    if (!due.length) { container.innerHTML = '<div class="empty">No pending payments</div>'; return; }
+    container.innerHTML = due.map(m => { const days = Math.ceil((new Date(m.expiryDate) - today) / (1000*60*60*24)); return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;border-bottom:1px solid var(--border)"><div><strong>${esc(m.name)}</strong><br><small>${esc(m.plan)}</small><br><small>Expires: ${fmtDate(m.expiryDate)}</small></div><div><span class="badge ${days < 0 ? 'badge-inactive' : 'badge-trial'}">${days < 0 ? 'Overdue' : days + ' days left'}</span></div><button class="btn btn-success btn-sm" onclick="openPayment('${m._id}','${esc(m.name)}','${esc(m.plan)}')">Pay Now</button></div>`; }).join('');
+  } catch(e) { toast('Error loading payments', 'error'); }
 }
-
-function openPaymentFor(id, name, plan) {
-  const amt = memberDiscounts[id] || PLAN_PRICES[plan] || 1000;
+function openPayment(id, name, plan) {
+  const amount = memberDiscounts[id] || PLAN_PRICES[plan] || 1000;
   currentPaymentMember = { id, name, plan };
-  currentFinalPrice = amt;
-
-  document.getElementById('paymentInfo').innerHTML = `
-    <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:1rem">
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Member</span><strong>${esc(name)}</strong></div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Plan</span><strong>${esc(plan)}</strong></div>
-      <div style="display:flex;justify-content:space-between"><span>Amount</span><strong style="color:var(--success)">₹${Math.round(amt).toLocaleString('en-IN')}</strong></div>
-    </div>
-  `;
-  const upiUrl = `upi://pay?pa=8688631823-2@ybl&pn=GymPro&am=${Math.round(amt)}&cu=INR`;
+  document.getElementById('paymentInfo').innerHTML = `<div style="background:var(--bg);padding:1rem;border-radius:10px;margin-bottom:1rem"><div><strong>Member:</strong> ${esc(name)}</div><div><strong>Plan:</strong> ${esc(plan)}</div><div><strong>Amount:</strong> ₹${Math.round(amount).toLocaleString()}</div></div>`;
+  const upiUrl = `upi://pay?pa=8688631823-2@ybl&pn=GymPro&am=${Math.round(amount)}&cu=INR`;
   document.getElementById('payQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
   openModal('paymentModal');
 }
-
 async function confirmPayment() {
   if (!currentPaymentMember) return;
-  const months = PLAN_MONTHS[currentPaymentMember.plan] || 1;
   const expiry = new Date();
-  expiry.setMonth(expiry.getMonth() + months);
-
-  try {
-    await fetch(`${API}/${currentPaymentMember.id}`, {
-      method: 'PUT', headers: headers(),
-      body: JSON.stringify({ expiryDate: expiry.toISOString().split('T')[0], status:'Active' })
-    }).catch(()=>{});
-
-    toast(`Payment confirmed for ${currentPaymentMember.name}! Extended to ${expiry.toLocaleDateString('en-IN')}`, 'success');
-    closeModal('paymentModal');
-    currentPaymentMember = null;
-    loadDashboard();
-    loadPayments();
-  } catch(e) { toast('Payment recorded','success'); closeModal('paymentModal'); }
+  expiry.setMonth(expiry.getMonth() + (PLAN_MONTHS[currentPaymentMember.plan] || 1));
+  try { await fetch(`${API}/${currentPaymentMember.id}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ expiryDate: expiry.toISOString().split('T')[0], status: 'Active' }) }).catch(() => {}); toast(`Payment confirmed! Extended to ${expiry.toLocaleDateString()}`, 'success'); closeModal('paymentModal'); currentPaymentMember = null; loadDashboard(); loadPayments(); } catch(e) { toast('Payment recorded', 'success'); closeModal('paymentModal'); }
 }
 
 // ===== ADD MEMBER FORM =====
@@ -1687,39 +1152,25 @@ function recalcPrice() {
   const origPrice = parseInt(sel.options[sel.selectedIndex].getAttribute('data-price')) || 0;
   const dType = document.querySelector('input[name="dType"]:checked')?.value || 'none';
   const dVal = parseFloat(document.getElementById('dValue')?.value) || 0;
-
   let final = origPrice;
   if (dType === 'percentage' && dVal > 0) final = origPrice - origPrice*dVal/100;
   else if (dType === 'fixed' && dVal > 0) final = Math.max(0, origPrice - dVal);
   final = Math.round(final);
   currentFinalPrice = final;
-
   document.getElementById('origPrice').textContent = `₹${origPrice.toLocaleString('en-IN')}`;
   document.getElementById('finalPrice').textContent = `₹${final.toLocaleString('en-IN')}`;
 }
-
 function addCondition() {
   const c = document.getElementById('condContainer');
   const row = document.createElement('div');
   row.className = 'condition-row';
-  row.innerHTML = `
-    <select class="cType">
-      <option value="">Select Condition</option>
-      <option>Diabetes</option><option>Asthma</option><option>High Blood Pressure</option>
-      <option>Heart Condition</option><option>Knee Injury</option><option>Other</option>
-    </select>
-    <select class="cSev"><option>Mild</option><option>Moderate</option><option>Severe</option></select>
-    <input type="text" class="cNote" placeholder="Notes">
-    <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>
-  `;
+  row.innerHTML = `<select class="cType"><option value="">Select Condition</option><option>Diabetes</option><option>Asthma</option><option>High Blood Pressure</option><option>Heart Condition</option><option>Knee Injury</option><option>Other</option></select><select class="cSev"><option>Mild</option><option>Moderate</option><option>Severe</option></select><input type="text" class="cNote" placeholder="Notes"><button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>`;
   c.appendChild(row);
 }
-
 document.getElementById('addMemberForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const phone = document.getElementById('mPhone').value.trim();
-  if (!/^\d{10}$/.test(phone)) { toast('Please enter a valid 10-digit phone number','error'); return; }
-
+  if (!/^\d{10}$/.test(phone)) { toast('Enter valid 10-digit phone', 'error'); return; }
   const sel = document.getElementById('mPlan');
   const origPrice = parseInt(sel.options[sel.selectedIndex].getAttribute('data-price')) || 0;
   const dType = document.querySelector('input[name="dType"]:checked')?.value || 'none';
@@ -1728,58 +1179,27 @@ document.getElementById('addMemberForm').addEventListener('submit', async (e) =>
   if (dType === 'percentage' && dVal > 0) finalPrice = origPrice - origPrice*dVal/100;
   else if (dType === 'fixed' && dVal > 0) finalPrice = Math.max(0, origPrice-dVal);
   finalPrice = Math.round(finalPrice);
-
   const conditions = [];
-  document.querySelectorAll('#condContainer .condition-row').forEach(row => {
-    const cond = row.querySelector('.cType')?.value;
-    if (cond) conditions.push({ condition:cond, severity:row.querySelector('.cSev')?.value||'Mild', notes:row.querySelector('.cNote')?.value||'' });
-  });
-
-  const data = {
-    name: document.getElementById('mName').value.trim(),
-    phone,
-    email: document.getElementById('mEmail').value.trim(),
-    age: parseInt(document.getElementById('mAge').value) || null,
-    plan: sel.value,
-    expiryDate: document.getElementById('mExpiry').value,
-    status: document.getElementById('mStatus').value,
-    photo: document.getElementById('photoData').value || '',
-    emergencyContact: {
-      name: document.getElementById('mEcName').value.trim(),
-      phone: document.getElementById('mEcPhone').value.trim(),
-      relationship: document.getElementById('mEcRel').value.trim()
-    },
-    healthConditions: conditions,
-    medicalNotes: document.getElementById('mNotes').value.trim()
-  };
-
-  if (!data.name) { toast('Name is required','error'); return; }
-  if (!data.expiryDate) { toast('Expiry date is required','error'); return; }
-
-  const btn = e.submitter;
-  btn.disabled = true; btn.textContent = 'Adding…';
-
+  document.querySelectorAll('#condContainer .condition-row').forEach(row => { const cond = row.querySelector('.cType')?.value; if (cond) conditions.push({ condition:cond, severity:row.querySelector('.cSev')?.value||'Mild', notes:row.querySelector('.cNote')?.value||'' }); });
+  const data = { name: document.getElementById('mName').value.trim(), phone, email: document.getElementById('mEmail').value.trim(), age: parseInt(document.getElementById('mAge').value) || null, plan: sel.value, expiryDate: document.getElementById('mExpiry').value, status: document.getElementById('mStatus').value, photo: document.getElementById('photoData').value || '', emergencyContact: { name: document.getElementById('mEcName').value.trim(), phone: document.getElementById('mEcPhone').value.trim(), relationship: document.getElementById('mEcRel').value.trim() }, healthConditions: conditions, medicalNotes: document.getElementById('mNotes').value.trim() };
+  if (!data.name) { toast('Name required', 'error'); return; }
+  const btn = e.submitter; btn.disabled = true; btn.textContent = 'Adding…';
   try {
-    const res = await fetch(API, { method:'POST', headers: headers(), body: JSON.stringify(data) });
+    const res = await fetch(API, { method: 'POST', headers: headers(), body: JSON.stringify(data) });
     if (res.ok) {
       const added = await res.json();
-      if (finalPrice !== origPrice) {
-        memberDiscounts[added._id] = finalPrice;
-        localStorage.setItem('gympro_member_discounts', JSON.stringify(memberDiscounts));
-      }
+      if (finalPrice !== origPrice) { memberDiscounts[added._id] = finalPrice; localStorage.setItem('gympro_member_discounts', JSON.stringify(memberDiscounts)); }
       closeModal('addMemberModal');
       e.target.reset();
       document.getElementById('condContainer').innerHTML = '';
       clearPhoto();
       recalcPrice();
       toast(`${added.name} added!`, 'success');
+      openPayment(added._id, added.name, added.plan);
       loadDashboard();
-      openPaymentFor(added._id, added.name, added.plan);
-    } else {
-      const err = await res.json();
-      toast(err.error || 'Could not add member', 'error');
-    }
-  } catch(err) { toast('Network error. Please try again.', 'error'); }
+      loadAllMembers();
+    } else { const err = await res.json(); toast(err.error || 'Error adding member', 'error'); }
+  } catch(err) { toast('Network error', 'error'); }
   btn.disabled = false; btn.textContent = 'Add Member';
 });
 
@@ -1787,58 +1207,27 @@ document.getElementById('addMemberForm').addEventListener('submit', async (e) =>
 document.getElementById('addTrainerForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const phone = document.getElementById('tPhone').value.trim();
-  if (!/^\d{10}$/.test(phone)) { toast('Please enter a valid 10-digit phone number','error'); return; }
-
-  const data = {
-    name: document.getElementById('tName').value.trim(),
-    phone,
-    specialty: document.getElementById('tSpecialty').value.trim(),
-    status: document.getElementById('tStatus').value
-  };
-
-  const btn = e.submitter;
-  btn.disabled = true; btn.textContent = 'Adding…';
-
+  if (!/^\d{10}$/.test(phone)) { toast('Enter valid phone number', 'error'); return; }
+  const data = { name: document.getElementById('tName').value.trim(), phone: phone, specialty: document.getElementById('tSpecialty').value.trim(), status: 'Active' };
   try {
-    const res = await fetch(TAPI, { method:'POST', headers: headers(), body: JSON.stringify(data) });
-    if (res.ok) {
-      closeModal('addTrainerModal');
-      e.target.reset();
-      toast('Trainer added!', 'success');
-      loadTrainers();
-    } else {
-      const err = await res.json();
-      toast(err.error || 'Could not add trainer', 'error');
-    }
-  } catch(err) { toast('Network error','error'); }
-  btn.disabled = false; btn.textContent = 'Add Trainer';
+    const res = await fetch(TAPI, { method: 'POST', headers: headers(), body: JSON.stringify(data) });
+    if (res.ok) { closeModal('addTrainerModal'); document.getElementById('addTrainerForm').reset(); toast('Trainer added!', 'success'); loadTrainers(); }
+    else { const err = await res.json(); toast(err.error || 'Error adding trainer', 'error'); }
+  } catch(err) { toast('Network error', 'error'); }
 });
 
 // ===== INIT =====
 window.addEventListener('DOMContentLoaded', () => {
   if (!checkAuth()) return;
-
-  document.getElementById('topbarDate').textContent = new Date().toLocaleDateString('en-IN', {weekday:'short',year:'numeric',month:'short',day:'numeric'});
+  document.getElementById('topbarDate').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
   document.getElementById('attendanceDate').value = new Date().toISOString().split('T')[0];
-
   const expiry = new Date();
   expiry.setMonth(expiry.getMonth() + 1);
   document.getElementById('mExpiry').value = expiry.toISOString().split('T')[0];
-
-  try {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (user.name) {
-      document.getElementById('userInfo').innerHTML = `
-        <div class="u-name">👤 ${esc(user.name)}</div>
-        <div class="u-role">${user.role==='admin'?'Administrator':'Staff Member'}</div>
-      `;
-    }
-  } catch(e) {}
-
+  try { const user = JSON.parse(localStorage.getItem('user') || '{}'); if (user.name) document.getElementById('userInfo').innerHTML = `<div class="u-name">👤 ${esc(user.name)}</div><div class="u-role">${user.role === 'admin' ? 'Admin' : 'Staff'}</div>`; } catch(e) {}
   recalcPrice();
   loadDashboard();
 });
-
 document.getElementById('mPlan').addEventListener('change', () => {
   const months = PLAN_MONTHS[document.getElementById('mPlan').value] || 1;
   const expiry = new Date();
