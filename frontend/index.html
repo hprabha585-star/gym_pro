@@ -6,6 +6,7 @@
   <title>GymPro - Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
   <style>
+    /* [YOUR EXACT EXISTING STYLES - KEEP AS IS] */
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
@@ -166,9 +167,6 @@
     .empty .e-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
     .empty p { font-size: 0.9rem; }
 
-    /* ══════════════════════════════════════
-       DISCOUNT BOX  — Add Member Modal only
-    ══════════════════════════════════════ */
     .discount-box {
       background: #faf9ff;
       border: 1.5px dashed #c4b5fd;
@@ -261,7 +259,7 @@
       <div class="table-wrap">
         <table>
           <thead><tr><th>Member</th><th>Plan</th><th>Joined</th><th>Expires</th><th>Status</th></tr></thead>
-          <tbody id="dashMembersBody"><tr><td colspan="5" class="empty">Loading...</td></tr></tbody>
+          <tbody id="dashMembersBody"><tr><td colspan="5" class="empty">Loading...</td</tr</tbody>
         </table>
       </div>
     </div>
@@ -278,9 +276,9 @@
         </div>
       </div>
       <div class="table-wrap">
-        <table>
+        </table>
           <thead><tr><th>Member</th><th>Phone</th><th>Plan</th><th>Expires</th><th>Status</th><th>Action</th></tr></thead>
-          <tbody id="allMembersBody"><tr><td colspan="6" class="empty">Loading...</td></tr></tbody>
+          <tbody id="allMembersBody"><tr><td colspan="6" class="empty">Loading...</td</tr</tbody>
         </table>
       </div>
     </div>
@@ -303,8 +301,8 @@
       <div class="table-wrap">
         <table>
           <thead><tr><th>Member</th><th>Plan</th><th>Phone</th><th>Status</th><th>Action</th></tr></thead>
-          <tbody id="attendanceBody"><tr><td colspan="5" class="empty">Select a date and click Load</td></tr></tbody>
-        </table>
+          <tbody id="attendanceBody"><tr><td colspan="5" class="empty">Select a date and click Load</td</tr</tbody>
+        <tr>
       </div>
     </div>
   </div>
@@ -319,7 +317,7 @@
       <div class="table-wrap">
         <table>
           <thead><tr><th>Trainer</th><th>Specialty</th><th>Phone</th><th>Status</th><th>Action</th></tr></thead>
-          <tbody id="trainersBody"><tr><td colspan="5" class="empty">Loading...</td></tr></tbody>
+          <tbody id="trainersBody"><tr><td colspan="5" class="empty">Loading...</td</tr</tbody>
         </table>
       </div>
     </div>
@@ -354,9 +352,7 @@
 
 </main>
 
-<!-- ═══════════════════════════════════════════
-     ADD MEMBER MODAL  ← discount box added here
-═══════════════════════════════════════════ -->
+<!-- Add Member Modal -->
 <div class="modal" id="addMemberModal">
   <div class="modal-content">
     <div class="modal-header">
@@ -364,8 +360,6 @@
       <button class="modal-close" onclick="closeModal('addMemberModal')">✕</button>
     </div>
     <form id="addMemberForm">
-
-      <!-- Photo (unchanged) -->
       <div class="photo-section">
         <div class="photo-preview">
           <img id="photoPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%236C47FF'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E">
@@ -379,7 +373,6 @@
         <input type="hidden" id="photoData" value="">
       </div>
 
-      <!-- Basic info (unchanged) -->
       <div class="form-grid">
         <div class="form-group"><label>Full Name *</label><input type="text" id="mName" required></div>
         <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="mPhone" maxlength="10" required></div>
@@ -387,7 +380,6 @@
         <div class="form-group"><label>Age</label><input type="number" id="mAge" min="12" max="100"></div>
       </div>
 
-      <!-- Plan (unchanged) -->
       <div class="form-group">
         <label>Plan *</label>
         <select id="mPlan" required onchange="calcMemberDiscount()">
@@ -402,47 +394,24 @@
         </select>
       </div>
 
-      <!-- ══════════════════════════════════════
-           DISCOUNT BOX  ← NEW (only UI added)
-      ══════════════════════════════════════ -->
       <div class="discount-box">
         <div class="discount-box-title">🏷️ Apply Discount <span style="font-weight:400;color:var(--muted);font-size:0.78rem">(optional)</span></div>
-
-        <!-- Discount type radio -->
         <div class="radio-row">
           <label><input type="radio" name="memberDiscType" value="none" checked onchange="calcMemberDiscount()"> No Discount</label>
           <label><input type="radio" name="memberDiscType" value="percentage" onchange="calcMemberDiscount()"> Percentage (%)</label>
           <label><input type="radio" name="memberDiscType" value="fixed" onchange="calcMemberDiscount()"> Fixed Amount (₹)</label>
         </div>
-
-        <!-- Value + Reason -->
         <div class="disc-inputs">
-          <div class="form-group">
-            <label>Discount Value</label>
-            <input type="number" id="memberDiscValue" min="0" placeholder="e.g. 200" oninput="calcMemberDiscount()">
-          </div>
-          <div class="form-group">
-            <label>Reason</label>
-            <input type="text" id="memberDiscReason" placeholder="e.g. Festival offer">
-          </div>
+          <div class="form-group"><label>Discount Value</label><input type="number" id="memberDiscValue" min="0" placeholder="e.g. 200" oninput="calcMemberDiscount()"></div>
+          <div class="form-group"><label>Reason</label><input type="text" id="memberDiscReason" placeholder="e.g. Festival offer"></div>
         </div>
-
-        <!-- Price summary -->
         <div class="price-summary">
-          <div class="price-summary-row">
-            <span>Original Price</span>
-            <span id="discOrigPrice">₹1,000</span>
-          </div>
+          <div class="price-summary-row"><span>Original Price</span><span id="discOrigPrice">₹1,000</span></div>
           <div class="price-saved-label" id="discSavedLabel"></div>
-          <div class="price-summary-row final-row">
-            <span>Final Price</span>
-            <span id="discFinalPrice" style="color:var(--success)">₹1,000</span>
-          </div>
+          <div class="price-summary-row final-row"><span>Final Price</span><span id="discFinalPrice" style="color:var(--success)">₹1,000</span></div>
         </div>
       </div>
-      <!-- ══════════════════════════════════════ -->
 
-      <!-- Expiry & Status (unchanged) -->
       <div class="form-group"><label>Expiry Date</label><input type="date" id="mExpiry" required></div>
       <div class="form-group"><label>Status</label>
         <select id="mStatus"><option value="Active">Active</option><option value="Trial">Trial</option><option value="Inactive">Inactive</option></select>
@@ -456,7 +425,7 @@
   </div>
 </div>
 
-<!-- Camera Modal (unchanged) -->
+<!-- Camera Modal -->
 <div class="modal" id="cameraModal">
   <div class="modal-content" style="max-width:450px">
     <div class="modal-header">
@@ -472,7 +441,7 @@
   </div>
 </div>
 
-<!-- Add Trainer Modal (unchanged) -->
+<!-- Add Trainer Modal -->
 <div class="modal" id="addTrainerModal">
   <div class="modal-content">
     <div class="modal-header">
@@ -491,31 +460,20 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     ADD DISCOUNT MODAL  ← individual plan option added
-═══════════════════════════════════════════ -->
+<!-- Add Discount Modal -->
 <div class="modal" id="addDiscountModal">
   <div class="modal-content">
     <div class="modal-header">
       <span class="modal-title">Add Discount</span>
       <button class="modal-close" onclick="closeModal('addDiscountModal')">✕</button>
     </div>
-
-    <div class="form-group">
-      <label>Discount Name *</label>
-      <input type="text" id="discName" placeholder="e.g., Festival Offer">
-    </div>
-
-    <!-- NEW: Applies to All / Specific Plan -->
-    <div class="form-group">
-      <label>Applies To</label>
+    <div class="form-group"><label>Discount Name *</label><input type="text" id="discName" placeholder="e.g., Festival Offer"></div>
+    <div class="form-group"><label>Applies To</label>
       <select id="discAppliesTo" onchange="toggleDiscPlanSelect()">
         <option value="all">All Plans</option>
         <option value="specific">Specific Plan</option>
       </select>
     </div>
-
-    <!-- NEW: Plan selector (hidden by default) -->
     <div class="form-group" id="discPlanGroup" style="display:none">
       <label>Select Plan</label>
       <select id="discPlanName">
@@ -529,20 +487,11 @@
         <option value="1 Year Strength + Cardio">1 Year Strength + Cardio</option>
       </select>
     </div>
-
-    <div class="form-group">
-      <label>Discount Type</label>
+    <div class="form-group"><label>Discount Type</label>
       <select id="discType"><option value="percentage">Percentage (%)</option><option value="fixed">Fixed Amount (₹)</option></select>
     </div>
-    <div class="form-group">
-      <label>Discount Value *</label>
-      <input type="number" id="discVal" placeholder="Enter value" min="0">
-    </div>
-    <div class="form-group">
-      <label>Valid Until</label>
-      <input type="date" id="discExpiry">
-    </div>
-
+    <div class="form-group"><label>Discount Value *</label><input type="number" id="discVal" placeholder="Enter value" min="0"></div>
+    <div class="form-group"><label>Valid Until</label><input type="date" id="discExpiry"></div>
     <div class="modal-footer">
       <button class="btn" style="background:var(--bg)" onclick="closeModal('addDiscountModal')">Cancel</button>
       <button class="btn btn-primary" onclick="addDiscount()">Add Discount</button>
@@ -550,7 +499,7 @@
   </div>
 </div>
 
-<!-- Payment Modal (unchanged) -->
+<!-- Payment Modal -->
 <div class="modal" id="paymentModal">
   <div class="modal-content">
     <div class="modal-header">
@@ -572,7 +521,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ===== CONFIG ===== (unchanged)
+// ===== CONFIG =====
 const BASE = 'https://gym-pro-mvyv.onrender.com/api';
 const API = `${BASE}/members`;
 const TAPI = `${BASE}/trainers`;
@@ -595,41 +544,48 @@ let activeDiscounts = JSON.parse(localStorage.getItem('gympro_discounts') || '[]
 let currentPaymentMember = null;
 let cameraStream = null;
 
-// ===== AUTH ===== (unchanged)
+// ===== AUTH =====
 function headers() {
   return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` };
 }
+
 function checkAuth() {
   if (!localStorage.getItem('token')) { window.location.href = '/login.html'; return false; }
   return true;
 }
+
 function logout() {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   window.location.href = '/login.html';
 }
+
 function toast(msg, type = '') {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.className = `toast show ${type}`;
   setTimeout(() => el.className = 'toast', 3000);
 }
+
 function esc(s) { if (!s) return ''; return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-IN') : '—'; }
+
 function avatarBg(name) {
   const colors = ['#6C47FF','#16a34a','#dc2626','#d97706','#0891b2','#9333ea'];
   return colors[(name.charCodeAt(0) || 0) % colors.length];
 }
+
 function avatar(name) {
   const initials = (name||'?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
   return `<div class="avatar" style="background:${avatarBg(name)}">${esc(initials)}</div>`;
 }
+
 function badge(status) {
   const cls = `badge-${(status||'inactive').toLowerCase()}`;
   return `<span class="badge ${cls}">${esc(status)}</span>`;
 }
 
-// ===== PHOTO FUNCTIONS ===== (unchanged)
+// ===== PHOTO FUNCTIONS =====
 async function openCameraModal() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
@@ -674,7 +630,7 @@ function clearPhoto() {
   document.getElementById('clearPhotoBtn').style.display = 'none';
 }
 
-// ===== SIDEBAR ===== (unchanged)
+// ===== SIDEBAR =====
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
   document.getElementById('overlay').classList.toggle('show');
@@ -684,12 +640,12 @@ function closeSidebar() {
   document.getElementById('overlay').classList.remove('show');
 }
 
-// ===== MODALS ===== (unchanged)
+// ===== MODALS =====
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.addEventListener('click', (e) => { if (e.target.classList.contains('modal')) closeModal(e.target.id); });
 
-// ===== NAVIGATION ===== (unchanged)
+// ===== NAVIGATION =====
 function showPage(page, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
@@ -706,11 +662,12 @@ function showPage(page, btn) {
   else if (page === 'payments') loadPayments();
 }
 
-// ===== DASHBOARD ===== (unchanged)
+// ===== DASHBOARD =====
 async function loadDashboard() {
   try {
     const res = await fetch(API, { headers: headers() });
     if (res.status === 401) { logout(); return; }
+    if (!res.ok) throw new Error('Failed to fetch');
     const members = await res.json();
     document.getElementById('totalMembers').textContent = members.length;
     const active = members.filter(m => m.status === 'Active');
@@ -719,33 +676,49 @@ async function loadDashboard() {
     active.forEach(m => rev += PLAN_PRICES[m.plan] || 0);
     document.getElementById('estimatedRevenue').textContent = `₹${rev.toLocaleString('en-IN')}`;
     const tbody = document.getElementById('dashMembersBody');
-    if (!members.length) tbody.innerHTML = '<tr><td colspan="5" class="empty">No members yet</td></tr>';
+    if (!members.length) tbody.innerHTML = '<tr><td colspan="5" class="empty">No members yet</td</tr>';
     else tbody.innerHTML = members.slice(0,5).map(m => `
       <tr><td style="display:flex;align-items:center;gap:8px">${avatar(m.name)}<div><strong>${esc(m.name)}</strong><br><small>${esc(m.phone)}</small></div></td>
-      <td>${esc(m.plan)}</td><td>${fmtDate(m.joinDate)}</td><td>${fmtDate(m.expiryDate)}</td><td>${badge(m.status)}</td></tr>
-    `).join('');
+      <td>${esc(m.plan)}</td
+      <td>${fmtDate(m.joinDate)}</td
+      <td>${fmtDate(m.expiryDate)}</td
+      <td>${badge(m.status)}</td
+    </tr>`).join('');
     const due = members.filter(m => m.status === 'Active' && new Date(m.expiryDate) <= new Date(Date.now() + 7*86400000));
     const rc = document.getElementById('reminderCard');
     if (due.length === 0) rc.innerHTML = '<div class="reminder-text"><h3>✅ All Good!</h3><p>No pending payments</p></div>';
     else rc.innerHTML = `<div class="reminder-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due Soon</h3></div><button class="btn btn-sm" style="background:white;color:var(--warning)" onclick="showPage('payments')">View →</button>`;
-  } catch(e) { toast('Error loading dashboard', 'error'); }
+  } catch(e) { 
+    console.error('Dashboard error:', e);
+    toast('Error loading dashboard. Please check connection.', 'error');
+    document.getElementById('dashMembersBody').innerHTML = '<tr><td colspan="5" class="empty">Error loading members. Please refresh.</td</tr>';
+  }
 }
 
-// ===== MEMBERS ===== (unchanged)
+// ===== MEMBERS =====
 async function loadAllMembers() {
   try {
     const res = await fetch(API, { headers: headers() });
     if (res.status === 401) { logout(); return; }
+    if (!res.ok) throw new Error('Failed to fetch');
     const members = await res.json();
     const tbody = document.getElementById('allMembersBody');
-    if (!members.length) tbody.innerHTML = '<tr><td colspan="6" class="empty">No members yet</td></tr>';
+    if (!members.length) tbody.innerHTML = '<tr><td colspan="6" class="empty">No members yet</td</tr>';
     else tbody.innerHTML = members.map(m => `
       <tr><td style="display:flex;align-items:center;gap:8px">${avatar(m.name)}<strong>${esc(m.name)}</strong></td>
-      <td>${esc(m.phone)}</td><td>${esc(m.plan)}</td><td>${fmtDate(m.expiryDate)}</td><td>${badge(m.status)}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteMember('${m._id}','${esc(m.name)}')">Delete</button></td></tr>
-    `).join('');
-  } catch(e) { toast('Error loading members', 'error'); }
+      <td>${esc(m.phone)}</td
+      <td>${esc(m.plan)}</td
+      <td>${fmtDate(m.expiryDate)}</td
+      <td>${badge(m.status)}</td
+      <td><button class="btn btn-danger btn-sm" onclick="deleteMember('${m._id}','${esc(m.name)}')">Delete</button></td
+    </tr>`).join('');
+  } catch(e) { 
+    console.error('Members error:', e);
+    toast('Error loading members. Please refresh.', 'error');
+    document.getElementById('allMembersBody').innerHTML = '<tr><td colspan="6" class="empty">Error loading members. Please refresh.</td</tr>';
+  }
 }
+
 async function deleteMember(id, name) {
   if (!confirm(`Delete "${name}"?`)) return;
   try {
@@ -754,6 +727,7 @@ async function deleteMember(id, name) {
     loadAllMembers(); loadDashboard();
   } catch(e) { toast('Error', 'error'); }
 }
+
 async function confirmDeleteAll() {
   if (prompt('Type DELETE ALL to confirm:') !== 'DELETE ALL') return;
   try {
@@ -765,7 +739,7 @@ async function confirmDeleteAll() {
   } catch(e) { toast('Error', 'error'); }
 }
 
-// ===== ATTENDANCE ===== (unchanged)
+// ===== ATTENDANCE =====
 async function loadAttendance() {
   const date = document.getElementById('attendanceDate').value || new Date().toISOString().split('T')[0];
   document.getElementById('attendanceDate').value = date;
@@ -781,33 +755,37 @@ async function loadAttendance() {
     document.getElementById('statPresent').textContent = present;
     document.getElementById('statPct').textContent = active.length ? `${Math.round(present/active.length*100)}%` : '0%';
     const tbody = document.getElementById('attendanceBody');
-    if (!active.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">No active members found</td></tr>'; return; }
+    if (!active.length) { tbody.innerHTML = '</tr><td colspan="5" class="empty">No active members found</td</tr>'; return; }
     tbody.innerHTML = active.map(m => {
       const status = saved[m._id] || 'Absent';
       return `<tr>
         <td style="display:flex;align-items:center;gap:8px">${avatar(m.name)}<strong>${esc(m.name)}</strong></td>
-        <td>${esc(m.plan)}</td><td>${esc(m.phone)}</td>
-        <td><span class="badge ${status === 'Present' ? 'badge-present' : 'badge-absent'}" id="status-${m._id}">${status}</span></td>
+        <td>${esc(m.plan)}</td
+        <td>${esc(m.phone)}</td
+        <td><span class="badge ${status === 'Present' ? 'badge-present' : 'badge-absent'}" id="status-${m._id}">${status}</span></td
         <td>
           <button class="att-btn att-btn-present" onclick="markAttendance('${m._id}','${date}','Present')">Present</button>
           <button class="att-btn att-btn-absent" onclick="markAttendance('${m._id}','${date}','Absent')">Absent</button>
-        </td></tr>`;
+         </td
+      </tr>`;
     }).join('');
   } catch(e) { toast('Error loading attendance', 'error'); }
 }
+
 function markAttendance(memberId, date, status) {
   const attKey = `att_${date}`;
   let saved = JSON.parse(localStorage.getItem(attKey) || '{}');
   saved[memberId] = status;
   localStorage.setItem(attKey, JSON.stringify(saved));
-  const badge = document.getElementById(`status-${memberId}`);
-  if (badge) { badge.textContent = status; badge.className = `badge ${status === 'Present' ? 'badge-present' : 'badge-absent'}`; }
+  const badgeSpan = document.getElementById(`status-${memberId}`);
+  if (badgeSpan) { badgeSpan.textContent = status; badgeSpan.className = `badge ${status === 'Present' ? 'badge-present' : 'badge-absent'}`; }
   const total = parseInt(document.getElementById('statTotal').textContent) || 0;
   const present = Object.values(saved).filter(s => s === 'Present').length;
   document.getElementById('statPresent').textContent = present;
   document.getElementById('statPct').textContent = total ? `${Math.round(present/total*100)}%` : '0%';
   toast(`Marked as ${status}`, 'success');
 }
+
 async function markAllPresent() {
   const date = document.getElementById('attendanceDate').value;
   if (!confirm(`Mark all active members as Present for ${new Date(date).toLocaleDateString()}?`)) return;
@@ -821,29 +799,29 @@ async function markAllPresent() {
     localStorage.setItem(attKey, JSON.stringify(saved));
     document.getElementById('statPresent').textContent = active.length;
     document.getElementById('statPct').textContent = '100%';
-    active.forEach(m => {
-      const badge = document.getElementById(`status-${m._id}`);
-      if (badge) { badge.textContent = 'Present'; badge.className = 'badge badge-present'; }
-    });
+    active.forEach(m => { const badgeSpan = document.getElementById(`status-${m._id}`); if (badgeSpan) { badgeSpan.textContent = 'Present'; badgeSpan.className = 'badge badge-present'; } });
     toast(`${active.length} members marked Present`, 'success');
   } catch(e) { toast('Error', 'error'); }
 }
 
-// ===== TRAINERS ===== (unchanged)
+// ===== TRAINERS =====
 async function loadTrainers() {
   try {
     const res = await fetch(TAPI, { headers: headers() });
     if (res.status === 401) { logout(); return; }
     const trainers = await res.json();
     const tbody = document.getElementById('trainersBody');
-    if (!trainers.length) tbody.innerHTML = '<tr><td colspan="5" class="empty">No trainers yet</td></tr>';
+    if (!trainers.length) tbody.innerHTML = '<td><td colspan="5" class="empty">No trainers yet</td</tr>';
     else tbody.innerHTML = trainers.map(t => `
       <tr><td style="display:flex;align-items:center;gap:8px">${avatar(t.name)}<strong>${esc(t.name)}</strong></td>
-      <td>${esc(t.specialty)}</td><td>${esc(t.phone)}</td><td>${badge(t.status)}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteTrainer('${t._id}','${esc(t.name)}')">Delete</button></td></tr>
-    `).join('');
+      <td>${esc(t.specialty)}</td
+      <td>${esc(t.phone)}</td
+      <td>${badge(t.status)}</td
+      <td><button class="btn btn-danger btn-sm" onclick="deleteTrainer('${t._id}','${esc(t.name)}')">Delete</button></td
+    </tr>`).join('');
   } catch(e) { toast('Error loading trainers', 'error'); }
 }
+
 async function deleteTrainer(id, name) {
   if (!confirm(`Delete trainer "${name}"?`)) return;
   try {
@@ -853,7 +831,6 @@ async function deleteTrainer(id, name) {
 }
 
 // ===== PLANS =====
-// UPDATED: now checks appliesTo === 'all' OR appliesTo === planName
 function loadPlans() {
   const plans = Object.entries(PLAN_PRICES).map(([name, price]) => {
     let discounted = price;
@@ -891,7 +868,6 @@ function selectPlan(name) {
 }
 
 // ===== DISCOUNTS =====
-// UPDATED: show "Applies To" column, toggle plan select
 function toggleDiscPlanSelect() {
   const val = document.getElementById('discAppliesTo').value;
   document.getElementById('discPlanGroup').style.display = val === 'specific' ? 'block' : 'none';
@@ -923,13 +899,12 @@ function renderDiscounts() {
 }
 
 function addDiscount() {
-  const name      = document.getElementById('discName').value.trim();
-  const type      = document.getElementById('discType').value;
-  const val       = parseFloat(document.getElementById('discVal').value);
-  const validUntil= document.getElementById('discExpiry').value;
+  const name = document.getElementById('discName').value.trim();
+  const type = document.getElementById('discType').value;
+  const val = parseFloat(document.getElementById('discVal').value);
+  const validUntil = document.getElementById('discExpiry').value;
   const appliesTo = document.getElementById('discAppliesTo').value;
-  // If specific plan, use plan name as appliesTo value
-  const planName  = appliesTo === 'specific' ? document.getElementById('discPlanName').value : 'all';
+  const planName = appliesTo === 'specific' ? document.getElementById('discPlanName').value : 'all';
 
   if (!name || !val || val <= 0) { toast('Please fill all fields', 'error'); return; }
   if (type === 'percentage' && val > 100) { toast('Percentage cannot exceed 100%', 'error'); return; }
@@ -937,7 +912,6 @@ function addDiscount() {
   activeDiscounts.push({ name, type, value: val, appliesTo: planName, validUntil });
   localStorage.setItem('gympro_discounts', JSON.stringify(activeDiscounts));
   closeModal('addDiscountModal');
-  // Reset the modal fields for next use
   document.getElementById('discName').value = '';
   document.getElementById('discVal').value = '';
   document.getElementById('discExpiry').value = '';
@@ -957,7 +931,7 @@ function removeDiscount(i) {
   toast('Discount removed');
 }
 
-// ===== PAYMENTS ===== (unchanged)
+// ===== PAYMENTS =====
 async function loadPayments() {
   try {
     const res = await fetch(API, { headers: headers() });
@@ -969,14 +943,17 @@ async function loadPayments() {
     if (!due.length) { container.innerHTML = '<div class="empty">No pending payments</div>'; return; }
     container.innerHTML = due.map(m => {
       const days = Math.ceil((new Date(m.expiryDate) - today) / (1000*60*60*24));
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px">
-        <div><strong>${esc(m.name)}</strong><br><small>${esc(m.plan)}</small><br><small>Expires: ${fmtDate(m.expiryDate)}</small></div>
-        <div><span class="badge ${days < 0 ? 'badge-inactive' : 'badge-trial'}">${days < 0 ? 'Overdue' : days + ' days left'}</span></div>
-        <button class="btn btn-success btn-sm" onclick="openPayment('${m._id}','${esc(m.name)}','${esc(m.plan)}')">Pay Now</button>
-      </div>`;
+      return `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px">
+          <div><strong>${esc(m.name)}</strong><br><small>${esc(m.plan)}</small><br><small>Expires: ${fmtDate(m.expiryDate)}</small></div>
+          <div><span class="badge ${days < 0 ? 'badge-inactive' : 'badge-trial'}">${days < 0 ? 'Overdue' : days + ' days left'}</span></div>
+          <button class="btn btn-success btn-sm" onclick="openPayment('${m._id}','${esc(m.name)}','${esc(m.plan)}')">Pay Now</button>
+        </div>
+      `;
     }).join('');
   } catch(e) { toast('Error loading payments', 'error'); }
 }
+
 function openPayment(id, name, plan) {
   const amount = PLAN_PRICES[plan] || 1000;
   currentPaymentMember = { id, name, plan, amount };
@@ -985,11 +962,13 @@ function openPayment(id, name, plan) {
       <div><strong>Member:</strong> ${esc(name)}</div>
       <div><strong>Plan:</strong> ${esc(plan)}</div>
       <div><strong>Amount:</strong> ₹${amount.toLocaleString()}</div>
-    </div>`;
+    </div>
+  `;
   const upiUrl = `upi://pay?pa=8688631823-2@ybl&pn=GymPro&am=${amount}&cu=INR`;
   document.getElementById('payQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
   openModal('paymentModal');
 }
+
 async function confirmPayment() {
   if (!currentPaymentMember) return;
   const expiry = new Date();
@@ -1005,28 +984,22 @@ async function confirmPayment() {
   } catch(e) { toast('Payment recorded', 'success'); closeModal('paymentModal'); }
 }
 
-// ═══════════════════════════════════════════════
-//  NEW: calcMemberDiscount — live price preview
-//  inside Add Member modal
-// ═══════════════════════════════════════════════
+// ===== ADD MEMBER DISCOUNT CALCULATION =====
 function calcMemberDiscount() {
-  const sel    = document.getElementById('mPlan');
-  const orig   = parseInt(sel.options[sel.selectedIndex].getAttribute('data-price')) || 0;
-  const dType  = document.querySelector('input[name="memberDiscType"]:checked')?.value || 'none';
-  const dVal   = parseFloat(document.getElementById('memberDiscValue').value) || 0;
-
+  const sel = document.getElementById('mPlan');
+  const orig = parseInt(sel.options[sel.selectedIndex].getAttribute('data-price')) || 0;
+  const dType = document.querySelector('input[name="memberDiscType"]:checked')?.value || 'none';
+  const dVal = parseFloat(document.getElementById('memberDiscValue').value) || 0;
   let final = orig;
   if (dType === 'percentage' && dVal > 0) final = Math.round(orig - (orig * dVal / 100));
-  if (dType === 'fixed'      && dVal > 0) final = Math.max(0, Math.round(orig - dVal));
-
-  document.getElementById('discOrigPrice').textContent  = `₹${orig.toLocaleString('en-IN')}`;
+  if (dType === 'fixed' && dVal > 0) final = Math.max(0, Math.round(orig - dVal));
+  document.getElementById('discOrigPrice').textContent = `₹${orig.toLocaleString('en-IN')}`;
   document.getElementById('discFinalPrice').textContent = `₹${final.toLocaleString('en-IN')}`;
-
-  const saved   = orig - final;
+  const saved = orig - final;
   const savedEl = document.getElementById('discSavedLabel');
   if (saved > 0) {
     savedEl.style.display = 'block';
-    savedEl.textContent   = `🎉 You save ₹${saved.toLocaleString('en-IN')}`;
+    savedEl.textContent = `🎉 You save ₹${saved.toLocaleString('en-IN')}`;
   } else {
     savedEl.style.display = 'none';
   }
@@ -1039,16 +1012,15 @@ document.getElementById('addMemberForm').addEventListener('submit', async (e) =>
   if (!/^\d{10}$/.test(phone)) { toast('Enter valid 10-digit phone', 'error'); return; }
 
   const data = {
-    name:       document.getElementById('mName').value.trim(),
-    phone,
-    email:      document.getElementById('mEmail').value.trim(),
-    age:        parseInt(document.getElementById('mAge').value) || null,
-    plan:       document.getElementById('mPlan').value,
+    name: document.getElementById('mName').value.trim(),
+    phone: phone,
+    email: document.getElementById('mEmail').value.trim(),
+    age: parseInt(document.getElementById('mAge').value) || null,
+    plan: document.getElementById('mPlan').value,
     expiryDate: document.getElementById('mExpiry').value,
-    status:     document.getElementById('mStatus').value,
-    photo:      document.getElementById('photoData').value || ''
+    status: document.getElementById('mStatus').value,
+    photo: document.getElementById('photoData').value || ''
   };
-
   if (!data.name) { toast('Name required', 'error'); return; }
 
   try {
@@ -1058,7 +1030,6 @@ document.getElementById('addMemberForm').addEventListener('submit', async (e) =>
       closeModal('addMemberModal');
       document.getElementById('addMemberForm').reset();
       clearPhoto();
-      // Reset discount UI
       document.querySelector('input[name="memberDiscType"][value="none"]').checked = true;
       document.getElementById('memberDiscValue').value = '';
       document.getElementById('memberDiscReason').value = '';
@@ -1073,16 +1044,16 @@ document.getElementById('addMemberForm').addEventListener('submit', async (e) =>
   } catch(err) { toast('Network error', 'error'); }
 });
 
-// ===== ADD TRAINER SUBMIT ===== (unchanged)
+// ===== ADD TRAINER SUBMIT =====
 document.getElementById('addTrainerForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const phone = document.getElementById('tPhone').value.trim();
   if (!/^\d{10}$/.test(phone)) { toast('Enter valid phone number', 'error'); return; }
   const data = {
-    name:      document.getElementById('tName').value.trim(),
-    phone,
+    name: document.getElementById('tName').value.trim(),
+    phone: phone,
     specialty: document.getElementById('tSpecialty').value.trim(),
-    status:    'Active'
+    status: 'Active'
   };
   try {
     const res = await fetch(TAPI, { method: 'POST', headers: headers(), body: JSON.stringify(data) });
@@ -1097,7 +1068,7 @@ document.getElementById('addTrainerForm').addEventListener('submit', async (e) =
   } catch(err) { toast('Network error', 'error'); }
 });
 
-// ===== INIT ===== (unchanged)
+// ===== INIT =====
 window.addEventListener('DOMContentLoaded', () => {
   if (!checkAuth()) return;
   document.getElementById('topbarDate').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
@@ -1113,7 +1084,6 @@ window.addEventListener('DOMContentLoaded', () => {
   loadDashboard();
 });
 
-// ===== PLAN CHANGE → auto expiry ===== (unchanged)
 document.getElementById('mPlan').addEventListener('change', () => {
   const months = PLAN_MONTHS[document.getElementById('mPlan').value] || 1;
   const expiry = new Date();
