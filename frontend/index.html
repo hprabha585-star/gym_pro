@@ -176,6 +176,23 @@
       z-index: 100;
     }
 
+    /* Hamburger Menu Button */
+    .menu-toggle {
+      display: flex;
+      width: 38px; height: 38px;
+      background: var(--primary-light);
+      border: none;
+      border-radius: 10px;
+      color: var(--primary);
+      font-size: 1.2rem;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+    .menu-toggle:hover { background: #dcd4ff; }
+
     .topbar-title {
       font-family: 'Space Grotesk', sans-serif;
       font-size: 1.2rem;
@@ -424,6 +441,7 @@
 <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
 <div class="topbar" id="topbar">
+  <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
   <span class="topbar-title" id="pageTitle">Dashboard</span>
   <span class="topbar-date" id="topbarDate"></span>
 </div>
@@ -1007,7 +1025,7 @@ async function loadDashboard() {
     const rc = document.getElementById('reminderCard');
     if (due.length === 0) {
       rc.className = 'reminder green';
-      rc.innerHTML = `<div class="reminder-text"><h3>✅ All Good!</h3><p>No payments due in the next 7 days</p></div>`;
+      rc.innerHTML = `<div class="reminder-text"><h3>✅ All Good!</h3><p>No pending payments</p></div>`;
     } else {
       rc.className = 'reminder orange';
       rc.innerHTML = `<div class="reminder-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due Soon</h3><p>Members expiring within 7 days</p></div>
