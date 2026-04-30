@@ -36,50 +36,35 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    /* Prevent accidental scrolling on number inputs */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+
     /* ===== SIDEBAR ===== */
     .sidebar {
-      position: fixed;
-      top: 0; left: 0;
-      width: var(--sidebar-w);
-      height: 100vh;
-      background: white;
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      padding: 1.25rem 1rem;
-      z-index: 2000;
-      overflow-y: auto;
-      transform: translateX(-100%);
-      transition: transform var(--transition);
+      position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh; background: white;
+      border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 1.25rem 1rem;
+      z-index: 2000; overflow-y: auto; transform: translateX(-100%); transition: transform var(--transition);
       box-shadow: 4px 0 24px rgba(0,0,0,0.05);
     }
-
     .sidebar.open { transform: translateX(0); }
-
-    .sidebar-brand {
-      display: flex; align-items: center; gap: 10px; padding: 0.25rem 0.5rem 1.25rem;
-      border-bottom: 1px solid var(--border); margin-bottom: 1rem; justify-content: space-between;
-    }
-    .brand-icon {
-      width: 36px; height: 36px; background: var(--primary); border-radius: 10px;
-      display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;
-    }
+    .sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 0.25rem 0.5rem 1.25rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; justify-content: space-between; }
+    .brand-icon { width: 36px; height: 36px; background: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
     .brand-name { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--primary); flex: 1; }
-    .sidebar-close-btn {
-      background: var(--bg); border: none; font-size: 1.2rem; color: var(--muted);
-      cursor: pointer; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px;
-    }
+    .sidebar-close-btn { background: var(--bg); border: none; font-size: 1.2rem; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; }
 
     .user-info { background: var(--primary-light); border-radius: 12px; padding: 12px; margin-bottom: 1rem; }
     .user-info .u-name { font-weight: 700; font-size: 0.95rem; color: var(--text); }
     .user-info .u-role { font-size: 0.8rem; color: var(--primary); font-weight: 600; }
-
     .nav-section-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); padding: 0 0.5rem; margin: 1rem 0 0.5rem; }
 
-    .nav-link {
-      display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; color: var(--muted);
-      font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; border: none; background: none; width: 100%; text-align: left; margin-bottom: 4px;
-    }
+    .nav-link { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; color: var(--muted); font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; border: none; background: none; width: 100%; text-align: left; margin-bottom: 4px; }
     .nav-link:hover, .nav-link.active { background: var(--primary-light); color: var(--primary); }
     .nav-link.active { background: var(--primary); color: white; }
     .nav-link .nav-icon { font-size: 1.1rem; width: 24px; text-align: center; flex-shrink: 0; }
@@ -88,39 +73,23 @@
     .logout-btn { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; background: var(--danger-bg); color: var(--danger); border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 700; cursor: pointer; width: 100%; }
 
     /* ===== TOPBAR ===== */
-    .topbar {
-      position: fixed; top: 0; left: 0; right: 0; height: 64px; background: rgba(255,255,255,0.9);
-      backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 1.25rem; gap: 1rem; z-index: 100;
-    }
-    .menu-toggle {
-      display: flex; width: 38px; height: 38px; background: var(--primary-light); border: none; border-radius: 10px;
-      color: var(--primary); font-size: 1.2rem; cursor: pointer; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s;
-    }
+    .topbar { position: fixed; top: 0; left: 0; right: 0; height: 64px; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 1.25rem; gap: 1rem; z-index: 100; }
+    .menu-toggle { display: flex; width: 38px; height: 38px; background: var(--primary-light); border: none; border-radius: 10px; color: var(--primary); font-size: 1.2rem; cursor: pointer; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s; }
     .menu-toggle:hover { background: #dcd4ff; }
     .topbar-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--text); }
     .topbar-date { margin-left: auto; font-size: 0.85rem; font-weight: 600; color: var(--muted); }
 
     /* ===== BOTTOM NAVIGATION ===== */
-    .bottom-nav {
-      display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: white;
-      border-top: 1px solid var(--border); z-index: 900; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -4px 20px rgba(0,0,0,0.03);
-    }
-    .b-nav-item {
-      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border: none; background: none;
-      color: var(--muted); font-size: 0.75rem; font-weight: 600; gap: 4px; cursor: pointer; font-family: 'DM Sans', sans-serif;
-    }
+    .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: white; border-top: 1px solid var(--border); z-index: 900; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -4px 20px rgba(0,0,0,0.03); }
+    .b-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border: none; background: none; color: var(--muted); font-size: 0.75rem; font-weight: 600; gap: 4px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
     .b-nav-item i { font-size: 1.3rem; font-style: normal; }
     .b-nav-item.active { color: var(--primary); }
     .b-nav-item.active i { transform: scale(1.1); transition: 0.2s; }
 
     /* ===== MAIN ===== */
     .main-content { margin-left: 0; margin-top: 64px; padding: 1.25rem; min-height: calc(100vh - 64px); }
-
-    /* ===== OVERLAY ===== */
     .overlay { display: none; position: fixed; inset: 0; background: rgba(10,8,30,0.5); z-index: 1500; backdrop-filter: blur(3px); transition: opacity var(--transition); }
     .overlay.show { display: block; }
-
-    /* ===== PAGE SECTIONS ===== */
     .page { display: none; animation: fadeIn 0.3s; }
     .page.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
@@ -132,19 +101,17 @@
     .stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--primary); line-height: 1; }
     .stat-sub { font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
 
-    /* ===== CARD ===== */
+    /* ===== CARD & TABLE ===== */
     .card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 1.25rem; margin-bottom: 1.25rem; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
     .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; gap: 1rem; flex-wrap: wrap; }
     .card-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 700; }
-
-    /* ===== TABLE ===== */
     .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -0.5rem; padding: 0 0.5rem; }
     table { width: 100%; border-collapse: collapse; min-width: 480px; }
     th { text-align: left; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--muted); padding: 10px 12px; border-bottom: 2px solid var(--border); }
     td { padding: 14px 12px; border-bottom: 1px solid #f0eff8; font-size: 0.9rem; vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
 
-    /* ===== BADGES ===== */
+    /* ===== BADGES & AVATARS ===== */
     .badge { display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
     .badge-active { background: var(--success-bg); color: var(--success); }
     .badge-trial { background: #fffbeb; color: var(--warning); border: 1px solid #fcd34d; }
@@ -152,50 +119,39 @@
     .badge-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
     .badge-present { background: var(--success-bg); color: var(--success); }
     .badge-absent { background: var(--danger-bg); color: var(--danger); }
-
-    /* ===== AVATAR ===== */
     .avatar { width: 38px; height: 38px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; color: white; flex-shrink: 0; }
 
-    /* ===== BUTTONS ===== */
-    .btn {
-      display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border: none; border-radius: 10px;
-      font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 700; cursor: pointer; white-space: nowrap;
-      min-height: 44px; justify-content: center;
-    }
+    /* ===== BUTTONS & FORMS ===== */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 700; cursor: pointer; white-space: nowrap; min-height: 44px; justify-content: center; }
     .btn-primary { background: var(--primary); color: white; }
     .btn-success { background: var(--success); color: white; }
     .btn-danger { background: var(--danger); color: white; }
     .btn-sm { padding: 6px 12px; font-size: 0.85rem; min-height: 36px; }
     .btn-outline { background: transparent; border: 1.5px solid var(--primary); color: var(--primary); }
-
     .att-btn { padding: 6px 12px; border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 700; margin: 2px; min-height: 36px;}
     .att-btn-present { background: var(--success-bg); color: var(--success); border: 1px solid #86efac; }
     .att-btn-absent { background: var(--danger-bg); color: var(--danger); border: 1px solid #fca5a5; }
 
-    /* ===== FORM ===== */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     .form-group { margin-bottom: 1rem; }
     .form-group label { display: block; font-size: 0.85rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
-    
-    .form-group input, .form-group select, .form-group textarea, .condition-row select, .condition-row input {
-      width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px;
-      font-family: 'DM Sans', sans-serif; font-size: 0.95rem; color: var(--text); background: white;
-      min-height: 48px; -webkit-appearance: none; appearance: none;
-    }
+    .form-group input, .form-group select, .form-group textarea, .condition-row select, .condition-row input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; color: var(--text); background: white; min-height: 48px; -webkit-appearance: none; appearance: none; }
     .form-group input[type="date"] { padding: 10px 14px; }
     .form-group textarea { resize: vertical; min-height: 100px; }
     .form-section-title { font-size: 0.85rem; font-weight: 700; color: var(--primary); margin: 1.5rem 0 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
 
+    .discount-box { background: #faf9ff; border: 1.5px dashed #c4b5fd; border-radius: 10px; padding: 1rem; margin-bottom: 1rem; }
+    .discount-box h4 { font-size: 0.85rem; color: var(--primary); margin-bottom: 0.75rem; font-weight: 700; }
+    .radio-group { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+    .radio-group label { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+    .price-summary { background: var(--primary-light); border-radius: 8px; padding: 10px 14px; margin-bottom: 1rem; font-size: 0.88rem; }
+    .price-summary .line { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .price-summary .line:last-child { margin-bottom: 0; font-weight: 700; font-size: 1rem; color: var(--success); }
+
     /* ===== MODAL ===== */
-    .modal {
-      display: none; position: fixed; inset: 0; background: rgba(10,8,30,0.6);
-      z-index: 2500; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(3px);
-    }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(10,8,30,0.6); z-index: 2500; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(3px); }
     .modal.open { display: flex; }
-    .modal-content {
-      background: white; border-radius: var(--radius); padding: 1.5rem; width: 100%; max-width: 520px;
-      max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 48px rgba(0,0,0,0.25); animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
+    .modal-content { background: white; border-radius: var(--radius); padding: 1.5rem; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 48px rgba(0,0,0,0.25); animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
     @keyframes modalIn { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: none; } }
     .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
     .modal-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 700; }
@@ -493,7 +449,6 @@
           </select>
         </div>
         <div class="form-group"><label>Age</label><input type="number" id="mAge" min="12" max="100" placeholder="18-80"></div>
-        <!-- Email added back correctly -->
         <div class="form-group" style="grid-column: 1 / -1;"><label>Email</label><input type="email" id="mEmail" placeholder="optional"></div>
       </div>
 
@@ -501,15 +456,12 @@
       <div class="form-grid">
         <div class="form-group">
           <label>Plan *</label>
-          <select id="mPlan" required onchange="recalcPrice()">
-            <!-- Options dynamically loaded from settings -->
-          </select>
+          <select id="mPlan" required onchange="recalcPrice()"></select>
         </div>
         <div class="form-group">
           <label>Personal Trainer (Optional)</label>
           <select id="mTrainer">
             <option value="">-- No Trainer --</option>
-            <!-- Filled dynamically -->
           </select>
         </div>
       </div>
@@ -531,7 +483,8 @@
         </div>
         <div class="price-summary" id="priceSummary">
           <div class="line"><span>Plan Price:</span><span id="origPrice">₹0</span></div>
-          <div class="line"><span>Admission Fee:</span><span id="dispAdmFee">₹500</span></div>
+          <div class="line" style="color:var(--danger)"><span>- Discount:</span><span id="dispDiscount">₹0</span></div>
+          <div class="line"><span>+ Admission Fee:</span><span id="dispAdmFee">₹500</span></div>
           <div class="line" style="margin-top:8px; padding-top:8px; border-top:1px dashed #c4b5fd;"><span>Grand Total:</span><span id="finalPrice">₹0</span></div>
         </div>
       </div>
@@ -649,10 +602,25 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// Prevent accidental mousewheel scrolling on number inputs
+document.addEventListener("wheel", function(event){
+    if(document.activeElement.type === "number"){
+        document.activeElement.blur();
+    }
+});
+
 // ===== CONFIG =====
 const BASE = 'https://gym-pro-mvyv.onrender.com/api';
 const API  = `${BASE}/members`;
 const TAPI = `${BASE}/trainers`;
+
+// Valid Mongoose Enums for the backend bypass
+const VALID_BACKEND_PLANS = [
+  '1 Month Strength', '1 Month Strength + Cardio',
+  '3 Months Strength', '3 Months Strength + Cardio',
+  '6 Months Strength', '6 Months Strength + Cardio',
+  '1 Year Strength', '1 Year Strength + Cardio'
+];
 
 // Default Setup
 const defaultPlans = [
@@ -670,6 +638,7 @@ if (!customPlans) {
 
 let gymUpiId = localStorage.getItem('gympro_upi_id') || 'management@ybl';
 
+let memberCustomPlans = JSON.parse(localStorage.getItem('gympro_member_custom_plans') || '{}');
 let activeDiscounts = JSON.parse(localStorage.getItem('gympro_discounts') || '[]');
 let memberDiscounts = JSON.parse(localStorage.getItem('gympro_member_discounts') || '{}');
 let memberAdmissionFees = JSON.parse(localStorage.getItem('gympro_member_admission_fees') || '{}');
@@ -695,6 +664,9 @@ function avatarBg(name) { const colors = ['#6C47FF','#16a34a','#dc2626','#d97706
 function avatar(name) { const initials = (name||'?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2); return `<div class="avatar" style="background:${avatarBg(name)}">${esc(initials)}</div>`; }
 function renderAvatar(m) { if (m.photo && m.photo.startsWith('data:image')) { return `<img src="${m.photo}" alt="${esc(m.name)}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">`; } return avatar(m.name); }
 function badge(status) { const cls = `badge-${(status||'inactive').toLowerCase()}`; return `<span class="badge ${cls}">${esc(status)}</span>`; }
+
+// Display correct plan name (Local Custom vs Backend Default)
+function getDisplayPlan(m) { return memberCustomPlans[m._id] || m.plan; }
 
 // ===== SIDEBAR & MENU =====
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('show'); }
@@ -727,7 +699,6 @@ function closeModal(id) {
   if(el) el.classList.remove('open'); 
 }
 
-// Close on outside click
 document.addEventListener('click', (e) => {
   if (e.target.classList.contains('modal')) {
     closeModal(e.target.id);
@@ -821,12 +792,14 @@ function getPlanDetails(planName) {
 
 // ===== SETTINGS =====
 function loadSettings() {
-  document.getElementById('settingUpiId').value = gymUpiId;
+  const upiInput = document.getElementById('settingUpiId');
+  if (upiInput) upiInput.value = gymUpiId;
+  
   const tbody = document.getElementById('settingsPlansBody');
   if(customPlans.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" class="empty"><p>No plans added yet.</p></td></tr>`;
+    if(tbody) tbody.innerHTML = `<tr><td colspan="4" class="empty"><p>No plans added yet.</p></td></tr>`;
   } else {
-    tbody.innerHTML = customPlans.map((p, i) => `
+    if(tbody) tbody.innerHTML = customPlans.map((p, i) => `
       <tr>
         <td><strong>${esc(p.name)}</strong></td>
         <td>₹${p.price}</td>
@@ -838,7 +811,7 @@ function loadSettings() {
 }
 
 function saveUpiId() {
-  const val = document.getElementById('settingUpiId').value.trim();
+  const val = document.getElementById('settingUpiId')?.value.trim();
   if(!val) return toast('UPI ID cannot be empty', 'error');
   gymUpiId = val;
   localStorage.setItem('gympro_upi_id', gymUpiId);
@@ -858,9 +831,13 @@ function addCustomPlan() {
   loadSettings();
   closeModal('addCustomPlanModal');
   toast('Plan Added', 'success');
-  document.getElementById('cpName').value = '';
-  document.getElementById('cpPrice').value = '';
-  document.getElementById('cpDuration').value = '';
+  
+  const cpNameEl = document.getElementById('cpName');
+  if(cpNameEl) cpNameEl.value = '';
+  const cpPriceEl = document.getElementById('cpPrice');
+  if(cpPriceEl) cpPriceEl.value = '';
+  const cpDurationEl = document.getElementById('cpDuration');
+  if(cpDurationEl) cpDurationEl.value = '';
 }
 
 function removeCustomPlan(index) {
@@ -904,50 +881,62 @@ async function loadDashboard() {
     if (res.status === 401) { logout(); return; }
     const members = await res.json();
 
-    document.getElementById('totalMembers').textContent = members.length;
+    const tmEl = document.getElementById('totalMembers');
+    if(tmEl) tmEl.textContent = members.length;
+    
     const active = members.filter(m => m.status === 'Active');
-    document.getElementById('activeMembers').textContent = active.length;
+    const amEl = document.getElementById('activeMembers');
+    if(amEl) amEl.textContent = active.length;
 
     let planRev = 0;
     let adminRev = 0;
     
     active.forEach(m => {
-      const pDetails = getPlanDetails(m.plan);
+      const actualPlanName = getDisplayPlan(m);
+      const pDetails = getPlanDetails(actualPlanName);
       planRev += memberDiscounts[m._id] || pDetails.price || 0;
       adminRev += memberAdmissionFees[m._id] || 0;
     });
     
-    document.getElementById('estimatedRevenue').textContent = `₹${Math.round(planRev).toLocaleString('en-IN')}`;
-    document.getElementById('admissionRevenue').textContent = `₹${Math.round(adminRev).toLocaleString('en-IN')}`;
+    const erEl = document.getElementById('estimatedRevenue');
+    if(erEl) erEl.textContent = `₹${Math.round(planRev).toLocaleString('en-IN')}`;
+    
+    const arEl = document.getElementById('admissionRevenue');
+    if(arEl) arEl.textContent = `₹${Math.round(adminRev).toLocaleString('en-IN')}`;
 
     // Recent / Expiry Overview
     const tbody = document.getElementById('dashMembersBody');
-    if (!members.length) {
-      tbody.innerHTML = `<tr><td colspan="4"><div class="empty"><div class="e-icon">👥</div><p>No members yet. Add your first member!</p></div></td></tr>`;
-    } else {
-      const sorted = members.sort((a,b) => new Date(a.expiryDate) - new Date(b.expiryDate));
-      tbody.innerHTML = sorted.slice(0, 10).map(m => {
-        const trainer = memberTrainers[m._id] || 'None';
-        return `
-        <tr>
-          <td style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.phone)}</small></div></td>
-          <td style="font-size:0.85rem">${esc(m.plan)}</td>
-          <td style="font-size:0.85rem; color:var(--muted);">${esc(trainer)}</td>
-          <td>${getExpiryBadge(m.expiryDate)}</td>
-        </tr>
-      `}).join('');
+    if(tbody) {
+      if (!members.length) {
+        tbody.innerHTML = `<tr><td colspan="4"><div class="empty"><div class="e-icon">👥</div><p>No members yet. Add your first member!</p></div></td></tr>`;
+      } else {
+        const sorted = members.sort((a,b) => new Date(a.expiryDate) - new Date(b.expiryDate));
+        tbody.innerHTML = sorted.slice(0, 10).map(m => {
+          const trainer = memberTrainers[m._id] || 'None';
+          const planToDisplay = getDisplayPlan(m);
+          return `
+          <tr>
+            <td style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.phone)}</small></div></td>
+            <td style="font-size:0.85rem">${esc(planToDisplay)}</td>
+            <td style="font-size:0.85rem; color:var(--muted);">${esc(trainer)}</td>
+            <td>${getExpiryBadge(m.expiryDate)}</td>
+          </tr>
+        `}).join('');
+      }
     }
 
     // Reminder
     const due = members.filter(m => m.status==='Active' && new Date(m.expiryDate) <= new Date(Date.now()+7*86400000));
     const rc = document.getElementById('reminderCard');
-    if (due.length === 0) {
-      rc.className = 'reminder green';
-      rc.innerHTML = `<div class="reminder-text"><h3>✅ All Good!</h3><p>No pending payments</p></div>`;
-    } else {
-      rc.className = 'reminder orange';
-      rc.innerHTML = `<div class="reminder-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due Soon</h3><p>Members expiring within 7 days</p></div>
-        <button class="btn btn-sm" style="background:white;color:var(--warning);font-weight:700" onclick="showPage('payments', document.querySelector('[data-page=payments]')); updateBNav('none')">View →</button>`;
+    if(rc) {
+      if (due.length === 0) {
+        rc.className = 'reminder green';
+        rc.innerHTML = `<div class="reminder-text"><h3>✅ All Good!</h3><p>No pending payments</p></div>`;
+      } else {
+        rc.className = 'reminder orange';
+        rc.innerHTML = `<div class="reminder-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due Soon</h3><p>Members expiring within 7 days</p></div>
+          <button class="btn btn-sm" style="background:white;color:var(--warning);font-weight:700" onclick="showPage('payments', document.querySelector('[data-page=payments]')); updateBNav('none')">View →</button>`;
+      }
     }
   } catch(e) { console.error(e); toast('Error loading dashboard','error'); }
 }
@@ -960,24 +949,28 @@ async function loadAllMembers() {
     if (res.status === 401) { logout(); return; }
     const members = await res.json();
 
-    if (!members.length) {
-      tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="e-icon">👥</div><p>No members yet.</p></div></td></tr>`;
-      return;
-    }
+    if(tbody) {
+      if (!members.length) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="e-icon">👥</div><p>No members yet.</p></div></td></tr>`;
+        return;
+      }
 
-    tbody.innerHTML = members.map(m => `
-      <tr>
-        <td style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.email||'')}</small></div></td>
-        <td>${esc(m.phone)}<br><small style="color:var(--muted)">${esc(m.gender || 'Not specified')}</small></td>
-        <td style="font-size:0.85rem">${esc(m.plan)}</td>
-        <td>${fmtDate(m.expiryDate)}</td>
-        <td>${badge(m.status)}</td>
-        <td>
-          <button class="btn btn-danger btn-sm" onclick="deleteMember('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\\'"))}')">Delete</button>
-        </td>
-      </tr>
-    `).join('');
-  } catch(e) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><p style="color:var(--danger)">Error loading members</p></div></td></tr>`; }
+      tbody.innerHTML = members.map(m => {
+        const planToDisplay = getDisplayPlan(m);
+        return `
+        <tr>
+          <td style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.email||'')}</small></div></td>
+          <td>${esc(m.phone)}<br><small style="color:var(--muted)">${esc(m.gender || 'Not specified')}</small></td>
+          <td style="font-size:0.85rem">${esc(planToDisplay)}</td>
+          <td>${fmtDate(m.expiryDate)}</td>
+          <td>${badge(m.status)}</td>
+          <td>
+            <button class="btn btn-danger btn-sm" onclick="deleteMember('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\\'"))}')">Delete</button>
+          </td>
+        </tr>
+      `}).join('');
+    }
+  } catch(e) { if(tbody) tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><p style="color:var(--danger)">Error loading members</p></div></td></tr>`; }
 }
 
 async function deleteMember(id, name) {
@@ -1004,7 +997,7 @@ async function confirmDeleteAll() {
 // ===== ATTENDANCE =====
 async function loadAttendance() {
   const dateEl = document.getElementById('attendanceDate');
-  const date = dateEl.value || new Date().toISOString().split('T')[0];
+  const date = dateEl?.value || new Date().toISOString().split('T')[0];
   if(dateEl) dateEl.value = date;
   const tbody = document.getElementById('attendanceBody');
 
@@ -1019,40 +1012,55 @@ async function loadAttendance() {
     try { saved = JSON.parse(localStorage.getItem(attKey) || '{}'); } catch(e) {}
     let presentCount = Object.values(saved).filter(s=>s==='Present').length;
 
-    document.getElementById('statTotal').textContent = active.length;
-    document.getElementById('statPresent').textContent = presentCount;
-    document.getElementById('statPct').textContent = active.length ? `${Math.min(100,Math.round(presentCount/active.length*100))}%` : '0%';
+    const stEl = document.getElementById('statTotal');
+    if(stEl) stEl.textContent = active.length;
+    
+    const spEl = document.getElementById('statPresent');
+    if(spEl) spEl.textContent = presentCount;
+    
+    const spcEl = document.getElementById('statPct');
+    if(spcEl) spcEl.textContent = active.length ? `${Math.min(100,Math.round(presentCount/active.length*100))}%` : '0%';
 
-    if (!active.length) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><p>No active members found</p></div></td></tr>`; return; }
+    if(tbody) {
+      if (!active.length) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><p>No active members found</p></div></td></tr>`; return; }
 
-    tbody.innerHTML = active.map(m => {
-      const st = saved[m._id] || 'Absent';
-      return `
-        <tr id="attrow-${m._id}">
-          <td style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<strong>${esc(m.name)}</strong></td>
-          <td style="font-size:0.85rem">${esc(m.plan)}</td>
-          <td>${esc(m.phone)}</td>
-          <td><span id="attbadge-${m._id}" class="badge ${st==='Present'?'badge-present':'badge-absent'}">${st}</span></td>
-          <td style="white-space: nowrap;">
-            <button class="att-btn att-btn-present" onclick="markAtt('${m._id}','${date}','Present')">Present</button>
-            <button class="att-btn att-btn-absent" onclick="markAtt('${m._id}','${date}','Absent')">Absent</button>
-          </td>
-        </tr>
-      `;
-    }).join('');
-  } catch(e) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading attendance</p></div></td></tr>`; }
+      tbody.innerHTML = active.map(m => {
+        const st = saved[m._id] || 'Absent';
+        const planToDisplay = getDisplayPlan(m);
+        return `
+          <tr id="attrow-${m._id}">
+            <td style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<strong>${esc(m.name)}</strong></td>
+            <td style="font-size:0.85rem">${esc(planToDisplay)}</td>
+            <td>${esc(m.phone)}</td>
+            <td><span id="attbadge-${m._id}" class="badge ${st==='Present'?'badge-present':'badge-absent'}">${st}</span></td>
+            <td style="white-space: nowrap;">
+              <button class="att-btn att-btn-present" onclick="markAtt('${m._id}','${date}','Present')">Present</button>
+              <button class="att-btn att-btn-absent" onclick="markAtt('${m._id}','${date}','Absent')">Absent</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+  } catch(e) { if(tbody) tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading attendance</p></div></td></tr>`; }
 }
 
 function markAtt(memberId, date, status) {
   const attKey = `gympro_att_${date}`;
   let saved = {}; try { saved = JSON.parse(localStorage.getItem(attKey) || '{}'); } catch(e) {}
   saved[memberId] = status; localStorage.setItem(attKey, JSON.stringify(saved));
+  
   const badge = document.getElementById(`attbadge-${memberId}`);
   if (badge) { badge.textContent = status; badge.className = `badge ${status==='Present'?'badge-present':'badge-absent'}`; }
-  const total = parseInt(document.getElementById('statTotal').textContent) || 0;
+  
+  const stEl = document.getElementById('statTotal');
+  const total = parseInt(stEl?.textContent) || 0;
   const presentCount = Object.values(saved).filter(s=>s==='Present').length;
-  document.getElementById('statPresent').textContent = presentCount;
-  document.getElementById('statPct').textContent = total ? `${Math.min(100,Math.round(presentCount/total*100))}%` : '0%';
+  
+  const spEl = document.getElementById('statPresent');
+  if(spEl) spEl.textContent = presentCount;
+  
+  const spcEl = document.getElementById('statPct');
+  if(spcEl) spcEl.textContent = total ? `${Math.min(100,Math.round(presentCount/total*100))}%` : '0%';
 }
 
 async function markAllPresent() {
@@ -1081,21 +1089,23 @@ async function loadTrainers() {
     if (res.status === 401) { logout(); return; }
     const trainers = await res.json();
 
-    if (!trainers.length) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="e-icon">🏋️</div><p>No trainers yet.</p></div></td></tr>`; return; }
+    if(tbody) {
+      if (!trainers.length) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="e-icon">🏋️</div><p>No trainers yet.</p></div></td></tr>`; return; }
 
-    tbody.innerHTML = trainers.map(t => `
-      <tr>
-        <td style="display:flex;align-items:center;gap:10px">${avatar(t.name)}<strong>${esc(t.name)}</strong></td>
-        <td>${esc(t.specialty)}</td>
-        <td>${esc(t.phone)}</td>
-        <td>${badge(t.status)}</td>
-        <td>
-          <button class="btn btn-sm btn-outline" onclick="editTrainer('${esc(t._id)}')">Edit</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteTrainer('${esc(t._id)}','${esc(t.name.replace(/'/g,"\\\'"))}')">Delete</button>
-        </td>
-      </tr>
-    `).join('');
-  } catch(e) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading trainers</p></div></td></tr>`; }
+      tbody.innerHTML = trainers.map(t => `
+        <tr>
+          <td style="display:flex;align-items:center;gap:10px">${avatar(t.name)}<strong>${esc(t.name)}</strong></td>
+          <td>${esc(t.specialty)}</td>
+          <td>${esc(t.phone)}</td>
+          <td>${badge(t.status)}</td>
+          <td>
+            <button class="btn btn-sm btn-outline" onclick="editTrainer('${esc(t._id)}')">Edit</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteTrainer('${esc(t._id)}','${esc(t.name.replace(/'/g,"\\\'"))}')">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+  } catch(e) { if(tbody) tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading trainers</p></div></td></tr>`; }
 }
 
 async function editTrainer(id) {
@@ -1133,15 +1143,18 @@ function loadPlans() {
     return { name: p.name, price: p.price, discounted: Math.round(discounted), discInfo };
   });
 
-  document.getElementById('plansGrid').innerHTML = plans.map(p => `
-    <div class="plan-card" onclick="selectPlan('${esc(p.name)}')">
-      ${p.discInfo ? `<div class="plan-discount-badge">${p.discInfo}</div>` : ''}
-      <h3>${esc(p.name)}</h3>
-      ${p.discInfo ? `<div class="plan-original">₹${p.price.toLocaleString('en-IN')}</div>` : ''}
-      <div class="plan-price">₹${p.discounted.toLocaleString('en-IN')}</div>
-      <button class="btn btn-primary" style="width:100%;margin-top:0.75rem" onclick="event.stopPropagation();selectPlan('${esc(p.name)}')">Select Plan</button>
-    </div>
-  `).join('');
+  const pGrid = document.getElementById('plansGrid');
+  if(pGrid) {
+    pGrid.innerHTML = plans.map(p => `
+      <div class="plan-card" onclick="selectPlan('${esc(p.name)}')">
+        ${p.discInfo ? `<div class="plan-discount-badge">${p.discInfo}</div>` : ''}
+        <h3>${esc(p.name)}</h3>
+        ${p.discInfo ? `<div class="plan-original">₹${p.price.toLocaleString('en-IN')}</div>` : ''}
+        <div class="plan-price">₹${p.discounted.toLocaleString('en-IN')}</div>
+        <button class="btn btn-primary" style="width:100%;margin-top:0.75rem" onclick="event.stopPropagation();selectPlan('${esc(p.name)}')">Select Plan</button>
+      </div>
+    `).join('');
+  }
 }
 
 function selectPlan(name) {
@@ -1159,39 +1172,50 @@ function selectPlan(name) {
 // ===== DISCOUNTS =====
 function renderDiscounts() {
   const container = document.getElementById('discountsTable');
-  if (!activeDiscounts.length) { container.innerHTML = `<div class="empty"><div class="e-icon">🏷️</div><p>No active discounts. Add one above.</p></div>`; return; }
-  container.innerHTML = `
-    <div class="table-wrap"><table>
-      <thead><tr><th>Name</th><th>Applies To</th><th>Type</th><th>Value</th><th>Valid Until</th><th>Action</th></tr></thead>
-      <tbody>
-        ${activeDiscounts.map((d,i) => `
-          <tr>
-            <td><strong>${esc(d.name)}</strong></td><td>${d.appliesTo==='all'?'All Plans':esc(d.planName)}</td>
-            <td>${d.type==='percentage'?'Percentage':'Fixed'}</td>
-            <td>${d.type==='percentage'?`${d.value}%`:`₹${d.value.toLocaleString('en-IN')}`}</td>
-            <td>${d.validUntil ? fmtDate(d.validUntil) : 'No expiry'}</td>
-            <td><button class="btn btn-danger btn-sm" onclick="removeDiscount(${i})">Remove</button></td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table></div>
-  `;
+  if(container) {
+    if (!activeDiscounts.length) { container.innerHTML = `<div class="empty"><div class="e-icon">🏷️</div><p>No active discounts. Add one above.</p></div>`; return; }
+    container.innerHTML = `
+      <div class="table-wrap"><table>
+        <thead><tr><th>Name</th><th>Applies To</th><th>Type</th><th>Value</th><th>Valid Until</th><th>Action</th></tr></thead>
+        <tbody>
+          ${activeDiscounts.map((d,i) => `
+            <tr>
+              <td><strong>${esc(d.name)}</strong></td><td>${d.appliesTo==='all'?'All Plans':esc(d.planName)}</td>
+              <td>${d.type==='percentage'?'Percentage':'Fixed'}</td>
+              <td>${d.type==='percentage'?`${d.value}%`:`₹${d.value.toLocaleString('en-IN')}`}</td>
+              <td>${d.validUntil ? fmtDate(d.validUntil) : 'No expiry'}</td>
+              <td><button class="btn btn-danger btn-sm" onclick="removeDiscount(${i})">Remove</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table></div>
+    `;
+  }
 }
 
 function toggleDiscPlan() { 
   const el = document.getElementById('discPlanGroup');
-  if(el) el.style.display = document.getElementById('discApplies')?.value === 'specific' ? 'block' : 'none'; 
+  const dApplies = document.getElementById('discApplies');
+  if(el && dApplies) el.style.display = dApplies.value === 'specific' ? 'block' : 'none'; 
 }
 
 function addDiscount() {
-  const name = document.getElementById('discName')?.value.trim();
-  const val = parseFloat(document.getElementById('discVal')?.value);
-  if (!name || !val || val <= 0) { toast('Please fill all required fields','error'); return; }
-  const type = document.getElementById('discType')?.value;
+  const nameEl = document.getElementById('discName');
+  const valEl = document.getElementById('discVal');
+  const typeEl = document.getElementById('discType');
+  const appliesEl = document.getElementById('discApplies');
+  
+  const name = nameEl?.value.trim();
+  const val = parseFloat(valEl?.value);
+  if (!name || isNaN(val) || val <= 0) { toast('Please fill all required fields','error'); return; }
+  const type = typeEl?.value;
   if (type==='percentage' && val > 100) { toast('Percentage cannot exceed 100%','error'); return; }
-  const appliesTo = document.getElementById('discApplies')?.value;
+  const appliesTo = appliesEl?.value;
 
-  activeDiscounts.push({ name, type, value: val, appliesTo, planName: appliesTo==='specific' ? document.getElementById('discPlan')?.value : null, validUntil: document.getElementById('discExpiry')?.value || null });
+  const dPlanEl = document.getElementById('discPlan');
+  const dExpEl = document.getElementById('discExpiry');
+
+  activeDiscounts.push({ name, type, value: val, appliesTo, planName: appliesTo==='specific' ? dPlanEl?.value : null, validUntil: dExpEl?.value || null });
   localStorage.setItem('gympro_discounts', JSON.stringify(activeDiscounts));
   closeModal('addDiscountModal'); renderDiscounts(); toast('Discount added','success');
 }
@@ -1204,21 +1228,24 @@ async function loadPayments() {
     const res = await fetch(API, { headers: headers() }); if (res.status === 401) { logout(); return; }
     const members = await res.json(); const today = new Date();
     const due = members.filter(m => m.status==='Active' && new Date(m.expiryDate) <= new Date(today.getTime()+14*86400000));
-    if (!due.length) { container.innerHTML = `<div class="empty"><div class="e-icon">✅</div><p>No payments due in the next 14 days!</p></div>`; return; }
+    if(container) {
+      if (!due.length) { container.innerHTML = `<div class="empty"><div class="e-icon">✅</div><p>No payments due in the next 14 days!</p></div>`; return; }
 
-    container.innerHTML = due.map(m => {
-      const exp = new Date(m.expiryDate); const daysLeft = Math.ceil((exp-today)/(1000*60*60*24)); const overdue = daysLeft < 0;
-      return `
-        <div class="payment-row">
-          <div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}
-            <div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.plan)}</small><br><small style="color:var(--muted)">Expires: ${fmtDate(m.expiryDate)}</small></div>
+      container.innerHTML = due.map(m => {
+        const exp = new Date(m.expiryDate); const daysLeft = Math.ceil((exp-today)/(1000*60*60*24)); const overdue = daysLeft < 0;
+        const planToDisplay = getDisplayPlan(m);
+        return `
+          <div class="payment-row">
+            <div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}
+              <div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(planToDisplay)}</small><br><small style="color:var(--muted)">Expires: ${fmtDate(m.expiryDate)}</small></div>
+            </div>
+            <div>${overdue ? `<span class="badge badge-inactive">⚠️ Overdue ${Math.abs(daysLeft)}d</span>` : `<span class="badge badge-trial">${daysLeft}d left</span>`}</div>
+            <button class="btn btn-success btn-sm" onclick="openPaymentFor('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\\'"))}','${esc(planToDisplay)}')">Pay Now</button>
           </div>
-          <div>${overdue ? `<span class="badge badge-inactive">⚠️ Overdue ${Math.abs(daysLeft)}d</span>` : `<span class="badge badge-trial">${daysLeft}d left</span>`}</div>
-          <button class="btn btn-success btn-sm" onclick="openPaymentFor('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\\'"))}','${esc(m.plan)}')">Pay Now</button>
-        </div>
-      `;
-    }).join('');
-  } catch(e) { container.innerHTML = `<div class="empty"><p style="color:var(--danger)">Error loading payments</p></div>`; }
+        `;
+      }).join('');
+    }
+  } catch(e) { if(container) container.innerHTML = `<div class="empty"><p style="color:var(--danger)">Error loading payments</p></div>`; }
 }
 
 function openPaymentFor(id, name, plan) {
@@ -1226,16 +1253,22 @@ function openPaymentFor(id, name, plan) {
   const amt = memberDiscounts[id] || pDetails.price || 1000;
   currentPaymentMember = { id, name, plan }; currentFinalPrice = amt;
 
-  document.getElementById('paymentInfo').innerHTML = `
-    <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:1rem">
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Member</span><strong>${esc(name)}</strong></div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Plan</span><strong>${esc(plan)}</strong></div>
-      <div style="display:flex;justify-content:space-between"><span>Amount</span><strong style="color:var(--success)">₹${Math.round(amt).toLocaleString('en-IN')}</strong></div>
-    </div>
-  `;
-  document.getElementById('displayUpiId').textContent = gymUpiId;
+  const pInfoEl = document.getElementById('paymentInfo');
+  if(pInfoEl) {
+    pInfoEl.innerHTML = `
+      <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:1rem">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Member</span><strong>${esc(name)}</strong></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Plan</span><strong>${esc(plan)}</strong></div>
+        <div style="display:flex;justify-content:space-between"><span>Amount</span><strong style="color:var(--success)">₹${Math.round(amt).toLocaleString('en-IN')}</strong></div>
+      </div>
+    `;
+  }
+  const dUpiEl = document.getElementById('displayUpiId');
+  if(dUpiEl) dUpiEl.textContent = gymUpiId;
+  
   const upiUrl = `upi://pay?pa=${gymUpiId}&pn=GymPro&am=${Math.round(amt)}&cu=INR`;
-  document.getElementById('payQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
+  const qrEl = document.getElementById('payQR');
+  if(qrEl) qrEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
   openModal('paymentModal');
 }
 
@@ -1256,56 +1289,79 @@ function recalcPrice() {
   const sel = document.getElementById('mPlan');
   const origPrice = parseInt(sel?.options[sel.selectedIndex]?.getAttribute('data-price')) || 0;
   
-  const dType = document.querySelector('input[name="dType"]:checked')?.value || 'none';
-  const dVal = parseFloat(document.getElementById('dValue')?.value) || 0;
+  const dTypeEl = document.querySelector('input[name="dType"]:checked');
+  const dType = dTypeEl?.value || 'none';
+  
+  const dValEl = document.getElementById('dValue');
+  const dVal = dValEl?.value ? parseFloat(dValEl.value) : 0;
 
-  let finalPlan = origPrice;
-  if (dType === 'percentage' && dVal > 0) finalPlan = origPrice - origPrice*dVal/100;
-  else if (dType === 'fixed' && dVal > 0) finalPlan = Math.max(0, origPrice - dVal);
+  let discountAmt = 0;
+  if (dType === 'percentage' && dVal > 0) discountAmt = origPrice * (dVal / 100);
+  else if (dType === 'fixed' && dVal > 0) discountAmt = dVal;
+
+  let finalPlan = Math.max(0, origPrice - discountAmt);
   finalPlan = Math.round(finalPlan);
 
-  const admissionFee = parseInt(document.getElementById('mAdmissionFee')?.value) || 0;
+  const admEl = document.getElementById('mAdmissionFee');
+  const admissionFee = admEl?.value ? parseInt(admEl.value) : 0;
+  
   const grandTotal = finalPlan + admissionFee;
   currentFinalPrice = grandTotal;
 
   const origPriceEl = document.getElementById('origPrice');
+  const dispDiscountEl = document.getElementById('dispDiscount');
   const dispAdmFeeEl = document.getElementById('dispAdmFee');
   const finalPriceEl = document.getElementById('finalPrice');
 
   if(origPriceEl) origPriceEl.textContent = `₹${origPrice.toLocaleString('en-IN')}`;
+  if(dispDiscountEl) dispDiscountEl.textContent = `₹${Math.round(discountAmt).toLocaleString('en-IN')}`;
   if(dispAdmFeeEl) dispAdmFeeEl.textContent = `₹${admissionFee.toLocaleString('en-IN')}`;
   if(finalPriceEl) finalPriceEl.textContent = `₹${grandTotal.toLocaleString('en-IN')}`;
 }
 
 function addCondition() {
-  const c = document.getElementById('condContainer'); const row = document.createElement('div'); row.className = 'condition-row';
+  const c = document.getElementById('condContainer'); 
+  const row = document.createElement('div'); row.className = 'condition-row';
   row.innerHTML = `<select class="cType"><option value="">Select Condition</option><option>Diabetes</option><option>Asthma</option><option>High Blood Pressure</option><option>Heart Condition</option><option>Knee Injury</option><option>Other</option></select><select class="cSev"><option>Mild</option><option>Moderate</option><option>Severe</option></select><input type="text" class="cNote" placeholder="Notes"><button type="button" class="btn btn-danger btn-sm" style="min-height:48px;" onclick="this.parentElement.remove()">✕</button>`;
   if(c) c.appendChild(row);
 }
 
 document.getElementById('addMemberForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const phone = document.getElementById('mPhone')?.value.trim() || '';
+  
+  const phoneEl = document.getElementById('mPhone');
+  const phone = phoneEl?.value.trim() || '';
   if (!/^\d{10}$/.test(phone)) { toast('Please enter a valid 10-digit phone number','error'); return; }
 
   const sel = document.getElementById('mPlan');
+  const customPlanName = sel?.value || '';
   const origPrice = parseInt(sel?.options[sel.selectedIndex]?.getAttribute('data-price')) || 0;
-  const dType = document.querySelector('input[name="dType"]:checked')?.value || 'none';
-  const dVal = parseFloat(document.getElementById('dValue')?.value) || 0;
+  
+  const dTypeEl = document.querySelector('input[name="dType"]:checked');
+  const dType = dTypeEl?.value || 'none';
+  
+  const dValEl = document.getElementById('dValue');
+  const dVal = dValEl?.value ? parseFloat(dValEl.value) : 0;
   
   let finalPlanPrice = origPrice;
-  if (dType === 'percentage' && dVal > 0) finalPlanPrice = origPrice - origPrice*dVal/100;
-  else if (dType === 'fixed' && dVal > 0) finalPlanPrice = Math.max(0, origPrice-dVal);
+  if (dType === 'percentage' && dVal > 0) finalPlanPrice = origPrice - origPrice * (dVal / 100);
+  else if (dType === 'fixed' && dVal > 0) finalPlanPrice = Math.max(0, origPrice - dVal);
   finalPlanPrice = Math.round(finalPlanPrice);
 
-  const admissionFee = parseInt(document.getElementById('mAdmissionFee')?.value) || 0;
-  const trainer = document.getElementById('mTrainer')?.value || '';
+  const admEl = document.getElementById('mAdmissionFee');
+  const admissionFee = admEl?.value ? parseInt(admEl.value) : 0;
+  
+  const trainerEl = document.getElementById('mTrainer');
+  const trainer = trainerEl?.value || '';
 
   const conditions = [];
   document.querySelectorAll('#condContainer .condition-row').forEach(row => {
     const cond = row.querySelector('.cType')?.value;
     if (cond) conditions.push({ condition:cond, severity:row.querySelector('.cSev')?.value||'Mild', notes:row.querySelector('.cNote')?.value||'' });
   });
+
+  // Mongoose Enum Bypass: Always pass a valid plan to backend, but save custom locally
+  const backendPlan = VALID_BACKEND_PLANS.includes(customPlanName) ? customPlanName : VALID_BACKEND_PLANS[0];
 
   const data = {
     name: document.getElementById('mName')?.value.trim() || '',
@@ -1314,7 +1370,7 @@ document.getElementById('addMemberForm')?.addEventListener('submit', async (e) =
     email: document.getElementById('mEmail')?.value.trim() || '',
     age: parseInt(document.getElementById('mAge')?.value) || null,
     photo: document.getElementById('photo-data')?.value || '', 
-    plan: sel?.value || '',
+    plan: backendPlan, // Validates Mongoose schema perfectly
     expiryDate: document.getElementById('mExpiry')?.value || '',
     status: document.getElementById('mStatus')?.value || 'Active',
     emergencyContact: { 
@@ -1336,6 +1392,8 @@ document.getElementById('addMemberForm')?.addEventListener('submit', async (e) =
     if (res.ok) {
       const added = await res.json();
       
+      // Save local states for calculations and display bypass
+      if (customPlanName !== backendPlan) { memberCustomPlans[added._id] = customPlanName; localStorage.setItem('gympro_member_custom_plans', JSON.stringify(memberCustomPlans)); }
       if (finalPlanPrice !== origPrice) { memberDiscounts[added._id] = finalPlanPrice; localStorage.setItem('gympro_member_discounts', JSON.stringify(memberDiscounts)); }
       if (admissionFee > 0) { memberAdmissionFees[added._id] = admissionFee; localStorage.setItem('gympro_member_admission_fees', JSON.stringify(memberAdmissionFees)); }
       if (trainer) { memberTrainers[added._id] = trainer; localStorage.setItem('gympro_member_trainers', JSON.stringify(memberTrainers)); }
@@ -1349,17 +1407,26 @@ document.getElementById('addMemberForm')?.addEventListener('submit', async (e) =
       toast(`${added.name} added!`, 'success'); 
       loadDashboard();
       
-      currentPaymentMember = { id: added._id, name: added.name, plan: added.plan };
-      document.getElementById('paymentInfo').innerHTML = `
-        <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:1rem">
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Member</span><strong>${esc(added.name)}</strong></div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Plan + Admission</span><strong>${esc(added.plan)}</strong></div>
-          <div style="display:flex;justify-content:space-between"><span>Grand Total</span><strong style="color:var(--success)">₹${currentFinalPrice.toLocaleString('en-IN')}</strong></div>
-        </div>
-      `;
-      document.getElementById('displayUpiId').textContent = gymUpiId;
+      currentPaymentMember = { id: added._id, name: added.name, plan: customPlanName };
+      
+      const pInfoEl = document.getElementById('paymentInfo');
+      if(pInfoEl) {
+        pInfoEl.innerHTML = `
+          <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:1rem">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Member</span><strong>${esc(added.name)}</strong></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Plan</span><strong>${esc(customPlanName)}</strong></div>
+            <div style="display:flex;justify-content:space-between"><span>Grand Total</span><strong style="color:var(--success)">₹${currentFinalPrice.toLocaleString('en-IN')}</strong></div>
+          </div>
+        `;
+      }
+      
+      const dUpiEl = document.getElementById('displayUpiId');
+      if(dUpiEl) dUpiEl.textContent = gymUpiId;
+      
       const upiUrl = `upi://pay?pa=${gymUpiId}&pn=GymPro&am=${currentFinalPrice}&cu=INR`;
-      document.getElementById('payQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
+      const qrEl = document.getElementById('payQR');
+      if(qrEl) qrEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
+      
       openModal('paymentModal');
 
     } else { const err = await res.json(); toast(err.error || 'Could not add member', 'error'); }
@@ -1371,7 +1438,8 @@ document.getElementById('addMemberForm')?.addEventListener('submit', async (e) =
 // ===== ADD TRAINER FORM =====
 document.getElementById('addTrainerForm')?.addEventListener('submit', async (e) => {
   e.preventDefault(); 
-  const phone = document.getElementById('tPhone')?.value.trim() || '';
+  const phoneEl = document.getElementById('tPhone');
+  const phone = phoneEl?.value.trim() || '';
   if (!/^\d{10}$/.test(phone)) { toast('Please enter a valid 10-digit phone number','error'); return; }
   
   const data = { 
