@@ -715,6 +715,20 @@ function showPage(page, btn) {
   if (loaders[page]) loaders[page]();
 }
 
+// ===== MODALS =====
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// Close on outside click
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('modal')) {
+    closeModal(e.target.id);
+    if (e.target.id === 'cameraModal' && currentStream) {
+      currentStream.getTracks().forEach(track => track.stop());
+    }
+  }
+});
+
 // ===== CAMERA & PHOTO =====
 function setupCamera() {
   const openCameraBtn = document.getElementById('open-camera-btn');
@@ -888,7 +902,6 @@ async function loadDashboard() {
     let adminRev = 0;
     
     active.forEach(m => {
-      // Find plan default price if no discount
       const pDetails = getPlanDetails(m.plan);
       planRev += memberDiscounts[m._id] || pDetails.price || 0;
       adminRev += memberAdmissionFees[m._id] || 0;
@@ -902,7 +915,6 @@ async function loadDashboard() {
     if (!members.length) {
       tbody.innerHTML = `<tr><td colspan="4"><div class="empty"><div class="e-icon">👥</div><p>No members yet. Add your first member!</p></div></td></tr>`;
     } else {
-      // Sort by closest expiry
       const sorted = members.sort((a,b) => new Date(a.expiryDate) - new Date(b.expiryDate));
       tbody.innerHTML = sorted.slice(0, 10).map(m => {
         const trainer = memberTrainers[m._id] || 'None';
@@ -921,7 +933,7 @@ async function loadDashboard() {
     const rc = document.getElementById('reminderCard');
     if (due.length === 0) {
       rc.className = 'reminder green';
-      rc.innerHTML = `<div class="reminder-text"><h3>✅ All Good!</h3><p>No payments due in the next 7 days</p></div>`;
+      rc.innerHTML = `<div class="reminder-text"><h3>✅ All Good!</h3><p>No pending payments</p></div>`;
     } else {
       rc.className = 'reminder orange';
       rc.innerHTML = `<div class="reminder-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due Soon</h3><p>Members expiring within 7 days</p></div>
@@ -972,7 +984,10 @@ async function confirmDeleteAll() {
   try {
     const res = await fetch(API, { headers: headers() });
     const members = await res.json();
-    for (const m of members) { await fetch(`${API}/${m._id}`, { method:'DELETE', headers: headers() }); }
+    for (const m of members) { 
+      // The catch handles any 404s if items are already deleted server-side
+      await fetch(`${API}/${m._id}`, { method:'DELETE', headers: headers() }).catch(e => console.log('Already deleted')); 
+    }
     toast('All members deleted'); loadAllMembers(); loadDashboard();
   } catch(e) { toast('Error','error'); }
 }
@@ -1296,7 +1311,6 @@ document.getElementById('addMemberForm').addEventListener('submit', async (e) =>
     if (res.ok) {
       const added = await res.json();
       
-      // Save local states for calculations
       if (finalPlanPrice !== origPrice) { memberDiscounts[added._id] = finalPlanPrice; localStorage.setItem('gympro_member_discounts', JSON.stringify(memberDiscounts)); }
       if (admissionFee > 0) { memberAdmissionFees[added._id] = admissionFee; localStorage.setItem('gympro_member_admission_fees', JSON.stringify(memberAdmissionFees)); }
       if (trainer) { memberTrainers[added._id] = trainer; localStorage.setItem('gympro_member_trainers', JSON.stringify(memberTrainers)); }
@@ -1304,7 +1318,6 @@ document.getElementById('addMemberForm').addEventListener('submit', async (e) =>
       closeModal('addMemberModal'); e.target.reset(); document.getElementById('condContainer').innerHTML = ''; resetPhotoPreview(); recalcPrice();
       toast(`${added.name} added!`, 'success'); loadDashboard();
       
-      // Open Payment QR with Grand Total
       currentPaymentMember = { id: added._id, name: added.name, plan: added.plan };
       document.getElementById('paymentInfo').innerHTML = `
         <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:1rem">
