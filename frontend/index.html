@@ -273,13 +273,13 @@
 
     <div class="card">
       <div class="card-header">
-        <span class="card-title">Recent Members Overview</span>
+        <span class="card-title">Expiring Soon (<= 5 Days)</span>
         <button class="btn btn-primary btn-sm" onclick="openModal('addMemberModal')">+ Add Member</button>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Member</th><th>Plan</th><th>Trainer</th><th>Status / Expiry Info</th></tr></thead>
-          <tbody id="dashMembersBody"><tr><td colspan="4" class="empty"><div class="e-icon">⏳</div><p>Loading…</p></td></tr></tbody>
+          <thead><tr><th>Member</th><th>Gender</th><th>Plan</th><th>Trainer</th><th>Status</th></tr></thead>
+          <tbody id="dashMembersBody"><tr><td colspan="5" class="empty"><div class="e-icon">⏳</div><p>Loading…</p></td></tr></tbody>
         </table>
       </div>
     </div>
@@ -639,6 +639,7 @@ if (!customPlans) {
 let gymUpiId = localStorage.getItem('gympro_upi_id') || 'management@ybl';
 
 let memberCustomPlans = JSON.parse(localStorage.getItem('gympro_member_custom_plans') || '{}');
+let memberGenders = JSON.parse(localStorage.getItem('gympro_member_genders') || '{}');
 let activeDiscounts = JSON.parse(localStorage.getItem('gympro_discounts') || '[]');
 let memberDiscounts = JSON.parse(localStorage.getItem('gympro_member_discounts') || '{}');
 let memberAdmissionFees = JSON.parse(localStorage.getItem('gympro_member_admission_fees') || '{}');
@@ -663,10 +664,10 @@ function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-IN') : '—'
 function avatarBg(name) { const colors = ['#6C47FF','#16a34a','#dc2626','#d97706','#0891b2','#9333ea']; return colors[(name.charCodeAt(0) || 0) % colors.length]; }
 function avatar(name) { const initials = (name||'?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2); return `<div class="avatar" style="background:${avatarBg(name)}">${esc(initials)}</div>`; }
 function renderAvatar(m) { if (m.photo && m.photo.startsWith('data:image')) { return `<img src="${m.photo}" alt="${esc(m.name)}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">`; } return avatar(m.name); }
-function badge(status) { const cls = `badge-${(status||'inactive').toLowerCase()}`; return `<span class="badge ${cls}">${esc(status)}</span>`; }
 
-// Display correct plan name (Local Custom vs Backend Default)
+// Display correct plan & gender
 function getDisplayPlan(m) { return memberCustomPlans[m._id] || m.plan; }
+function getDisplayGender(m) { return memberGenders[m._id] || 'Not specified'; }
 
 // ===== SIDEBAR & MENU =====
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('show'); }
@@ -894,7 +895,8 @@ async function loadDashboard() {
     active.forEach(m => {
       const actualPlanName = getDisplayPlan(m);
       const pDetails = getPlanDetails(actualPlanName);
-      planRev += memberDiscounts[m._id] || pDetails.price || 0;
+      // Use local saved discount price if it exists, otherwise base plan price
+      planRev += memberDiscounts[m._id] !== undefined ? memberDiscounts[m._id] : (pDetails.price || 0);
       adminRev += memberAdmissionFees[m._id] || 0;
     });
     
@@ -904,19 +906,30 @@ async function loadDashboard() {
     const arEl = document.getElementById('admissionRevenue');
     if(arEl) arEl.textContent = `₹${Math.round(adminRev).toLocaleString('en-IN')}`;
 
-    // Recent / Expiry Overview
+    // Recent / Expiry Overview (Filtered for <= 5 days)
     const tbody = document.getElementById('dashMembersBody');
     if(tbody) {
-      if (!members.length) {
-        tbody.innerHTML = `<tr><td colspan="4"><div class="empty"><div class="e-icon">👥</div><p>No members yet. Add your first member!</p></div></td></tr>`;
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      
+      const expiringMembers = members.filter(m => {
+        if(m.status !== 'Active') return false;
+        const exp = new Date(m.expiryDate);
+        const diffDays = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
+        return diffDays <= 5; // Includes expired or expiring very soon
+      }).sort((a,b) => new Date(a.expiryDate) - new Date(b.expiryDate));
+
+      if (!expiringMembers.length) {
+        tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="e-icon">✅</div><p>No members expiring soon!</p></div></td></tr>`;
       } else {
-        const sorted = members.sort((a,b) => new Date(a.expiryDate) - new Date(b.expiryDate));
-        tbody.innerHTML = sorted.slice(0, 10).map(m => {
+        tbody.innerHTML = expiringMembers.map(m => {
           const trainer = memberTrainers[m._id] || 'None';
           const planToDisplay = getDisplayPlan(m);
+          const genderToDisplay = getDisplayGender(m);
           return `
           <tr>
             <td style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.phone)}</small></div></td>
+            <td>${esc(genderToDisplay)}</td>
             <td style="font-size:0.85rem">${esc(planToDisplay)}</td>
             <td style="font-size:0.85rem; color:var(--muted);">${esc(trainer)}</td>
             <td>${getExpiryBadge(m.expiryDate)}</td>
@@ -957,10 +970,11 @@ async function loadAllMembers() {
 
       tbody.innerHTML = members.map(m => {
         const planToDisplay = getDisplayPlan(m);
+        const genderToDisplay = getDisplayGender(m);
         return `
         <tr>
           <td style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.email||'')}</small></div></td>
-          <td>${esc(m.phone)}<br><small style="color:var(--muted)">${esc(m.gender || 'Not specified')}</small></td>
+          <td>${esc(m.phone)}<br><small style="color:var(--muted)">${esc(genderToDisplay)}</small></td>
           <td style="font-size:0.85rem">${esc(planToDisplay)}</td>
           <td>${fmtDate(m.expiryDate)}</td>
           <td>${badge(m.status)}</td>
@@ -988,10 +1002,18 @@ async function confirmDeleteAll() {
     const res = await fetch(API, { headers: headers() });
     const members = await res.json();
     for (const m of members) { 
-      await fetch(`${API}/${m._id}`, { method:'DELETE', headers: headers() }).catch(e => console.log('Already deleted')); 
+      try { await fetch(`${API}/${m._id}`, { method:'DELETE', headers: headers() }); } catch(e){} 
     }
+    
+    // Clear local dependencies safely
+    localStorage.removeItem('gympro_member_custom_plans');
+    localStorage.removeItem('gympro_member_genders');
+    localStorage.removeItem('gympro_member_discounts');
+    localStorage.removeItem('gympro_member_admission_fees');
+    localStorage.removeItem('gympro_member_trainers');
+    
     toast('All members deleted'); loadAllMembers(); loadDashboard();
-  } catch(e) { toast('Error','error'); }
+  } catch(e) { toast('Error clearing members','error'); }
 }
 
 // ===== ATTENDANCE =====
@@ -1250,8 +1272,14 @@ async function loadPayments() {
 
 function openPaymentFor(id, name, plan) {
   const pDetails = getPlanDetails(plan);
-  const amt = memberDiscounts[id] || pDetails.price || 1000;
-  currentPaymentMember = { id, name, plan }; currentFinalPrice = amt;
+  
+  // Explicitly pull exact saved prices
+  const planPrice = memberDiscounts[id] !== undefined ? memberDiscounts[id] : (pDetails.price || 1000);
+  const admFee = memberAdmissionFees[id] || 0;
+  const amt = planPrice + admFee;
+  
+  currentPaymentMember = { id, name, plan }; 
+  currentFinalPrice = amt;
 
   const pInfoEl = document.getElementById('paymentInfo');
   if(pInfoEl) {
@@ -1259,7 +1287,10 @@ function openPaymentFor(id, name, plan) {
       <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:1rem">
         <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Member</span><strong>${esc(name)}</strong></div>
         <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Plan</span><strong>${esc(plan)}</strong></div>
-        <div style="display:flex;justify-content:space-between"><span>Amount</span><strong style="color:var(--success)">₹${Math.round(amt).toLocaleString('en-IN')}</strong></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Admission Fee</span><strong>₹${admFee}</strong></div>
+        <div style="display:flex;justify-content:space-between; border-top: 1px dashed var(--border); padding-top: 6px; margin-top: 6px;">
+          <span>Grand Total</span><strong style="color:var(--success)">₹${Math.round(amt).toLocaleString('en-IN')}</strong>
+        </div>
       </div>
     `;
   }
@@ -1343,13 +1374,18 @@ document.getElementById('addMemberForm')?.addEventListener('submit', async (e) =
   const dValEl = document.getElementById('dValue');
   const dVal = dValEl?.value ? parseFloat(dValEl.value) : 0;
   
-  let finalPlanPrice = origPrice;
-  if (dType === 'percentage' && dVal > 0) finalPlanPrice = origPrice - origPrice * (dVal / 100);
-  else if (dType === 'fixed' && dVal > 0) finalPlanPrice = Math.max(0, origPrice - dVal);
+  let discountAmt = 0;
+  if (dType === 'percentage' && dVal > 0) discountAmt = origPrice * (dVal / 100);
+  else if (dType === 'fixed' && dVal > 0) discountAmt = dVal;
+  
+  let finalPlanPrice = Math.max(0, origPrice - discountAmt);
   finalPlanPrice = Math.round(finalPlanPrice);
 
   const admEl = document.getElementById('mAdmissionFee');
   const admissionFee = admEl?.value ? parseInt(admEl.value) : 0;
+  
+  const genderEl = document.getElementById('mGender');
+  const gender = genderEl?.value || 'Not specified';
   
   const trainerEl = document.getElementById('mTrainer');
   const trainer = trainerEl?.value || '';
@@ -1360,17 +1396,17 @@ document.getElementById('addMemberForm')?.addEventListener('submit', async (e) =
     if (cond) conditions.push({ condition:cond, severity:row.querySelector('.cSev')?.value||'Mild', notes:row.querySelector('.cNote')?.value||'' });
   });
 
-  // Mongoose Enum Bypass: Always pass a valid plan to backend, but save custom locally
+  // Mongoose Enum Bypass: Send a valid plan to backend, but map the real custom plan locally
   const backendPlan = VALID_BACKEND_PLANS.includes(customPlanName) ? customPlanName : VALID_BACKEND_PLANS[0];
 
   const data = {
     name: document.getElementById('mName')?.value.trim() || '',
     phone,
-    gender: document.getElementById('mGender')?.value || 'Not specified',
+    gender: gender, // Even if backend ignores, we send it just in case
     email: document.getElementById('mEmail')?.value.trim() || '',
     age: parseInt(document.getElementById('mAge')?.value) || null,
     photo: document.getElementById('photo-data')?.value || '', 
-    plan: backendPlan, // Validates Mongoose schema perfectly
+    plan: backendPlan, 
     expiryDate: document.getElementById('mExpiry')?.value || '',
     status: document.getElementById('mStatus')?.value || 'Active',
     emergencyContact: { 
@@ -1392,10 +1428,18 @@ document.getElementById('addMemberForm')?.addEventListener('submit', async (e) =
     if (res.ok) {
       const added = await res.json();
       
-      // Save local states for calculations and display bypass
+      // Permanently save bypassed fields locally
+      memberGenders[added._id] = gender; 
+      localStorage.setItem('gympro_member_genders', JSON.stringify(memberGenders));
+      
       if (customPlanName !== backendPlan) { memberCustomPlans[added._id] = customPlanName; localStorage.setItem('gympro_member_custom_plans', JSON.stringify(memberCustomPlans)); }
-      if (finalPlanPrice !== origPrice) { memberDiscounts[added._id] = finalPlanPrice; localStorage.setItem('gympro_member_discounts', JSON.stringify(memberDiscounts)); }
-      if (admissionFee > 0) { memberAdmissionFees[added._id] = admissionFee; localStorage.setItem('gympro_member_admission_fees', JSON.stringify(memberAdmissionFees)); }
+      
+      // Save exact pricing internally
+      memberDiscounts[added._id] = finalPlanPrice; 
+      localStorage.setItem('gympro_member_discounts', JSON.stringify(memberDiscounts));
+      memberAdmissionFees[added._id] = admissionFee; 
+      localStorage.setItem('gympro_member_admission_fees', JSON.stringify(memberAdmissionFees));
+      
       if (trainer) { memberTrainers[added._id] = trainer; localStorage.setItem('gympro_member_trainers', JSON.stringify(memberTrainers)); }
 
       closeModal('addMemberModal'); 
@@ -1415,7 +1459,10 @@ document.getElementById('addMemberForm')?.addEventListener('submit', async (e) =
           <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:1rem">
             <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Member</span><strong>${esc(added.name)}</strong></div>
             <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Plan</span><strong>${esc(customPlanName)}</strong></div>
-            <div style="display:flex;justify-content:space-between"><span>Grand Total</span><strong style="color:var(--success)">₹${currentFinalPrice.toLocaleString('en-IN')}</strong></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Admission Fee</span><strong>₹${admissionFee}</strong></div>
+            <div style="display:flex;justify-content:space-between; border-top: 1px dashed var(--border); padding-top: 6px; margin-top: 6px;">
+              <span>Grand Total</span><strong style="color:var(--success)">₹${currentFinalPrice.toLocaleString('en-IN')}</strong>
+            </div>
           </div>
         `;
       }
