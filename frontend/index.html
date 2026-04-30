@@ -602,19 +602,20 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// Prevent accidental mousewheel scrolling on number inputs
-document.addEventListener("wheel", function(event){
-    if(document.activeElement.type === "number"){
-        document.activeElement.blur();
-    }
-});
+// ===== UTILITY GETTERS TO PREVENT CRASHES =====
+function getVal(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+function getNum(id, fallback = 0) { const el = document.getElementById(id); const val = el ? parseFloat(el.value) : NaN; return isNaN(val) ? fallback : val; }
+
+function safeJSON(key, defaultVal) {
+    try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : defaultVal; } 
+    catch(e) { return defaultVal; }
+}
 
 // ===== CONFIG =====
 const BASE = 'https://gym-pro-mvyv.onrender.com/api';
 const API  = `${BASE}/members`;
 const TAPI = `${BASE}/trainers`;
 
-// Valid Mongoose Enums for the backend bypass
 const VALID_BACKEND_PLANS = [
   '1 Month Strength', '1 Month Strength + Cardio',
   '3 Months Strength', '3 Months Strength + Cardio',
@@ -622,7 +623,6 @@ const VALID_BACKEND_PLANS = [
   '1 Year Strength', '1 Year Strength + Cardio'
 ];
 
-// Default Setup
 const defaultPlans = [
   { name: '1 Month Strength', price: 1000, months: 1 },
   { name: '3 Months Strength', price: 2700, months: 3 },
@@ -630,20 +630,17 @@ const defaultPlans = [
   { name: '1 Year Strength', price: 9000, months: 12 }
 ];
 
-let customPlans = JSON.parse(localStorage.getItem('gympro_custom_plans'));
-if (!customPlans) {
-  customPlans = defaultPlans;
-  localStorage.setItem('gympro_custom_plans', JSON.stringify(customPlans));
-}
+let customPlans = safeJSON('gympro_custom_plans', defaultPlans);
+if (!customPlans || customPlans.length === 0) customPlans = defaultPlans;
 
 let gymUpiId = localStorage.getItem('gympro_upi_id') || 'management@ybl';
+let memberCustomPlans = safeJSON('gympro_member_custom_plans', {});
+let memberGenders = safeJSON('gympro_member_genders', {});
+let activeDiscounts = safeJSON('gympro_discounts', []);
+let memberDiscounts = safeJSON('gympro_member_discounts', {});
+let memberAdmissionFees = safeJSON('gympro_member_admission_fees', {});
+let memberTrainers = safeJSON('gympro_member_trainers', {});
 
-let memberCustomPlans = JSON.parse(localStorage.getItem('gympro_member_custom_plans') || '{}');
-let memberGenders = JSON.parse(localStorage.getItem('gympro_member_genders') || '{}');
-let activeDiscounts = JSON.parse(localStorage.getItem('gympro_discounts') || '[]');
-let memberDiscounts = JSON.parse(localStorage.getItem('gympro_member_discounts') || '{}');
-let memberAdmissionFees = JSON.parse(localStorage.getItem('gympro_member_admission_fees') || '{}');
-let memberTrainers = JSON.parse(localStorage.getItem('gympro_member_trainers') || '{}');
 let currentPaymentMember = null;
 let currentFinalPrice = 0;
 let currentStream = null;
@@ -655,7 +652,8 @@ function logout() { localStorage.removeItem('token'); localStorage.removeItem('u
 
 // ===== TOAST =====
 function toast(msg, type = '') {
-  const el = document.getElementById('toast'); el.textContent = msg; el.className = `toast show ${type}`; setTimeout(() => el.className = 'toast', 3000);
+  const el = document.getElementById('toast'); 
+  if(el) { el.textContent = msg; el.className = `toast show ${type}`; setTimeout(() => el.className = 'toast', 3000); }
 }
 
 // ===== HELPERS =====
@@ -665,13 +663,22 @@ function avatarBg(name) { const colors = ['#6C47FF','#16a34a','#dc2626','#d97706
 function avatar(name) { const initials = (name||'?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2); return `<div class="avatar" style="background:${avatarBg(name)}">${esc(initials)}</div>`; }
 function renderAvatar(m) { if (m.photo && m.photo.startsWith('data:image')) { return `<img src="${m.photo}" alt="${esc(m.name)}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">`; } return avatar(m.name); }
 
-// Display correct plan & gender
 function getDisplayPlan(m) { return memberCustomPlans[m._id] || m.plan; }
 function getDisplayGender(m) { return memberGenders[m._id] || 'Not specified'; }
 
 // ===== SIDEBAR & MENU =====
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('show'); }
-function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
+function toggleSidebar() { 
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('overlay');
+  if(sb) sb.classList.toggle('open'); 
+  if(ov) ov.classList.toggle('show'); 
+}
+function closeSidebar() { 
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('overlay');
+  if(sb) sb.classList.remove('open'); 
+  if(ov) ov.classList.remove('show'); 
+}
 function updateBNav(activeId) {
   document.querySelectorAll('.b-nav-item').forEach(btn => btn.classList.remove('active'));
   if(activeId !== 'none') { const btn = document.getElementById(`bnav-${activeId}`); if(btn) btn.classList.add('active'); }
@@ -680,10 +687,14 @@ function updateBNav(activeId) {
 function showPage(page, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-  document.getElementById(`page-${page}`).classList.add('active');
+  const target = document.getElementById(`page-${page}`);
+  if(target) target.classList.add('active');
   if (btn) btn.classList.add('active');
+  
   const titles = { dashboard:'Dashboard', members:'Members', attendance:'Attendance', trainers:'Trainers', plans:'Plans', discounts:'Discounts', payments:'Payments', settings:'Settings' };
-  document.getElementById('pageTitle').textContent = titles[page] || page;
+  const pt = document.getElementById('pageTitle');
+  if(pt) pt.textContent = titles[page] || page;
+  
   closeSidebar();
 
   const loaders = { dashboard: loadDashboard, members: loadAllMembers, attendance: () => loadAttendance(), trainers: loadTrainers, plans: loadPlans, discounts: renderDiscounts, payments: loadPayments, settings: loadSettings };
@@ -691,14 +702,8 @@ function showPage(page, btn) {
 }
 
 // ===== MODALS =====
-function openModal(id) { 
-  const el = document.getElementById(id);
-  if(el) el.classList.add('open'); 
-}
-function closeModal(id) { 
-  const el = document.getElementById(id);
-  if(el) el.classList.remove('open'); 
-}
+function openModal(id) { const el = document.getElementById(id); if(el) el.classList.add('open'); }
+function closeModal(id) { const el = document.getElementById(id); if(el) el.classList.remove('open'); }
 
 document.addEventListener('click', (e) => {
   if (e.target.classList.contains('modal')) {
@@ -788,7 +793,7 @@ function updatePlanDropdowns() {
 }
 
 function getPlanDetails(planName) {
-  return customPlans.find(p => p.name === planName) || customPlans[0];
+  return customPlans.find(p => p.name === planName) || customPlans[0] || { name: planName, price: 1000, months: 1 };
 }
 
 // ===== SETTINGS =====
@@ -797,10 +802,12 @@ function loadSettings() {
   if (upiInput) upiInput.value = gymUpiId;
   
   const tbody = document.getElementById('settingsPlansBody');
+  if(!tbody) return;
+
   if(customPlans.length === 0) {
-    if(tbody) tbody.innerHTML = `<tr><td colspan="4" class="empty"><p>No plans added yet.</p></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" class="empty"><p>No plans added yet.</p></td></tr>`;
   } else {
-    if(tbody) tbody.innerHTML = customPlans.map((p, i) => `
+    tbody.innerHTML = customPlans.map((p, i) => `
       <tr>
         <td><strong>${esc(p.name)}</strong></td>
         <td>₹${p.price}</td>
@@ -812,7 +819,7 @@ function loadSettings() {
 }
 
 function saveUpiId() {
-  const val = document.getElementById('settingUpiId')?.value.trim();
+  const val = getVal('settingUpiId');
   if(!val) return toast('UPI ID cannot be empty', 'error');
   gymUpiId = val;
   localStorage.setItem('gympro_upi_id', gymUpiId);
@@ -820,11 +827,11 @@ function saveUpiId() {
 }
 
 function addCustomPlan() {
-  const name = document.getElementById('cpName')?.value.trim();
-  const price = parseInt(document.getElementById('cpPrice')?.value);
-  const months = parseInt(document.getElementById('cpDuration')?.value);
+  const name = getVal('cpName');
+  const price = getNum('cpPrice');
+  const months = getNum('cpDuration');
   
-  if(!name || isNaN(price) || isNaN(months)) return toast('Please fill all fields correctly', 'error');
+  if(!name || price <= 0 || months <= 0) return toast('Please fill all fields correctly', 'error');
   
   customPlans.push({name, price, months});
   localStorage.setItem('gympro_custom_plans', JSON.stringify(customPlans));
@@ -833,12 +840,9 @@ function addCustomPlan() {
   closeModal('addCustomPlanModal');
   toast('Plan Added', 'success');
   
-  const cpNameEl = document.getElementById('cpName');
-  if(cpNameEl) cpNameEl.value = '';
-  const cpPriceEl = document.getElementById('cpPrice');
-  if(cpPriceEl) cpPriceEl.value = '';
-  const cpDurationEl = document.getElementById('cpDuration');
-  if(cpDurationEl) cpDurationEl.value = '';
+  const cpNameEl = document.getElementById('cpName'); if(cpNameEl) cpNameEl.value = '';
+  const cpPriceEl = document.getElementById('cpPrice'); if(cpPriceEl) cpPriceEl.value = '';
+  const cpDurationEl = document.getElementById('cpDuration'); if(cpDurationEl) cpDurationEl.value = '';
 }
 
 function removeCustomPlan(index) {
@@ -867,8 +871,7 @@ function getExpiryBadge(expiryDateStr) {
   const exp = new Date(expiryDateStr);
   const today = new Date();
   today.setHours(0,0,0,0);
-  const diffTime = exp - today;
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const diffDays = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
 
   if (diffDays < 0) return `<span class="badge badge-danger">Expired</span>`;
   if (diffDays <= 3) return `<span class="badge badge-danger">⚠️ ${diffDays} Days Left</span>`;
@@ -880,7 +883,10 @@ async function loadDashboard() {
   try {
     const res = await fetch(API, { headers: headers() });
     if (res.status === 401) { logout(); return; }
-    const members = await res.json();
+    
+    // Safety check in case API fails or returns non-array
+    let members = await res.json();
+    if (!Array.isArray(members)) members = [];
 
     const tmEl = document.getElementById('totalMembers');
     if(tmEl) tmEl.textContent = members.length;
@@ -895,7 +901,6 @@ async function loadDashboard() {
     active.forEach(m => {
       const actualPlanName = getDisplayPlan(m);
       const pDetails = getPlanDetails(actualPlanName);
-      // Use local saved discount price if it exists, otherwise base plan price
       planRev += memberDiscounts[m._id] !== undefined ? memberDiscounts[m._id] : (pDetails.price || 0);
       adminRev += memberAdmissionFees[m._id] || 0;
     });
@@ -916,11 +921,11 @@ async function loadDashboard() {
         if(m.status !== 'Active') return false;
         const exp = new Date(m.expiryDate);
         const diffDays = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
-        return diffDays <= 5; // Includes expired or expiring very soon
+        return diffDays <= 5; // Shows all active members expiring in 5 days or less
       }).sort((a,b) => new Date(a.expiryDate) - new Date(b.expiryDate));
 
       if (!expiringMembers.length) {
-        tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="e-icon">✅</div><p>No members expiring soon!</p></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="e-icon">✅</div><p>No active members expiring within 5 days.</p></div></td></tr>`;
       } else {
         tbody.innerHTML = expiringMembers.map(m => {
           const trainer = memberTrainers[m._id] || 'None';
@@ -938,20 +943,24 @@ async function loadDashboard() {
       }
     }
 
-    // Reminder
+    // Reminder Box
     const due = members.filter(m => m.status==='Active' && new Date(m.expiryDate) <= new Date(Date.now()+7*86400000));
     const rc = document.getElementById('reminderCard');
     if(rc) {
       if (due.length === 0) {
         rc.className = 'reminder green';
-        rc.innerHTML = `<div class="reminder-text"><h3>✅ All Good!</h3><p>No pending payments</p></div>`;
+        rc.innerHTML = `<div class="reminder-text"><h3>✅ All Good!</h3><p>No active members expiring soon</p></div>`;
       } else {
         rc.className = 'reminder orange';
-        rc.innerHTML = `<div class="reminder-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due Soon</h3><p>Members expiring within 7 days</p></div>
+        rc.innerHTML = `<div class="reminder-text"><h3>⚠️ ${due.length} Renewal${due.length>1?'s':''} Due Soon</h3><p>Members expiring within 7 days</p></div>
           <button class="btn btn-sm" style="background:white;color:var(--warning);font-weight:700" onclick="showPage('payments', document.querySelector('[data-page=payments]')); updateBNav('none')">View →</button>`;
       }
     }
-  } catch(e) { console.error(e); toast('Error loading dashboard','error'); }
+  } catch(e) { 
+    console.error('Load Dashboard Error:', e); 
+    const tbody = document.getElementById('dashMembersBody');
+    if(tbody) tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading dashboard data</p></div></td></tr>`;
+  }
 }
 
 // ===== ALL MEMBERS =====
@@ -960,7 +969,9 @@ async function loadAllMembers() {
   try {
     const res = await fetch(API, { headers: headers() });
     if (res.status === 401) { logout(); return; }
-    const members = await res.json();
+    
+    let members = await res.json();
+    if (!Array.isArray(members)) members = [];
 
     if(tbody) {
       if (!members.length) {
@@ -984,14 +995,18 @@ async function loadAllMembers() {
         </tr>
       `}).join('');
     }
-  } catch(e) { if(tbody) tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><p style="color:var(--danger)">Error loading members</p></div></td></tr>`; }
+  } catch(e) { 
+    console.error('Load Members Error:', e);
+    if(tbody) tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><p style="color:var(--danger)">Error loading members</p></div></td></tr>`; 
+  }
 }
 
 async function deleteMember(id, name) {
   if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
   try {
     const res = await fetch(`${API}/${id}`, { method:'DELETE', headers: headers() });
-    if (res.ok) { toast(`${name} deleted`, 'success'); loadAllMembers(); loadDashboard(); } else toast('Error deleting member','error');
+    if (res.ok) { toast(`${name} deleted`, 'success'); loadAllMembers(); loadDashboard(); } 
+    else { toast('Error deleting member','error'); }
   } catch(e) { toast('Network error','error'); }
 }
 
@@ -1000,17 +1015,26 @@ async function confirmDeleteAll() {
   if (v !== 'DELETE ALL') return;
   try {
     const res = await fetch(API, { headers: headers() });
-    const members = await res.json();
+    let members = await res.json();
+    if(!Array.isArray(members)) members = [];
+    
     for (const m of members) { 
       try { await fetch(`${API}/${m._id}`, { method:'DELETE', headers: headers() }); } catch(e){} 
     }
     
-    // Clear local dependencies safely
+    // Clear all bypassed local data safely
     localStorage.removeItem('gympro_member_custom_plans');
     localStorage.removeItem('gympro_member_genders');
     localStorage.removeItem('gympro_member_discounts');
     localStorage.removeItem('gympro_member_admission_fees');
     localStorage.removeItem('gympro_member_trainers');
+    
+    // Reset our local variables too
+    memberCustomPlans = {};
+    memberGenders = {};
+    memberDiscounts = {};
+    memberAdmissionFees = {};
+    memberTrainers = {};
     
     toast('All members deleted'); loadAllMembers(); loadDashboard();
   } catch(e) { toast('Error clearing members','error'); }
@@ -1026,12 +1050,13 @@ async function loadAttendance() {
   try {
     const res = await fetch(API, { headers: headers() });
     if (res.status === 401) { logout(); return; }
-    const members = await res.json();
+    
+    let members = await res.json();
+    if(!Array.isArray(members)) members = [];
     const active = members.filter(m => m.status==='Active' || m.status==='Trial');
 
     const attKey = `gympro_att_${date}`;
-    let saved = {};
-    try { saved = JSON.parse(localStorage.getItem(attKey) || '{}'); } catch(e) {}
+    let saved = safeJSON(attKey, {});
     let presentCount = Object.values(saved).filter(s=>s==='Present').length;
 
     const stEl = document.getElementById('statTotal');
@@ -1068,8 +1093,9 @@ async function loadAttendance() {
 
 function markAtt(memberId, date, status) {
   const attKey = `gympro_att_${date}`;
-  let saved = {}; try { saved = JSON.parse(localStorage.getItem(attKey) || '{}'); } catch(e) {}
-  saved[memberId] = status; localStorage.setItem(attKey, JSON.stringify(saved));
+  let saved = safeJSON(attKey, {});
+  saved[memberId] = status; 
+  localStorage.setItem(attKey, JSON.stringify(saved));
   
   const badge = document.getElementById(`attbadge-${memberId}`);
   if (badge) { badge.textContent = status; badge.className = `badge ${status==='Present'?'badge-present':'badge-absent'}`; }
@@ -1092,12 +1118,15 @@ async function markAllPresent() {
 
   try {
     const res = await fetch(API, { headers: headers() });
-    const members = await res.json();
+    let members = await res.json();
+    if(!Array.isArray(members)) members = [];
     const active = members.filter(m => m.status==='Active'||m.status==='Trial');
+    
     const attKey = `gympro_att_${date}`;
-    let saved = {}; try { saved = JSON.parse(localStorage.getItem(attKey) || '{}'); } catch(e) {}
+    let saved = safeJSON(attKey, {});
     active.forEach(m => { saved[m._id] = 'Present'; });
     localStorage.setItem(attKey, JSON.stringify(saved));
+    
     toast(`${active.length} members marked Present`, 'success');
     loadAttendance();
   } catch(e) { toast('Error','error'); }
@@ -1109,7 +1138,9 @@ async function loadTrainers() {
   try {
     const res = await fetch(TAPI, { headers: headers() });
     if (res.status === 401) { logout(); return; }
-    const trainers = await res.json();
+    
+    let trainers = await res.json();
+    if(!Array.isArray(trainers)) trainers = [];
 
     if(tbody) {
       if (!trainers.length) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="e-icon">🏋️</div><p>No trainers yet.</p></div></td></tr>`; return; }
@@ -1222,22 +1253,18 @@ function toggleDiscPlan() {
 }
 
 function addDiscount() {
-  const nameEl = document.getElementById('discName');
-  const valEl = document.getElementById('discVal');
-  const typeEl = document.getElementById('discType');
-  const appliesEl = document.getElementById('discApplies');
+  const name = getVal('discName');
+  const val = getNum('discVal');
+  const type = getVal('discType');
+  const appliesTo = getVal('discApplies');
   
-  const name = nameEl?.value.trim();
-  const val = parseFloat(valEl?.value);
   if (!name || isNaN(val) || val <= 0) { toast('Please fill all required fields','error'); return; }
-  const type = typeEl?.value;
   if (type==='percentage' && val > 100) { toast('Percentage cannot exceed 100%','error'); return; }
-  const appliesTo = appliesEl?.value;
 
-  const dPlanEl = document.getElementById('discPlan');
-  const dExpEl = document.getElementById('discExpiry');
+  const planName = appliesTo === 'specific' ? getVal('discPlan') : null;
+  const validUntil = getVal('discExpiry') || null;
 
-  activeDiscounts.push({ name, type, value: val, appliesTo, planName: appliesTo==='specific' ? dPlanEl?.value : null, validUntil: dExpEl?.value || null });
+  activeDiscounts.push({ name, type, value: val, appliesTo, planName, validUntil });
   localStorage.setItem('gympro_discounts', JSON.stringify(activeDiscounts));
   closeModal('addDiscountModal'); renderDiscounts(); toast('Discount added','success');
 }
@@ -1248,8 +1275,13 @@ async function loadPayments() {
   const container = document.getElementById('paymentsList');
   try {
     const res = await fetch(API, { headers: headers() }); if (res.status === 401) { logout(); return; }
-    const members = await res.json(); const today = new Date();
+    
+    let members = await res.json(); 
+    if(!Array.isArray(members)) members = [];
+    
+    const today = new Date();
     const due = members.filter(m => m.status==='Active' && new Date(m.expiryDate) <= new Date(today.getTime()+14*86400000));
+    
     if(container) {
       if (!due.length) { container.innerHTML = `<div class="empty"><div class="e-icon">✅</div><p>No payments due in the next 14 days!</p></div>`; return; }
 
@@ -1273,7 +1305,7 @@ async function loadPayments() {
 function openPaymentFor(id, name, plan) {
   const pDetails = getPlanDetails(plan);
   
-  // Explicitly pull exact saved prices
+  // Use exact internal saved prices directly
   const planPrice = memberDiscounts[id] !== undefined ? memberDiscounts[id] : (pDetails.price || 1000);
   const admFee = memberAdmissionFees[id] || 0;
   const amt = planPrice + admFee;
@@ -1287,7 +1319,7 @@ function openPaymentFor(id, name, plan) {
       <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:1rem">
         <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Member</span><strong>${esc(name)}</strong></div>
         <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Plan</span><strong>${esc(plan)}</strong></div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Admission Fee</span><strong>₹${admFee}</strong></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Admission Fee</span><strong>₹${admFee.toLocaleString('en-IN')}</strong></div>
         <div style="display:flex;justify-content:space-between; border-top: 1px dashed var(--border); padding-top: 6px; margin-top: 6px;">
           <span>Grand Total</span><strong style="color:var(--success)">₹${Math.round(amt).toLocaleString('en-IN')}</strong>
         </div>
@@ -1323,8 +1355,7 @@ function recalcPrice() {
   const dTypeEl = document.querySelector('input[name="dType"]:checked');
   const dType = dTypeEl?.value || 'none';
   
-  const dValEl = document.getElementById('dValue');
-  const dVal = dValEl?.value ? parseFloat(dValEl.value) : 0;
+  const dVal = getNum('dValue');
 
   let discountAmt = 0;
   if (dType === 'percentage' && dVal > 0) discountAmt = origPrice * (dVal / 100);
@@ -1333,9 +1364,7 @@ function recalcPrice() {
   let finalPlan = Math.max(0, origPrice - discountAmt);
   finalPlan = Math.round(finalPlan);
 
-  const admEl = document.getElementById('mAdmissionFee');
-  const admissionFee = admEl?.value ? parseInt(admEl.value) : 0;
-  
+  const admissionFee = getNum('mAdmissionFee', 0);
   const grandTotal = finalPlan + admissionFee;
   currentFinalPrice = grandTotal;
 
@@ -1360,8 +1389,7 @@ function addCondition() {
 document.getElementById('addMemberForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   
-  const phoneEl = document.getElementById('mPhone');
-  const phone = phoneEl?.value.trim() || '';
+  const phone = getVal('mPhone');
   if (!/^\d{10}$/.test(phone)) { toast('Please enter a valid 10-digit phone number','error'); return; }
 
   const sel = document.getElementById('mPlan');
@@ -1370,9 +1398,7 @@ document.getElementById('addMemberForm')?.addEventListener('submit', async (e) =
   
   const dTypeEl = document.querySelector('input[name="dType"]:checked');
   const dType = dTypeEl?.value || 'none';
-  
-  const dValEl = document.getElementById('dValue');
-  const dVal = dValEl?.value ? parseFloat(dValEl.value) : 0;
+  const dVal = getNum('dValue');
   
   let discountAmt = 0;
   if (dType === 'percentage' && dVal > 0) discountAmt = origPrice * (dVal / 100);
@@ -1381,14 +1407,9 @@ document.getElementById('addMemberForm')?.addEventListener('submit', async (e) =
   let finalPlanPrice = Math.max(0, origPrice - discountAmt);
   finalPlanPrice = Math.round(finalPlanPrice);
 
-  const admEl = document.getElementById('mAdmissionFee');
-  const admissionFee = admEl?.value ? parseInt(admEl.value) : 0;
-  
-  const genderEl = document.getElementById('mGender');
-  const gender = genderEl?.value || 'Not specified';
-  
-  const trainerEl = document.getElementById('mTrainer');
-  const trainer = trainerEl?.value || '';
+  const admissionFee = getNum('mAdmissionFee', 0);
+  const gender = getVal('mGender') || 'Not specified';
+  const trainer = getVal('mTrainer') || '';
 
   const conditions = [];
   document.querySelectorAll('#condContainer .condition-row').forEach(row => {
@@ -1396,26 +1417,26 @@ document.getElementById('addMemberForm')?.addEventListener('submit', async (e) =
     if (cond) conditions.push({ condition:cond, severity:row.querySelector('.cSev')?.value||'Mild', notes:row.querySelector('.cNote')?.value||'' });
   });
 
-  // Mongoose Enum Bypass: Send a valid plan to backend, but map the real custom plan locally
+  // Mongoose Enum Bypass: Send a valid default plan to backend, but map the real custom plan locally
   const backendPlan = VALID_BACKEND_PLANS.includes(customPlanName) ? customPlanName : VALID_BACKEND_PLANS[0];
 
   const data = {
-    name: document.getElementById('mName')?.value.trim() || '',
+    name: getVal('mName'),
     phone,
-    gender: gender, // Even if backend ignores, we send it just in case
-    email: document.getElementById('mEmail')?.value.trim() || '',
-    age: parseInt(document.getElementById('mAge')?.value) || null,
-    photo: document.getElementById('photo-data')?.value || '', 
+    gender: gender, 
+    email: getVal('mEmail'),
+    age: getNum('mAge', null) || null,
+    photo: getVal('photo-data'), 
     plan: backendPlan, 
-    expiryDate: document.getElementById('mExpiry')?.value || '',
-    status: document.getElementById('mStatus')?.value || 'Active',
+    expiryDate: getVal('mExpiry'),
+    status: getVal('mStatus') || 'Active',
     emergencyContact: { 
-      name: document.getElementById('mEcName')?.value.trim() || '', 
-      phone: document.getElementById('mEcPhone')?.value.trim() || '', 
-      relationship: document.getElementById('mEcRel')?.value.trim() || '' 
+      name: getVal('mEcName'), 
+      phone: getVal('mEcPhone'), 
+      relationship: getVal('mEcRel')
     },
     healthConditions: conditions,
-    medicalNotes: document.getElementById('mNotes')?.value.trim() || ''
+    medicalNotes: getVal('mNotes')
   };
 
   if (!data.name || !data.expiryDate) { toast('Please fill all required fields','error'); return; }
@@ -1432,9 +1453,12 @@ document.getElementById('addMemberForm')?.addEventListener('submit', async (e) =
       memberGenders[added._id] = gender; 
       localStorage.setItem('gympro_member_genders', JSON.stringify(memberGenders));
       
-      if (customPlanName !== backendPlan) { memberCustomPlans[added._id] = customPlanName; localStorage.setItem('gympro_member_custom_plans', JSON.stringify(memberCustomPlans)); }
+      if (customPlanName !== backendPlan) { 
+        memberCustomPlans[added._id] = customPlanName; 
+        localStorage.setItem('gympro_member_custom_plans', JSON.stringify(memberCustomPlans)); 
+      }
       
-      // Save exact pricing internally
+      // Save exact pricing internally to fix any 1500 calculation bugs
       memberDiscounts[added._id] = finalPlanPrice; 
       localStorage.setItem('gympro_member_discounts', JSON.stringify(memberDiscounts));
       memberAdmissionFees[added._id] = admissionFee; 
@@ -1459,7 +1483,7 @@ document.getElementById('addMemberForm')?.addEventListener('submit', async (e) =
           <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:1rem">
             <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Member</span><strong>${esc(added.name)}</strong></div>
             <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Plan</span><strong>${esc(customPlanName)}</strong></div>
-            <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Admission Fee</span><strong>₹${admissionFee}</strong></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Admission Fee</span><strong>₹${admissionFee.toLocaleString('en-IN')}</strong></div>
             <div style="display:flex;justify-content:space-between; border-top: 1px dashed var(--border); padding-top: 6px; margin-top: 6px;">
               <span>Grand Total</span><strong style="color:var(--success)">₹${currentFinalPrice.toLocaleString('en-IN')}</strong>
             </div>
@@ -1485,15 +1509,14 @@ document.getElementById('addMemberForm')?.addEventListener('submit', async (e) =
 // ===== ADD TRAINER FORM =====
 document.getElementById('addTrainerForm')?.addEventListener('submit', async (e) => {
   e.preventDefault(); 
-  const phoneEl = document.getElementById('tPhone');
-  const phone = phoneEl?.value.trim() || '';
+  const phone = getVal('tPhone');
   if (!/^\d{10}$/.test(phone)) { toast('Please enter a valid 10-digit phone number','error'); return; }
   
   const data = { 
-    name: document.getElementById('tName')?.value.trim() || '', 
+    name: getVal('tName'), 
     phone, 
-    specialty: document.getElementById('tSpecialty')?.value.trim() || '', 
-    status: document.getElementById('tStatus')?.value || 'Active' 
+    specialty: getVal('tSpecialty'), 
+    status: getVal('tStatus') || 'Active' 
   };
   
   const btn = e.submitter; 
@@ -1530,7 +1553,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   try { 
-    const user = JSON.parse(localStorage.getItem('user') || '{}'); 
+    const user = safeJSON('user', {}); 
     const userInfoEl = document.getElementById('userInfo');
     if (user.name && userInfoEl) { 
       userInfoEl.innerHTML = `<div class="u-name">👤 ${esc(user.name)}</div><div class="u-role">${user.role==='admin'?'Administrator':'Staff Member'}</div>`; 
@@ -1542,7 +1565,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 document.getElementById('mPlan')?.addEventListener('change', () => {
-  const pName = document.getElementById('mPlan')?.value;
+  const pName = getVal('mPlan');
   if(pName) {
     const pDetails = getPlanDetails(pName);
     const expiry = new Date(); expiry.setMonth(expiry.getMonth() + pDetails.months);
