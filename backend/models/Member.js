@@ -44,17 +44,8 @@ const memberSchema = new mongoose.Schema({
   },
   plan: { 
     type: String, 
-    enum: [
-      '1 Month Strength',
-      '1 Month Strength + Cardio',
-      '3 Months Strength',
-      '3 Months Strength + Cardio',
-      '6 Months Strength',
-      '6 Months Strength + Cardio',
-      '1 Year Strength',
-      '1 Year Strength + Cardio'
-    ], 
-    required: [true, 'Plan is required']
+    required: [true, 'Plan is required'],
+    trim: true
   },
   joinDate: { 
     type: Date, 
@@ -82,7 +73,6 @@ const memberSchema = new mongoose.Schema({
   timestamps: true 
 });
 
-// Compound index to ensure unique phone per user
 memberSchema.index({ userId: 1, phone: 1 }, { unique: true });
 
 module.exports = mongoose.model('Member', memberSchema);
