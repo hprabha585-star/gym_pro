@@ -36,6 +36,7 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    /* Prevent accidental scrolling on number inputs */
     input[type=number]::-webkit-inner-spin-button, 
     input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     input[type=number] { -moz-appearance: textfield; }
@@ -499,7 +500,7 @@
       <div class="form-section-title" style="margin-top:0">Basic Info</div>
       <div class="form-grid">
         <div class="form-group"><label>Full Name *</label><input type="text" id="mName" required placeholder="e.g. Arjun Reddy"></div>
-        <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="mPhone" required placeholder="9876543210" maxlength="10"></div>
+        <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="mPhone" required placeholder="9876543210" maxlength="10" pattern="\d{10}"></div>
         <div class="form-group"><label>Email</label><input type="email" id="mEmail" placeholder="optional"></div>
         <div class="form-group"><label>Age</label><input type="number" id="mAge" min="12" max="100" placeholder="18"></div>
         <div class="form-group">
@@ -762,8 +763,8 @@ let gymSettings      = safeJSON('gymSettings', {});
 let currentPaymentMember = null;
 let currentFinalPrice = 0;
 let currentStream = null;
-let editingMemberId = null; // Track if we are updating an existing member
-let allMembersCache = []; // To easily fetch details when editing
+let editingMemberId = null; 
+let allMembersCache = []; 
 
 function getPlanPrice(name)  { return (gymPlans.find(p=>p.name===name)||{}).price||0; }
 function getPlanMonths(name) { return (gymPlans.find(p=>p.name===name)||{}).months||1; }
@@ -782,9 +783,9 @@ function toast(msg, type='') {
 // ===== HELPERS =====
 function esc(s) { return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-IN') : '—'; }
-function avBg(n) { const c=['#6C47FF','#16a34a','#dc2626','#d97706','#0891b2','#9333ea']; return c[(n.charCodeAt(0)||0)%c.length]; }
+function avBg(n) { const c=['#6C47FF','#16a34a','#dc2626','#d97706','#0891b2','#9333ea']; return c[(String(n||'').charCodeAt(0)||0)%c.length]; }
 function avatar(name) {
-  const i=(name||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
+  const i=String(name||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
   return `<div class="avatar" style="background:${avBg(name)}">${esc(i)}</div>`;
 }
 function renderAvatar(m) {
@@ -868,13 +869,9 @@ function openEditMember(id) {
   document.getElementById('mGender').value = meta.gender || m.gender || '';
   document.getElementById('mPlan').value = actualPlan;
   
-  // Expiry handling
-  if(m.expiryDate) {
-    document.getElementById('mExpiry').value = new Date(m.expiryDate).toISOString().split('T')[0];
-  }
+  if(m.expiryDate) document.getElementById('mExpiry').value = new Date(m.expiryDate).toISOString().split('T')[0];
   document.getElementById('mStatus').value = m.status || 'Active';
 
-  // Meta logic
   document.getElementById('mAdmissionFee').value = meta.admissionFee || 0;
   document.getElementById('mWaiveAdmission').value = meta.admissionWaived ? 'yes' : 'no';
   
@@ -885,20 +882,18 @@ function openEditMember(id) {
   document.getElementById('mPtNotes').value = meta.ptNotes || '';
   togglePT();
 
-  // Emergency contact
   if(m.emergencyContact) {
     document.getElementById('mEcName').value = m.emergencyContact.name || '';
     document.getElementById('mEcPhone').value = m.emergencyContact.phone || '';
     document.getElementById('mEcRel').value = m.emergencyContact.relationship || '';
   }
 
-  // Health
   document.getElementById('mNotes').value = m.medicalNotes || '';
   const cCont = document.getElementById('condContainer');
   cCont.innerHTML = '';
   if(m.healthConditions && m.healthConditions.length > 0) {
     m.healthConditions.forEach(hc => {
-      addCondition(); // adds empty row
+      addCondition(); 
       const rows = cCont.querySelectorAll('.condition-row');
       const lastRow = rows[rows.length - 1];
       lastRow.querySelector('.cType').value = hc.condition || '';
@@ -907,7 +902,6 @@ function openEditMember(id) {
     });
   }
 
-  // Photo
   if(m.photo) {
     document.getElementById('member-photo-preview').src = m.photo;
     document.getElementById('photo-data').value = m.photo;
@@ -916,7 +910,6 @@ function openEditMember(id) {
     resetPhotoPreview();
   }
 
-  // Reset radio discounts for edit view (prevent accidental override)
   document.querySelector('input[name="dType"][value="none"]').checked = true;
   document.getElementById('dValue').value = '';
   
@@ -928,12 +921,17 @@ function openEditMember(id) {
 function showPage(page, btn) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
-  document.getElementById(`page-${page}`).classList.add('active');
+  const target = document.getElementById(`page-${page}`);
+  if(target) target.classList.add('active');
   if (btn) btn.classList.add('active');
-  const t={dashboard:'Dashboard',members:'Members',attendance:'Attendance',trainers:'Trainers',plans:'Plans',discounts:'Discounts',payments:'Payments',settings:'Settings'};
-  document.getElementById('pageTitle').textContent = t[page]||page;
+  
+  const titles = { dashboard:'Dashboard', members:'Members', attendance:'Attendance', trainers:'Trainers', plans:'Plans', discounts:'Discounts', payments:'Payments', settings:'Settings' };
+  const pt = document.getElementById('pageTitle');
+  if(pt) pt.textContent = titles[page] || page;
+  
   closeSidebar();
-  const loaders={dashboard:loadDashboard,members:loadAllMembers,attendance:loadAttendance,trainers:loadTrainers,plans:loadPlans,discounts:renderDiscounts,payments:loadPayments,settings:loadSettings};
+
+  const loaders = { dashboard: loadDashboard, members: loadAllMembers, attendance: () => loadAttendance(), trainers: loadTrainers, plans: loadPlans, discounts: renderDiscounts, payments: loadPayments, settings: loadSettings };
   if (loaders[page]) loaders[page]();
 }
 
@@ -983,10 +981,11 @@ function setupCamera() {
 }
 
 function resetPhotoPreview() {
-  document.getElementById('member-photo-preview').src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%23c4b5fd'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
-  document.getElementById('photo-data').value='';
-  document.getElementById('clear-photo-btn').style.display='none';
-  document.getElementById('photo-upload').value='';
+  const p = document.getElementById('member-photo-preview');
+  if(p) p.src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%23c4b5fd'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+  const d = document.getElementById('photo-data'); if(d) d.value='';
+  const c = document.getElementById('clear-photo-btn'); if(c) c.style.display='none';
+  const u = document.getElementById('photo-upload'); if(u) u.value='';
 }
 
 // ===== PLAN SELECT POPULATE =====
@@ -1000,9 +999,10 @@ function populatePlanSelect() {
   recalcPrice();
 }
 
-// ===== PT TOGGLE =====
 function togglePT() {
-  document.getElementById('ptDetails').style.display = document.getElementById('mPtEnabled').checked ? 'block' : 'none';
+  const c = document.getElementById('mPtEnabled');
+  const d = document.getElementById('ptDetails');
+  if(c && d) d.style.display = c.checked ? 'block' : 'none';
 }
 
 // ===== PRICE CALC =====
@@ -1022,37 +1022,32 @@ function recalcPrice() {
   let finalPlan = Math.max(0, origPrice - discountAmt);
   finalPlan = Math.round(finalPlan);
 
-  const waiveAdm = document.getElementById('mWaiveAdmission').value === 'yes';
-  const admissionFee = waiveAdm ? 0 : (parseFloat(document.getElementById('mAdmissionFee').value)||0);
+  const waiveAdm = document.getElementById('mWaiveAdmission')?.value === 'yes';
+  const admissionFee = waiveAdm ? 0 : (parseFloat(document.getElementById('mAdmissionFee')?.value)||0);
 
-  const ptEnabled = document.getElementById('mPtEnabled').checked;
-  const ptFee = ptEnabled ? (parseFloat(document.getElementById('mPtFee').value)||0) : 0;
+  const ptEnabled = document.getElementById('mPtEnabled')?.checked;
+  const ptFee = ptEnabled ? (parseFloat(document.getElementById('mPtFee')?.value)||0) : 0;
 
-  // GRAND TOTAL
   const grandTotal = finalPlan + admissionFee + ptFee;
   currentFinalPrice = grandTotal;
 
-  // UI Updates
-  document.getElementById('origPrice').textContent = `₹${origPrice.toLocaleString('en-IN')}`;
-  document.getElementById('dispDiscount').textContent = `₹${Math.round(discountAmt).toLocaleString('en-IN')}`;
-  document.getElementById('dispAdmFee').textContent = `₹${admissionFee.toLocaleString('en-IN')}`;
-  
-  const dPt = document.getElementById('dispPtFee');
-  if(dPt) dPt.textContent = `₹${ptFee.toLocaleString('en-IN')}`;
-  
-  document.getElementById('finalPrice').textContent = `₹${grandTotal.toLocaleString('en-IN')}`;
+  const oEl = document.getElementById('origPrice'); if(oEl) oEl.textContent = `₹${origPrice.toLocaleString('en-IN')}`;
+  const dEl = document.getElementById('dispDiscount'); if(dEl) dEl.textContent = `₹${Math.round(discountAmt).toLocaleString('en-IN')}`;
+  const aEl = document.getElementById('dispAdmFee'); if(aEl) aEl.textContent = `₹${admissionFee.toLocaleString('en-IN')}`;
+  const pEl = document.getElementById('dispPtFee'); if(pEl) pEl.textContent = `₹${ptFee.toLocaleString('en-IN')}`;
+  const fEl = document.getElementById('finalPrice'); if(fEl) fEl.textContent = `₹${grandTotal.toLocaleString('en-IN')}`;
 
-  // Only auto-update expiry if we are NOT in edit mode
   if(!editingMemberId) {
     const months = parseInt(sel.options[sel.selectedIndex].getAttribute('data-months'))||1;
     const exp = new Date(); exp.setMonth(exp.getMonth()+months);
-    document.getElementById('mExpiry').value = exp.toISOString().split('T')[0];
+    const mExp = document.getElementById('mExpiry');
+    if(mExp) mExp.value = exp.toISOString().split('T')[0];
   }
 }
 
-// ===== CONDITION ROW =====
 function addCondition() {
   const c=document.getElementById('condContainer');
+  if(!c) return;
   const row=document.createElement('div'); row.className='condition-row';
   row.style.cssText='display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center';
   row.innerHTML=`
@@ -1071,73 +1066,78 @@ async function loadDashboard() {
     let members=await res.json();
     if(!Array.isArray(members)) members = [];
 
-    document.getElementById('totalMembers').textContent=members.length;
+    const tm=document.getElementById('totalMembers'); if(tm) tm.textContent=members.length;
     const active=members.filter(m=>m.status==='Active');
-    document.getElementById('activeMembers').textContent=active.length;
+    const am=document.getElementById('activeMembers'); if(am) am.textContent=active.length;
 
-    // Revenue calculation
     let monthlyRev=0, admissionRev=0, ptRev=0;
     members.forEach(m=>{
       const meta=memberMeta[m._id]||{};
-      monthlyRev += memberDiscounts[m._id] !== undefined ? memberDiscounts[m._id] : getPlanPrice(meta.customPlanName || m.plan);
+      const actualPlanName = meta.customPlanName || m.plan;
+      const pDetails = getPlanDetails(actualPlanName);
+      monthlyRev += memberDiscounts[m._id] !== undefined ? memberDiscounts[m._id] : (pDetails.price||0);
       if (!meta.admissionWaived) admissionRev += meta.admissionFee||0;
       if (meta.ptEnabled) ptRev += meta.ptFee||0;
     });
     
     const totalRev = monthlyRev + admissionRev + ptRev;
-    document.getElementById('totalRevenue').textContent   = `₹${Math.round(totalRev).toLocaleString('en-IN')}`;
-    document.getElementById('monthlyRevenue').textContent = `₹${Math.round(monthlyRev).toLocaleString('en-IN')}`;
-    document.getElementById('admissionRevenue').textContent=`₹${Math.round(admissionRev).toLocaleString('en-IN')}`;
-    document.getElementById('ptRevenue').textContent      = `₹${Math.round(ptRev).toLocaleString('en-IN')}`;
+    const trEl=document.getElementById('totalRevenue'); if(trEl) trEl.textContent = `₹${Math.round(totalRev).toLocaleString('en-IN')}`;
+    const mrEl=document.getElementById('monthlyRevenue'); if(mrEl) mrEl.textContent = `₹${Math.round(monthlyRev).toLocaleString('en-IN')}`;
+    const arEl=document.getElementById('admissionRevenue'); if(arEl) arEl.textContent=`₹${Math.round(admissionRev).toLocaleString('en-IN')}`;
+    const prEl=document.getElementById('ptRevenue'); if(prEl) prEl.textContent = `₹${Math.round(ptRev).toLocaleString('en-IN')}`;
 
-    // Reminder
     const due=members.filter(m=>m.status==='Active'&&new Date(m.expiryDate)<=new Date(Date.now()+7*86400000));
     const rc=document.getElementById('reminderCard');
-    if (!due.length) {
-      rc.className='reminder green';
-      rc.innerHTML='<div class="reminder-text"><h3>✅ All Good!</h3><p>No pending payments</p></div>';
-    } else {
-      rc.className='reminder orange';
-      rc.innerHTML=`<div class="reminder-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due Soon</h3><p>Members expiring within 7 days</p></div>
-        <button class="btn btn-sm" style="background:white;color:var(--warning);font-weight:700" onclick="showPage('payments',document.querySelector('[data-page=payments]'));updateBNav('none')">View →</button>`;
+    if(rc) {
+      if (!due.length) {
+        rc.className='reminder green';
+        rc.innerHTML='<div class="reminder-text"><h3>✅ All Good!</h3><p>No pending payments</p></div>';
+      } else {
+        rc.className='reminder orange';
+        rc.innerHTML=`<div class="reminder-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due Soon</h3><p>Members expiring within 7 days</p></div>
+          <button class="btn btn-sm" style="background:white;color:var(--warning);font-weight:700" onclick="showPage('payments',document.querySelector('[data-page=payments]'));updateBNav('none')">View →</button>`;
+      }
     }
 
-    // Table (Filtered to <= 5 days Expiry)
     const tbody=document.getElementById('dashMembersBody');
-    const today = new Date(); today.setHours(0,0,0,0);
-    
-    const expiring = members.filter(m=>{
-      if(m.status!=='Active') return false;
-      const d = Math.ceil((new Date(m.expiryDate) - today)/(1000*60*60*24));
-      return d <= 5;
-    }).sort((a,b)=>new Date(a.expiryDate)-new Date(b.expiryDate));
+    if(tbody) {
+      const today = new Date(); today.setHours(0,0,0,0);
+      const expiring = members.filter(m=>{
+        if(m.status!=='Active') return false;
+        const d = Math.ceil((new Date(m.expiryDate) - today)/(1000*60*60*24));
+        return d <= 5;
+      }).sort((a,b)=>new Date(a.expiryDate)-new Date(b.expiryDate));
 
-    if (!expiring.length) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="e-icon">✅</div><p>No active members expiring soon.</p></div></td></tr>'; return; }
-    
-    tbody.innerHTML=expiring.map(m=>{
-      const meta = memberMeta[m._id]||{};
-      const planToDisplay = meta.customPlanName || m.plan;
-      return `
-      <tr>
-        <td><div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.phone)}</small></div></div></td>
-        <td style="font-size:0.85rem">${esc(planToDisplay)}</td>
-        <td>${genderBadge(meta.gender||m.gender)}</td>
-        <td>${expiryCell(m.expiryDate, m.status)}</td>
-        <td>${badge(m.status)}</td>
-      </tr>`
-    }).join('');
+      if (!expiring.length) { 
+        tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="e-icon">✅</div><p>No active members expiring soon.</p></div></td></tr>'; 
+      } else {
+        tbody.innerHTML=expiring.map(m=>{
+          const meta = memberMeta[m._id]||{};
+          const planToDisplay = meta.customPlanName || m.plan;
+          return `
+          <tr>
+            <td><div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.phone)}</small></div></div></td>
+            <td style="font-size:0.85rem">${esc(planToDisplay)}</td>
+            <td>${genderBadge(meta.gender||m.gender)}</td>
+            <td>${expiryCell(m.expiryDate, m.status)}</td>
+            <td>${badge(m.status)}</td>
+          </tr>`
+        }).join('');
+      }
+    }
   } catch(e) { toast('Error loading dashboard','error'); }
 }
 
 // ===== ALL MEMBERS =====
 async function loadAllMembers() {
   const tbody=document.getElementById('allMembersBody');
+  if(!tbody) return;
   try {
     const res=await fetch(API,{headers:headers()});
     if (res.status===401){logout();return;}
     let members=await res.json();
     if(!Array.isArray(members)) members = [];
-    allMembersCache = members; // cache for editing
+    allMembersCache = members;
 
     if (!members.length) { tbody.innerHTML='<tr><td colspan="8"><div class="empty"><div class="e-icon">👥</div><p>No members yet.</p></div></td></tr>'; return; }
     
@@ -1154,7 +1154,7 @@ async function loadAllMembers() {
         <td>${badge(m.status)}</td>
         <td style="white-space:nowrap">
           <button class="btn btn-outline btn-sm" onclick="openEditMember('${esc(m._id)}')">Edit</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteMember('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\'"))}')">Delete</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteMember('${esc(m._id)}','${esc(String(m.name||'').replace(/'/g,"\\'"))}')">Delete</button>
         </td>
       </tr>`;
     }).join('');
@@ -1174,14 +1174,15 @@ async function confirmDeleteAll() {
   if (prompt('Type DELETE ALL to confirm:') !== 'DELETE ALL') return;
   try {
     const res=await fetch(API,{headers:headers()});
-    const members=await res.json();
-    for (const m of members) await fetch(`${API}/${m._id}`,{method:'DELETE',headers:headers()}).catch(()=>{});
+    let members=await res.json();
+    if(!Array.isArray(members)) members=[];
+    for (const m of members) {
+      try{ await fetch(`${API}/${m._id}`,{method:'DELETE',headers:headers()}); } catch(e){}
+    }
     
-    // Clear meta localstorage
     localStorage.removeItem('gympro_member_meta');
     localStorage.removeItem('gympro_member_discounts');
     memberMeta = {}; memberDiscounts = {};
-    
     toast('All members deleted'); loadAllMembers(); loadDashboard();
   } catch(e){toast('Error','error');}
 }
@@ -1189,59 +1190,68 @@ async function confirmDeleteAll() {
 // ===== ATTENDANCE =====
 async function loadAttendance() {
   const dateEl=document.getElementById('attendanceDate');
-  const date=dateEl.value||new Date().toISOString().split('T')[0];
-  dateEl.value=date;
+  const date=dateEl?.value||new Date().toISOString().split('T')[0];
+  if(dateEl) dateEl.value=date;
   const tbody=document.getElementById('attendanceBody');
   try {
     const res=await fetch(API,{headers:headers()});
     if (res.status===401){logout();return;}
-    const members=await res.json();
+    let members=await res.json();
+    if(!Array.isArray(members)) members=[];
     const active=members.filter(m=>m.status==='Active'||m.status==='Trial');
+    
     const attKey=`gympro_att_${date}`;
-    let saved={};
-    try{saved=JSON.parse(localStorage.getItem(attKey)||'{}');}catch(e){}
+    let saved=safeJSON(attKey, {});
     const presentCount=Object.values(saved).filter(s=>s==='Present').length;
-    document.getElementById('statTotal').textContent=active.length;
-    document.getElementById('statPresent').textContent=presentCount;
-    document.getElementById('statPct').textContent=active.length?`${Math.min(100,Math.round(presentCount/active.length*100))}%`:'0%';
-    if (!active.length){tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p>No active members found</p></div></td></tr>';return;}
-    tbody.innerHTML=active.map(m=>{
-      const st=saved[m._id]||'Absent';
-      const planToDisplay = (memberMeta[m._id]||{}).customPlanName || m.plan;
-      return `<tr>
-        <td><div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<strong>${esc(m.name)}</strong></div></td>
-        <td style="font-size:0.85rem">${esc(planToDisplay)}</td><td>${esc(m.phone)}</td>
-        <td><span id="attbadge-${m._id}" class="badge ${st==='Present'?'badge-present':'badge-absent'}">${st}</span></td>
-        <td style="white-space:nowrap">
-          <button class="att-btn att-btn-present" onclick="markAtt('${m._id}','${date}','Present')">Present</button>
-          <button class="att-btn att-btn-absent"  onclick="markAtt('${m._id}','${date}','Absent')">Absent</button>
-        </td></tr>`;
-    }).join('');
-  } catch(e){tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading attendance</p></div></td></tr>';}
+    
+    const sTotal=document.getElementById('statTotal'); if(sTotal) sTotal.textContent=active.length;
+    const sPres=document.getElementById('statPresent'); if(sPres) sPres.textContent=presentCount;
+    const sPct=document.getElementById('statPct'); if(sPct) sPct.textContent=active.length?`${Math.min(100,Math.round(presentCount/active.length*100))}%`:'0%';
+    
+    if(tbody) {
+      if (!active.length){tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p>No active members found</p></div></td></tr>';return;}
+      tbody.innerHTML=active.map(m=>{
+        const st=saved[m._id]||'Absent';
+        const planToDisplay = (memberMeta[m._id]||{}).customPlanName || m.plan;
+        return `<tr>
+          <td><div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<strong>${esc(m.name)}</strong></div></td>
+          <td style="font-size:0.85rem">${esc(planToDisplay)}</td><td>${esc(m.phone)}</td>
+          <td><span id="attbadge-${m._id}" class="badge ${st==='Present'?'badge-present':'badge-absent'}">${st}</span></td>
+          <td style="white-space:nowrap">
+            <button class="att-btn att-btn-present" onclick="markAtt('${m._id}','${date}','Present')">Present</button>
+            <button class="att-btn att-btn-absent"  onclick="markAtt('${m._id}','${date}','Absent')">Absent</button>
+          </td></tr>`;
+      }).join('');
+    }
+  } catch(e){if(tbody) tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading attendance</p></div></td></tr>';}
 }
 
 function markAtt(memberId,date,status) {
   const attKey=`gympro_att_${date}`;
-  let saved={};try{saved=JSON.parse(localStorage.getItem(attKey)||'{}');}catch(e){}
+  let saved=safeJSON(attKey, {});
   saved[memberId]=status; localStorage.setItem(attKey,JSON.stringify(saved));
+  
   const b=document.getElementById(`attbadge-${memberId}`);
   if(b){b.textContent=status;b.className=`badge ${status==='Present'?'badge-present':'badge-absent'}`;}
-  const total=parseInt(document.getElementById('statTotal').textContent)||0;
+  
+  const total=parseInt(document.getElementById('statTotal')?.textContent)||0;
   const present=Object.values(saved).filter(s=>s==='Present').length;
-  document.getElementById('statPresent').textContent=present;
-  document.getElementById('statPct').textContent=total?`${Math.min(100,Math.round(present/total*100))}%`:'0%';
+  const sPres=document.getElementById('statPresent'); if(sPres) sPres.textContent=present;
+  const sPct=document.getElementById('statPct'); if(sPct) sPct.textContent=total?`${Math.min(100,Math.round(present/total*100))}%`:'0%';
 }
 
 async function markAllPresent() {
   const dateEl=document.getElementById('attendanceDate');
-  const date=dateEl.value||new Date().toISOString().split('T')[0];
+  const date=dateEl?.value||new Date().toISOString().split('T')[0];
   if(!confirm(`Mark all active members Present for ${new Date(date).toLocaleDateString('en-IN')}?`))return;
   try{
     const res=await fetch(API,{headers:headers()});
-    const members=await res.json();
+    let members=await res.json();
+    if(!Array.isArray(members)) members=[];
     const active=members.filter(m=>m.status==='Active'||m.status==='Trial');
+    
     const attKey=`gympro_att_${date}`;
-    let saved={};try{saved=JSON.parse(localStorage.getItem(attKey)||'{}');}catch(e){}
+    let saved=safeJSON(attKey, {});
     active.forEach(m=>{saved[m._id]='Present';});
     localStorage.setItem(attKey,JSON.stringify(saved));
     toast(`${active.length} members marked Present`,'success'); loadAttendance();
@@ -1255,21 +1265,23 @@ async function loadTrainers() {
     const res=await fetch(TAPI,{headers:headers()});
     if(res.status===401){logout();return;}
     let trainers=await res.json();
-    if(!Array.isArray(trainers)) trainers = [];
-    if(!trainers.length){tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="e-icon">🏋️</div><p>No trainers yet.</p></div></td></tr>';return;}
-    tbody.innerHTML=trainers.map(t=>`
-      <tr>
-        <td><div style="display:flex;align-items:center;gap:10px">${avatar(t.name)}<strong>${esc(t.name)}</strong></div></td>
-        <td>${esc(t.specialty)}</td><td>${esc(t.phone)}</td><td>${badge(t.status)}</td>
-        <td>
-          <button class="btn btn-sm btn-outline" onclick="editTrainer('${esc(t._id)}')">Edit</button>
-          <button class="btn btn-sm btn-danger"  onclick="deleteTrainer('${esc(t._id)}','${esc(t.name.replace(/'/g,"\\'"))}')">Delete</button>
-        </td>
-      </tr>`).join('');
-    // Populate PT trainer dropdown
+    if(!Array.isArray(trainers)) trainers=[];
+    
+    if(tbody) {
+      if(!trainers.length){tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="e-icon">🏋️</div><p>No trainers yet.</p></div></td></tr>';return;}
+      tbody.innerHTML=trainers.map(t=>`
+        <tr>
+          <td><div style="display:flex;align-items:center;gap:10px">${avatar(t.name)}<strong>${esc(t.name)}</strong></div></td>
+          <td>${esc(t.specialty)}</td><td>${esc(t.phone)}</td><td>${badge(t.status)}</td>
+          <td>
+            <button class="btn btn-sm btn-outline" onclick="editTrainer('${esc(t._id)}')">Edit</button>
+            <button class="btn btn-sm btn-danger"  onclick="deleteTrainer('${esc(t._id)}','${esc(String(t.name||'').replace(/'/g,"\\'"))}')">Delete</button>
+          </td>
+        </tr>`).join('');
+    }
     const ptSel=document.getElementById('mPtTrainer');
-    ptSel.innerHTML='<option value="">Select Trainer</option>'+trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
-  }catch(e){tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading trainers</p></div></td></tr>';}
+    if(ptSel) ptSel.innerHTML='<option value="">Select Trainer</option>'+trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
+  }catch(e){if(tbody) tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading trainers</p></div></td></tr>';}
 }
 
 async function editTrainer(id) {
@@ -1294,6 +1306,7 @@ async function deleteTrainer(id,name) {
 // ===== PLANS =====
 function loadPlans() {
   const grid=document.getElementById('plansGrid');
+  if(!grid) return;
   if (!gymPlans.length) { grid.innerHTML='<div class="empty"><div class="e-icon">💎</div><p>No plans yet. Add one!</p></div>'; return; }
   const plans=gymPlans.map(p=>{
     let discounted=p.price,discInfo=null;
@@ -1323,13 +1336,14 @@ function loadPlans() {
 }
 
 function selectPlan(name) {
-  document.getElementById('mPlan').value=name; recalcPrice(); openAddMember();
+  const mPlan=document.getElementById('mPlan'); if(mPlan) mPlan.value=name; 
+  recalcPrice(); openAddMember();
 }
 
 function addGymPlan() {
-  const name=document.getElementById('newPlanName').value.trim();
-  const price=parseFloat(document.getElementById('newPlanPrice').value);
-  const months=parseInt(document.getElementById('newPlanMonths').value);
+  const name=getVal('newPlanName');
+  const price=getNum('newPlanPrice');
+  const months=getNum('newPlanMonths');
   if(!name||isNaN(price)||isNaN(months)){toast('Please fill all fields correctly','error');return;}
   if(gymPlans.find(p=>p.name===name)){toast('Plan with this name already exists','error');return;}
   gymPlans.push({name,price,months});
@@ -1338,9 +1352,9 @@ function addGymPlan() {
   populatePlanSelect();
   loadPlans();
   toast('Plan added!','success');
-  document.getElementById('newPlanName').value='';
-  document.getElementById('newPlanPrice').value='';
-  document.getElementById('newPlanMonths').value='';
+  const np=document.getElementById('newPlanName'); if(np) np.value='';
+  const pp=document.getElementById('newPlanPrice'); if(pp) pp.value='';
+  const pm=document.getElementById('newPlanMonths'); if(pm) pm.value='';
 }
 
 function removePlan(name) {
@@ -1353,6 +1367,7 @@ function removePlan(name) {
 // ===== DISCOUNTS =====
 function renderDiscounts() {
   const c=document.getElementById('discountsTable');
+  if(!c) return;
   if(!activeDiscounts.length){c.innerHTML='<div class="empty"><div class="e-icon">🏷️</div><p>No active discounts. Add one above.</p></div>';return;}
   c.innerHTML=`<div class="table-wrap"><table class="discount-table">
     <thead><tr><th>Name</th><th>Applies To</th><th>Type</th><th>Value</th><th>Valid Until</th><th>Action</th></tr></thead>
@@ -1369,17 +1384,19 @@ function renderDiscounts() {
 }
 
 function toggleDiscPlan() {
-  document.getElementById('discPlanGroup').style.display=document.getElementById('discApplies').value==='specific'?'block':'none';
+  const el=document.getElementById('discPlanGroup');
+  const app=document.getElementById('discApplies');
+  if(el && app) el.style.display=app.value==='specific'?'block':'none';
 }
 
 function addDiscount() {
-  const name=document.getElementById('discName').value.trim();
-  const val=parseFloat(document.getElementById('discVal').value);
+  const name=getVal('discName');
+  const val=getNum('discVal');
   if(!name||isNaN(val)||val<=0){toast('Please fill all required fields','error');return;}
-  const type=document.getElementById('discType').value;
+  const type=getVal('discType');
   if(type==='percentage'&&val>100){toast('Percentage cannot exceed 100%','error');return;}
-  const appliesTo=document.getElementById('discApplies').value;
-  activeDiscounts.push({name,type,value:val,appliesTo,planName:appliesTo==='specific'?document.getElementById('discPlan').value:null,validUntil:document.getElementById('discExpiry').value||null});
+  const appliesTo=getVal('discApplies');
+  activeDiscounts.push({name,type,value:val,appliesTo,planName:appliesTo==='specific'?getVal('discPlan'):null,validUntil:getVal('discExpiry')||null});
   localStorage.setItem('gympro_discounts',JSON.stringify(activeDiscounts));
   closeModal('addDiscountModal'); renderDiscounts(); toast('Discount added','success');
 }
@@ -1398,24 +1415,27 @@ async function loadPayments() {
     const res=await fetch(API,{headers:headers()});
     if(res.status===401){logout();return;}
     let members=await res.json();
-    if(!Array.isArray(members)) members = [];
+    if(!Array.isArray(members)) members=[];
+    
     const today=new Date();
     const due=members.filter(m=>m.status==='Active'&&new Date(m.expiryDate)<=new Date(today.getTime()+14*86400000));
-    if(!due.length){container.innerHTML='<div class="empty"><div class="e-icon">✅</div><p>No payments due in the next 14 days!</p></div>';return;}
-    container.innerHTML=due.map(m=>{
-      const exp=new Date(m.expiryDate);
-      const daysLeft=Math.ceil((exp-today)/(1000*60*60*24));
-      const planToDisplay = getDisplayPlan(m);
-      return `<div class="payment-row">
-        <div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(planToDisplay)}</small><br><small style="color:var(--muted)">Expires: ${fmtDate(m.expiryDate)}</small></div></div>
-        <span class="badge ${daysLeft<0?'badge-inactive':'badge-trial'}">${daysLeft<0?'Overdue':daysLeft+'d left'}</span>
-        <button class="btn btn-success btn-sm" onclick="openPaymentFor('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\'"))}','${esc(planToDisplay)}')">Pay Now</button>
-      </div>`;
-    }).join('');
-  }catch(e){container.innerHTML='<div class="empty"><p style="color:var(--danger)">Error loading payments</p></div>';}
+    
+    if(container) {
+      if(!due.length){container.innerHTML='<div class="empty"><div class="e-icon">✅</div><p>No payments due in the next 14 days!</p></div>';return;}
+      container.innerHTML=due.map(m=>{
+        const exp=new Date(m.expiryDate);
+        const daysLeft=Math.ceil((exp-today)/(1000*60*60*24));
+        const planToDisplay = getDisplayPlan(m);
+        return `<div class="payment-row">
+          <div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(planToDisplay)}</small><br><small style="color:var(--muted)">Expires: ${fmtDate(m.expiryDate)}</small></div></div>
+          <span class="badge ${daysLeft<0?'badge-inactive':'badge-trial'}">${daysLeft<0?'Overdue':daysLeft+'d left'}</span>
+          <button class="btn btn-success btn-sm" onclick="openPaymentFor('${esc(m._id)}','${esc(String(m.name||'').replace(/'/g,"\\'"))}','${esc(planToDisplay)}')">Pay Now</button>
+        </div>`;
+      }).join('');
+    }
+  }catch(e){if(container) container.innerHTML='<div class="empty"><p style="color:var(--danger)">Error loading payments</p></div>';}
 }
 
-// Open Payment specific to Grand Total (Plan + Admission + PT)
 function openPaymentFor(id, name, plan) {
   const meta = memberMeta[id] || {};
   const planAmt = memberDiscounts[id] !== undefined ? memberDiscounts[id] : getPlanPrice(plan);
@@ -1429,86 +1449,70 @@ function openPaymentFor(id, name, plan) {
   const upiId   = gymSettings.upiId   || 'your-upi@bank';
   const upiName = gymSettings.upiName || 'GymPro';
 
-  document.getElementById('paymentInfo').innerHTML = `
-    <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:1rem">
-      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-        <span style="color:var(--muted)">Member</span><strong>${esc(name)}</strong>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-        <span style="color:var(--muted)">Plan</span><strong style="font-size:0.85rem">${esc(plan)} (₹${planAmt})</strong>
-      </div>
-      ${admFee > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--muted)">Admission Fee</span><strong>₹${admFee}</strong></div>` : ''}
-      ${ptFee > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--muted)">PT Fee</span><strong>₹${ptFee}</strong></div>` : ''}
-      <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border)">
-        <span style="font-weight:700">Grand Total</span>
-        <strong style="color:var(--success);font-size:1.1rem">₹${Math.round(amt).toLocaleString('en-IN')}</strong>
-      </div>
-    </div>`;
-
-  document.getElementById('displayUpiId').textContent = upiId;
+  const pi=document.getElementById('paymentInfo');
+  if(pi) {
+    pi.innerHTML = `
+      <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:1rem">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="color:var(--muted)">Member</span><strong>${esc(name)}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="color:var(--muted)">Plan</span><strong style="font-size:0.85rem">${esc(plan)} (₹${planAmt})</strong>
+        </div>
+        ${admFee > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--muted)">Admission Fee</span><strong>₹${admFee}</strong></div>` : ''}
+        ${ptFee > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--muted)">PT Fee</span><strong>₹${ptFee}</strong></div>` : ''}
+        <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border)">
+          <span style="font-weight:700">Grand Total</span>
+          <strong style="color:var(--success);font-size:1.1rem">₹${Math.round(amt).toLocaleString('en-IN')}</strong>
+        </div>
+      </div>`;
+  }
+  const du=document.getElementById('displayUpiId'); if(du) du.textContent = upiId;
   const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${Math.round(amt)}&cu=INR`;
-  document.getElementById('payQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
+  const qr=document.getElementById('payQR'); if(qr) qr.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
   openModal('paymentModal');
 }
 
 async function confirmPayment() {
   if(!currentPaymentMember)return;
-  const months = getPlanMonths(currentPaymentMember.plan);
-  const expiry = new Date(); expiry.setMonth(expiry.getMonth()+months);
-  
-  try {
-    await fetch(`${API}/${currentPaymentMember.id}`,{
+  const months=getPlanMonths(currentPaymentMember.plan);
+  const expiry=new Date(); expiry.setMonth(expiry.getMonth()+months);
+  try{
+    const res = await fetch(`${API}/${currentPaymentMember.id}`,{
       method:'PUT',headers:headers(),
       body:JSON.stringify({expiryDate:expiry.toISOString().split('T')[0],status:'Active'})
     });
-  } catch(e) {}
-  
-  toast(`Payment confirmed! Extended to ${expiry.toLocaleDateString('en-IN')}`,'success');
-  closeModal('paymentModal'); currentPaymentMember=null; loadDashboard(); loadPayments();
-}
-
-// ===== SETTINGS =====
-function loadSettings() {
-  document.getElementById('settingsUpiId').value=gymSettings.upiId||'';
-  document.getElementById('settingsUpiName').value=gymSettings.upiName||'';
-  document.getElementById('settingsAdmissionFee').value=gymSettings.admissionFee||'';
-  document.getElementById('settingsPtFee').value=gymSettings.ptFee||'';
-}
-
-function saveSettings() {
-  gymSettings.upiId=document.getElementById('settingsUpiId').value.trim();
-  gymSettings.upiName=document.getElementById('settingsUpiName').value.trim();
-  gymSettings.admissionFee=parseFloat(document.getElementById('settingsAdmissionFee').value)||0;
-  gymSettings.ptFee=parseFloat(document.getElementById('settingsPtFee').value)||0;
-  localStorage.setItem('gymSettings',JSON.stringify(gymSettings));
-  toast('Settings saved!','success');
+    if(!res.ok) { toast('Failed to record payment on server','error'); return; }
+    toast(`Payment confirmed! Extended to ${expiry.toLocaleDateString('en-IN')}`,'success');
+    closeModal('paymentModal'); currentPaymentMember=null; loadDashboard(); loadPayments();
+  }catch(e){toast('Network error','error');}
 }
 
 // ===== ADD / EDIT MEMBER SUBMIT =====
-document.getElementById('addMemberForm').addEventListener('submit', async e=>{
+document.getElementById('addMemberForm')?.addEventListener('submit', async e=>{
   e.preventDefault();
-  const phone=document.getElementById('mPhone').value.trim();
+  const phone=getVal('mPhone');
   if(!/^\d{10}$/.test(phone)){toast('Please enter a valid 10-digit phone number','error');return;}
-  const gender=document.getElementById('mGender').value;
+  const gender=getVal('mGender');
   if(!gender){toast('Please select gender','error');return;}
 
-  const customPlanName = document.getElementById('mPlan').value;
+  const customPlanName = getVal('mPlan');
   const origPrice = getPlanPrice(customPlanName);
   
   const dType=document.querySelector('input[name="dType"]:checked')?.value||'none';
-  const dVal=parseFloat(document.getElementById('dValue').value)||0;
+  const dVal=getNum('dValue');
   
   let finalPlanPrice=origPrice;
   if(dType==='percentage'&&dVal>0) finalPlanPrice=origPrice-origPrice*dVal/100;
   else if(dType==='fixed'&&dVal>0) finalPlanPrice=Math.max(0,origPrice-dVal);
   finalPlanPrice=Math.round(finalPlanPrice);
 
-  const admissionFee=parseFloat(document.getElementById('mAdmissionFee').value)||0;
-  const admissionWaived=document.getElementById('mWaiveAdmission').value==='yes';
-  const ptEnabled=document.getElementById('mPtEnabled').checked;
-  const ptFee=parseFloat(document.getElementById('mPtFee').value)||0;
-  const ptTrainer=document.getElementById('mPtTrainer').value;
-  const ptNotes=document.getElementById('mPtNotes').value.trim();
+  const admissionFee=getNum('mAdmissionFee');
+  const admissionWaived=getVal('mWaiveAdmission')==='yes';
+  const ptEnabled=document.getElementById('mPtEnabled')?.checked||false;
+  const ptFee=getNum('mPtFee');
+  const ptTrainer=getVal('mPtTrainer');
+  const ptNotes=getVal('mPtNotes');
 
   const conditions=[];
   document.querySelectorAll('#condContainer .condition-row').forEach(row=>{
@@ -1516,27 +1520,26 @@ document.getElementById('addMemberForm').addEventListener('submit', async e=>{
     if(cond) conditions.push({condition:cond,severity:row.querySelector('.cSev')?.value||'Mild',notes:row.querySelector('.cNote')?.value||''});
   });
 
-  // Mongoose bypass
   const backendPlan = VALID_BACKEND_PLANS.includes(customPlanName) ? customPlanName : VALID_BACKEND_PLANS[0];
 
   const data={
-    name:document.getElementById('mName').value.trim(),
+    name:getVal('mName'),
     phone,
-    email:document.getElementById('mEmail').value.trim(),
-    age:parseInt(document.getElementById('mAge').value)||null,
-    photo:document.getElementById('photo-data').value||'',
+    email:getVal('mEmail'),
+    age:getNum('mAge', null) || null,
+    photo:getVal('photo-data'),
     plan:backendPlan,
-    expiryDate:document.getElementById('mExpiry').value,
-    status:document.getElementById('mStatus').value,
-    emergencyContact:{name:document.getElementById('mEcName').value.trim(),phone:document.getElementById('mEcPhone').value.trim(),relationship:document.getElementById('mEcRel').value.trim()},
+    expiryDate:getVal('mExpiry'),
+    status:getVal('mStatus') || 'Active',
+    emergencyContact:{name:getVal('mEcName'),phone:getVal('mEcPhone'),relationship:getVal('mEcRel')},
     healthConditions:conditions,
-    medicalNotes:document.getElementById('mNotes').value.trim()
+    medicalNotes:getVal('mNotes')
   };
 
   if(!data.name){toast('Name is required','error');return;}
   if(!data.expiryDate){toast('Expiry date is required','error');return;}
 
-  const btn=e.submitter; btn.disabled=true; btn.textContent= editingMemberId ? 'Saving…' : 'Adding…';
+  const btn=e.submitter; if(btn){btn.disabled=true; btn.textContent= editingMemberId ? 'Saving…' : 'Adding…';}
 
   try{
     const method = editingMemberId ? 'PUT' : 'POST';
@@ -1547,21 +1550,15 @@ document.getElementById('addMemberForm').addEventListener('submit', async e=>{
       const savedMem = await res.json();
       const targetId = savedMem._id || editingMemberId;
 
-      // Save custom plan mapping if modified
       if (customPlanName !== backendPlan) {
         memberCustomPlans[targetId] = customPlanName;
         localStorage.setItem('gympro_member_custom_plans', JSON.stringify(memberCustomPlans));
       }
 
-      // Save exact calculated discount & meta
-      if(finalPlanPrice!==origPrice) {
-        memberDiscounts[targetId]=finalPlanPrice;
-      } else {
-        delete memberDiscounts[targetId]; // clean up if discount removed
-      }
+      if(finalPlanPrice!==origPrice) memberDiscounts[targetId]=finalPlanPrice;
+      else delete memberDiscounts[targetId];
       localStorage.setItem('gympro_member_discounts',JSON.stringify(memberDiscounts));
 
-      // Save meta (gender, admission, PT)
       memberMeta[targetId]={gender,admissionFee,admissionWaived,ptEnabled,ptFee,ptTrainer,ptNotes, customPlanName};
       localStorage.setItem('gympro_member_meta',JSON.stringify(memberMeta));
 
@@ -1570,53 +1567,37 @@ document.getElementById('addMemberForm').addEventListener('submit', async e=>{
       
       toast(wasEditing ? `${data.name} updated!` : `${data.name} added!`,'success');
       loadDashboard();
-      if(!wasEditing) loadAllMembers(); // Refresh full table cache
+      if(!wasEditing) loadAllMembers(); 
 
-      // Show payment if NEW member
-      if (!wasEditing) {
-        openPaymentFor(targetId, data.name, customPlanName);
-      }
+      if (!wasEditing) openPaymentFor(targetId, data.name, customPlanName);
     } else {
       const err=await res.json(); toast(err.error||'Could not save member','error');
     }
   } catch(err){ toast('Network error. Please try again.','error'); }
-  btn.disabled=false; btn.textContent= editingMemberId ? 'Save Changes' : 'Add Member';
-});
-
-// ===== ADD TRAINER SUBMIT =====
-document.getElementById('addTrainerForm').addEventListener('submit', async e=>{
-  e.preventDefault();
-  const phone=document.getElementById('tPhone').value.trim();
-  if(!/^\d{10}$/.test(phone)){toast('Please enter a valid 10-digit phone number','error');return;}
-  const data={name:document.getElementById('tName').value.trim(),phone,specialty:document.getElementById('tSpecialty').value.trim(),status:document.getElementById('tStatus').value};
-  const btn=e.submitter; btn.disabled=true; btn.textContent='Adding…';
-  try{
-    const res=await fetch(TAPI,{method:'POST',headers:headers(),body:JSON.stringify(data)});
-    if(res.ok){closeModal('addTrainerModal');e.target.reset();toast('Trainer added!','success');loadTrainers();}
-    else{const err=await res.json();toast(err.error||'Could not add trainer','error');}
-  }catch(err){toast('Network error','error');}
-  btn.disabled=false; btn.textContent='Add Trainer';
+  if(btn){btn.disabled=false; btn.textContent= editingMemberId ? 'Save Changes' : 'Add Member';}
 });
 
 // ===== INIT =====
 window.addEventListener('DOMContentLoaded', ()=>{
   if (!checkAuth()) return;
   setupCamera();
-  document.getElementById('topbarDate').textContent=new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
-  document.getElementById('attendanceDate').value=new Date().toISOString().split('T')[0];
+  const d=document.getElementById('topbarDate'); if(d) d.textContent=new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+  const ad=document.getElementById('attendanceDate'); if(ad) ad.value=new Date().toISOString().split('T')[0];
 
   try{
-    const user=JSON.parse(localStorage.getItem('user')||'{}');
-    if(user.name) document.getElementById('userInfo').innerHTML=`<div class="u-name">👤 ${esc(user.name)}</div><div class="u-role">${user.role==='admin'?'Administrator':'Staff Member'}</div>`;
+    const user=safeJSON('user', {});
+    if(user.name) {
+      const ui=document.getElementById('userInfo');
+      if(ui) ui.innerHTML=`<div class="u-name">👤 ${esc(user.name)}</div><div class="u-role">${user.role==='admin'?'Administrator':'Staff Member'}</div>`;
+    }
   }catch(e){}
 
   populatePlanSelect();
   loadDashboard();
   
-  // Pre-load trainers for PT dropdown
   fetch(TAPI,{headers:headers()}).then(r=>r.json()).then(trainers=>{
     const ptSel=document.getElementById('mPtTrainer');
-    if(ptSel) ptSel.innerHTML='<option value="">Select Trainer</option>'+trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
+    if(ptSel && Array.isArray(trainers)) ptSel.innerHTML='<option value="">Select Trainer</option>'+trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
   }).catch(()=>{});
 });
 </script>
