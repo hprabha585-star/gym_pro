@@ -1014,16 +1014,14 @@ async function deleteMember(id,name) {
 }
 
 async function confirmDeleteAll() {
-  if (prompt('Type DELETE ALL to confirm:')||'' !== 'DELETE ALL') {
-    if (prompt('⚠️ Type DELETE ALL to confirm deleting every member:')==='DELETE ALL') {
-      try {
-        const res=await fetch(API,{headers:headers()});
-        const members=await res.json();
-        for (const m of members) await fetch(`${API}/${m._id}`,{method:'DELETE',headers:headers()});
-        toast('All members deleted'); loadAllMembers(); loadDashboard();
-      } catch(e){toast('Error','error');}
-    }
-  }
+  const v = prompt('⚠️ Type DELETE ALL to confirm deleting every member:');
+  if (v !== 'DELETE ALL') return;
+  try {
+    const res=await fetch(API,{headers:headers()});
+    const members=await res.json();
+    for (const m of members) await fetch(`${API}/${m._id}`,{method:'DELETE',headers:headers()});
+    toast('All members deleted'); loadAllMembers(); loadDashboard();
+  } catch(e){toast('Error','error');}
 }
 
 // ===== ATTENDANCE =====
@@ -1251,30 +1249,109 @@ async function loadPayments() {
   }catch(e){container.innerHTML='<div class="empty"><p style="color:var(--danger)">Error loading payments</p></div>';}
 }
 
-function openPaymentFor(id,name,plan) {
-  const amt=memberDiscounts[id]||getPlanPrice(plan)||1000;
-  currentPaymentMember={id,name,plan}; currentFinalPrice=amt;
-  const upiId=gymSettings.upiId||'your-upi@bank';
-  const upiName=gymSettings.upiName||'GymPro';
-  document.getElementById('paymentInfo').innerHTML=`
+// ✅ Payment modal shows PLAN AMOUNT ONLY
+// Admission fee and PT fee are separate charges — not included here
+function openPaymentFor(id, name, plan) {
+  // Use discounted price if available, else standard plan price
+  const planAmt = memberDiscounts[id] || getPlanPrice(plan) || 1000;
+  currentPaymentMember = { id, name, plan };
+  currentFinalPrice = planAmt;
+
+  const upiId   = gymSettings.upiId   || 'your-upi@bank';
+  const upiName = gymSettings.upiName || 'GymPro';
+
+  document.getElementById('paymentInfo').innerHTML = `
     <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:1rem">
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Member</span><strong>${esc(name)}</strong></div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Plan</span><strong>${esc(plan)}</strong></div>
-      <div style="display:flex;justify-content:space-between"><span>Amount</span><strong style="color:var(--success)">₹${Math.round(amt).toLocaleString('en-IN')}</strong></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="color:var(--muted)">Member</span>
+        <strong>${esc(name)}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="color:var(--muted)">Plan</span>
+        <strong style="font-size:0.85rem">${esc(plan)}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border)">
+        <span style="font-weight:700">Plan Amount</span>
+        <strong style="color:var(--success);font-size:1.1rem">₹${Math.round(planAmt).toLocaleString('en-IN')}</strong>
+      </div>
+    </div>
+    <p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem;text-align:center">
+      💡 Admission fee &amp; PT fee are collected separately
+    </p>`;
+
+  document.getElementById('displayUpiId').textContent = upiId;
+  const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${Math.round(planAmt)}&cu=INR`;
+  document.getElementById('payQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
+  openModal('paymentModal');
+}
+
+// Separate function to collect admission fee via UPI
+function openAdmissionPayment(id, name, admissionFee) {
+  if (!admissionFee || admissionFee <= 0) return;
+  const upiId   = gymSettings.upiId   || 'your-upi@bank';
+  const upiName = gymSettings.upiName || 'GymPro';
+  const upiUrl  = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${Math.round(admissionFee)}&cu=INR`;
+
+  // Show a simple confirmation toast with QR — reuse payment modal
+  currentPaymentMember = { id, name, plan: 'Admission Fee' };
+  currentFinalPrice = admissionFee;
+
+  document.getElementById('paymentInfo').innerHTML = `
+    <div style="background:#f0fdf4;border-radius:10px;padding:14px;margin-bottom:1rem;border:1px solid #86efac">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="color:var(--muted)">Member</span><strong>${esc(name)}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid #86efac">
+        <span style="font-weight:700">🎟️ Admission Fee</span>
+        <strong style="color:var(--success);font-size:1.1rem">₹${Math.round(admissionFee).toLocaleString('en-IN')}</strong>
+      </div>
     </div>`;
-  document.getElementById('displayUpiId').textContent=upiId;
-  const upiUrl=`upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${Math.round(amt)}&cu=INR`;
-  document.getElementById('payQR').src=`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
+
+  document.getElementById('displayUpiId').textContent = upiId;
+  document.getElementById('payQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
   openModal('paymentModal');
 }
 
 async function confirmPayment() {
-  if(!currentPaymentMember)return;
-  const months=getPlanMonths(currentPaymentMember.plan);
-  const expiry=new Date(); expiry.setMonth(expiry.getMonth()+months);
-  try{await fetch(`${API}/${currentPaymentMember.id}`,{method:'PUT',headers:headers(),body:JSON.stringify({expiryDate:expiry.toISOString().split('T')[0],status:'Active'})}).catch(()=>{});}catch(e){}
-  toast(`Payment confirmed for ${currentPaymentMember.name}! Extended to ${expiry.toLocaleDateString('en-IN')}`,'success');
-  closeModal('paymentModal'); currentPaymentMember=null; loadDashboard(); loadPayments();
+  if (!currentPaymentMember) return;
+
+  const isAdmission = currentPaymentMember.plan === 'Admission Fee';
+
+  if (!isAdmission) {
+    // Plan payment confirmed — extend expiry
+    const months = getPlanMonths(currentPaymentMember.plan);
+    const expiry = new Date(); expiry.setMonth(expiry.getMonth() + months);
+    try {
+      await fetch(`${API}/${currentPaymentMember.id}`, {
+        method: 'PUT', headers: headers(),
+        body: JSON.stringify({ expiryDate: expiry.toISOString().split('T')[0], status: 'Active' })
+      }).catch(()=>{});
+    } catch(e) {}
+    toast(`✅ Plan payment confirmed! Extended to ${expiry.toLocaleDateString('en-IN')}`, 'success');
+
+    // Check if there's a pending admission fee to collect
+    const pendingAdmission = currentPaymentMember._admissionFee;
+    const pendingName      = currentPaymentMember._admissionName;
+    const pendingId        = currentPaymentMember._admissionId;
+
+    closeModal('paymentModal');
+    currentPaymentMember = null;
+    loadDashboard(); loadPayments();
+
+    // Show admission fee payment next (after short delay)
+    if (pendingAdmission && pendingAdmission > 0) {
+      setTimeout(() => {
+        if (confirm(`Collect Admission Fee ₹${Math.round(pendingAdmission).toLocaleString('en-IN')} for ${pendingName}?\n\nClick OK to open UPI payment.`)) {
+          openAdmissionPayment(pendingId, pendingName, pendingAdmission);
+        }
+      }, 600);
+    }
+  } else {
+    // Admission fee payment confirmed
+    toast(`✅ Admission fee collected!`, 'success');
+    closeModal('paymentModal');
+    currentPaymentMember = null;
+  }
 }
 
 // ===== SETTINGS =====
@@ -1365,9 +1442,16 @@ document.getElementById('addMemberForm').addEventListener('submit', async e=>{
       toast(`${added.name} added!`,'success');
       loadDashboard();
 
-      // Show payment (include admission fee if applicable)
-      const totalDue=finalPrice+(!admissionWaived?admissionFee:0)+(ptEnabled?ptFee:0);
-      openPaymentFor(added._id,added.name,added.plan);
+      // ✅ Show PLAN payment only
+      openPaymentFor(added._id, added.name, added.plan);
+
+      // ✅ After plan payment modal closes, prompt for admission fee separately (if not waived)
+      if (!admissionWaived && admissionFee > 0) {
+        // Store admission info so after confirmPayment we can show it
+        currentPaymentMember._admissionFee = admissionFee;
+        currentPaymentMember._admissionName = added.name;
+        currentPaymentMember._admissionId = added._id;
+      }
     } else {
       const err=await res.json(); toast(err.error||'Could not add member','error');
     }
