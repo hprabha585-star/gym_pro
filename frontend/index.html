@@ -36,11 +36,6 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* Prevent accidental scrolling on number inputs */
-    input[type=number]::-webkit-inner-spin-button, 
-    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-    input[type=number] { -moz-appearance: textfield; }
-
     /* ===== SIDEBAR ===== */
     .sidebar {
       position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh;
@@ -51,6 +46,7 @@
       box-shadow: 4px 0 24px rgba(0,0,0,0.05);
     }
     .sidebar.open { transform: translateX(0); }
+
     .sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 0.25rem 0.5rem 1.25rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; justify-content: space-between; }
     .brand-icon { width: 36px; height: 36px; background: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
     .brand-name { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--primary); flex: 1; }
@@ -86,8 +82,12 @@
 
     /* ===== MAIN ===== */
     .main-content { margin-left: 0; margin-top: 64px; padding: 1.25rem; min-height: calc(100vh - 64px); }
+
+    /* ===== OVERLAY ===== */
     .overlay { display: none; position: fixed; inset: 0; background: rgba(10,8,30,0.5); z-index: 1500; backdrop-filter: blur(3px); }
     .overlay.show { display: block; }
+
+    /* ===== PAGES ===== */
     .page { display: none; animation: fadeIn 0.3s; }
     .page.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
@@ -244,10 +244,19 @@
     .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); }
     .empty .e-icon { font-size: 3rem; margin-bottom: 0.5rem; }
 
+    /* ===== DISCOUNT TABLE ===== */
+    .discount-table { width: 100%; border-collapse: collapse; }
+    .discount-table th, .discount-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+    .discount-table th { background: #f8f9fa; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; color: var(--muted); }
+
     /* ===== SETTINGS PAGE ===== */
     .settings-section { background: white; border-radius: var(--radius); border: 1px solid var(--border); padding: 1.25rem; margin-bottom: 1.25rem; }
     .settings-section h3 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: var(--text); }
-    
+    .settings-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-row label { font-size: 0.9rem; font-weight: 600; color: var(--text); }
+    .settings-row small { font-size: 0.78rem; color: var(--muted); display: block; }
+
     /* ===== RESPONSIVE ===== */
     @media (max-width: 768px) {
       .bottom-nav { display: flex; }
@@ -341,8 +350,8 @@
 
     <div class="card">
       <div class="card-header">
-        <span class="card-title">Recent Members (Expiring <= 5 Days)</span>
-        <button class="btn btn-primary btn-sm" onclick="openAddMember()">+ Add Member</button>
+        <span class="card-title">Recent Members</span>
+        <button class="btn btn-primary btn-sm" onclick="openModal('addMemberModal')">+ Add Member</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -359,7 +368,7 @@
       <div class="card-header">
         <span class="card-title">All Members</span>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-primary btn-sm" onclick="openAddMember()">+ Add Member</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('addMemberModal')">+ Add Member</button>
           <button class="btn btn-danger btn-sm" onclick="confirmDeleteAll()">🗑 Delete All</button>
         </div>
       </div>
@@ -472,12 +481,12 @@
 
 </main>
 
-<!-- ════ ADD/EDIT MEMBER MODAL ════ -->
+<!-- ════ ADD MEMBER MODAL ════ -->
 <div class="modal" id="addMemberModal">
   <div class="modal-content">
     <div class="modal-header">
-      <span class="modal-title" id="memberModalTitle">Add New Member</span>
-      <button class="modal-close" onclick="closeMemberModal()">✕</button>
+      <span class="modal-title">Add New Member</span>
+      <button class="modal-close" onclick="closeModal('addMemberModal')">✕</button>
     </div>
     <form id="addMemberForm">
 
@@ -500,7 +509,7 @@
       <div class="form-section-title" style="margin-top:0">Basic Info</div>
       <div class="form-grid">
         <div class="form-group"><label>Full Name *</label><input type="text" id="mName" required placeholder="e.g. Arjun Reddy"></div>
-        <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="mPhone" required placeholder="9876543210" maxlength="10" pattern="\d{10}"></div>
+        <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="mPhone" required placeholder="9876543210" maxlength="10"></div>
         <div class="form-group"><label>Email</label><input type="email" id="mEmail" placeholder="optional"></div>
         <div class="form-group"><label>Age</label><input type="number" id="mAge" min="12" max="100" placeholder="18"></div>
         <div class="form-group">
@@ -535,15 +544,19 @@
           <div class="form-group"><label>Discount Value</label><input type="number" id="dValue" min="0" placeholder="e.g. 200" oninput="recalcPrice()"></div>
           <div class="form-group"><label>Reason</label><input type="text" id="dReason" placeholder="e.g. Festival offer"></div>
         </div>
+        <div class="price-summary" id="priceSummary">
+          <div class="line"><span>Original price:</span><span id="origPrice">₹0</span></div>
+          <div class="line"><span>Final price:</span><span id="finalPrice">₹0</span></div>
+        </div>
       </div>
 
       <!-- Admission Fee -->
       <div class="admission-box">
         <h4>🎟️ Admission Fee (One-time)</h4>
         <div class="form-grid">
-          <div class="form-group"><label>Admission Fee (₹)</label><input type="number" id="mAdmissionFee" min="0" placeholder="e.g. 500" oninput="recalcPrice()"></div>
+          <div class="form-group"><label>Admission Fee (₹)</label><input type="number" id="mAdmissionFee" min="0" placeholder="e.g. 500"></div>
           <div class="form-group"><label>Waive Admission Fee?</label>
-            <select id="mWaiveAdmission" onchange="recalcPrice()">
+            <select id="mWaiveAdmission">
               <option value="no">No — Collect Fee</option>
               <option value="yes">Yes — Waive Fee</option>
             </select>
@@ -556,14 +569,14 @@
         <h4>💪 Personal Training</h4>
         <div class="pt-toggle">
           <label class="toggle-switch">
-            <input type="checkbox" id="mPtEnabled" onchange="togglePT(); recalcPrice();">
+            <input type="checkbox" id="mPtEnabled" onchange="togglePT()">
             <span class="toggle-slider"></span>
           </label>
           <span style="font-size:0.9rem;font-weight:600">Enable Personal Training</span>
         </div>
         <div id="ptDetails" style="display:none">
           <div class="form-grid">
-            <div class="form-group"><label>PT Fee / month (₹)</label><input type="number" id="mPtFee" min="0" placeholder="e.g. 2000" oninput="recalcPrice()"></div>
+            <div class="form-group"><label>PT Fee / month (₹)</label><input type="number" id="mPtFee" min="0" placeholder="e.g. 2000"></div>
             <div class="form-group"><label>Assigned Trainer</label>
               <select id="mPtTrainer">
                 <option value="">Select Trainer</option>
@@ -572,15 +585,6 @@
           </div>
           <div class="form-group"><label>PT Notes</label><input type="text" id="mPtNotes" placeholder="e.g. Weight loss, 5 days/week"></div>
         </div>
-      </div>
-
-      <!-- Summary -->
-      <div class="price-summary" id="priceSummary">
-        <div class="line"><span>Plan Price:</span><span id="origPrice">₹0</span></div>
-        <div class="line" style="color:var(--success)"><span>- Discount:</span><span id="dispDiscount">₹0</span></div>
-        <div class="line"><span>+ Admission Fee:</span><span id="dispAdmFee">₹0</span></div>
-        <div class="line"><span>+ PT Fee:</span><span id="dispPtFee">₹0</span></div>
-        <div class="line" style="margin-top:6px; padding-top:6px; border-top:1px dashed #c4b5fd;"><span>Grand Total:</span><span id="finalPrice">₹0</span></div>
       </div>
 
       <!-- Expiry & Status -->
@@ -606,8 +610,8 @@
       <div class="form-group"><label>Medical Notes</label><textarea id="mNotes" placeholder="Any notes..."></textarea></div>
 
       <div class="modal-footer" style="flex-direction:column;gap:10px;margin-top:1.25rem">
-        <button type="submit" class="btn btn-primary" id="memberSubmitBtn" style="width:100%">Add Member</button>
-        <button type="button" class="btn" style="background:var(--border);color:var(--text);width:100%" onclick="closeMemberModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" style="width:100%">Add Member</button>
+        <button type="button" class="btn" style="background:var(--border);color:var(--text);width:100%" onclick="closeModal('addMemberModal')">Cancel</button>
       </div>
     </form>
   </div>
@@ -718,53 +722,34 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// Prevent accidental mousewheel scrolling on number inputs
-document.addEventListener("wheel", function(event){
-    if(document.activeElement.type === "number") document.activeElement.blur();
-});
-
-// Safe getters
-function getVal(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
-function getNum(id, fallback = 0) { const el = document.getElementById(id); const val = el ? parseFloat(el.value) : NaN; return isNaN(val) ? fallback : val; }
-
-function safeJSON(key, defaultVal) {
-    try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : defaultVal; } 
-    catch(e) { return defaultVal; }
-}
-
 // ===== CONFIG =====
 const BASE = 'https://gym-pro-mvyv.onrender.com/api';
 const API  = `${BASE}/members`;
 const TAPI = `${BASE}/trainers`;
 
-const VALID_BACKEND_PLANS = [
-  '1 Month Strength', '1 Month Strength + Cardio',
-  '3 Months Strength', '3 Months Strength + Cardio',
-  '6 Months Strength', '6 Months Strength + Cardio',
-  '1 Year Strength', '1 Year Strength + Cardio'
+// Default plans — user can add more via Settings / Add Plan
+let gymPlans = JSON.parse(localStorage.getItem('gymPlans') || 'null') || [
+  { name:'1 Month Strength',           price:1000,  months:1  },
+  { name:'1 Month Strength + Cardio',  price:1500,  months:1  },
+  { name:'3 Months Strength',          price:2700,  months:3  },
+  { name:'3 Months Strength + Cardio', price:4000,  months:3  },
+  { name:'6 Months Strength',          price:5000,  months:6  },
+  { name:'6 Months Strength + Cardio', price:7500,  months:6  },
+  { name:'1 Year Strength',            price:9000,  months:12 },
+  { name:'1 Year Strength + Cardio',   price:14000, months:12 }
 ];
 
-let gymPlans = safeJSON('gymPlans', [
-  { name:'1 Month Strength', price:1000, months:1 },
-  { name:'1 Month Strength + Cardio', price:1500, months:1 },
-  { name:'3 Months Strength', price:2700, months:3 },
-  { name:'3 Months Strength + Cardio', price:4000, months:3 },
-  { name:'6 Months Strength', price:5000, months:6 },
-  { name:'6 Months Strength + Cardio', price:7500, months:6 },
-  { name:'1 Year Strength', price:9000, months:12 },
-  { name:'1 Year Strength + Cardio', price:14000, months:12 }
-]);
-
-let activeDiscounts  = safeJSON('gympro_discounts', []);
-let memberDiscounts  = safeJSON('gympro_member_discounts', {});
-let memberMeta       = safeJSON('gympro_member_meta', {});
-let gymSettings      = safeJSON('gymSettings', {});
+let activeDiscounts  = JSON.parse(localStorage.getItem('gympro_discounts') || '[]');
+let memberDiscounts  = JSON.parse(localStorage.getItem('gympro_member_discounts') || '{}');
+let memberMeta       = JSON.parse(localStorage.getItem('gympro_member_meta') || '{}');
+// memberMeta[id] = { admissionFee, admissionWaived, ptEnabled, ptFee, ptTrainer, ptNotes, gender }
+let gymSettings      = JSON.parse(localStorage.getItem('gymSettings') || '{}');
+// gymSettings = { upiId, upiName, admissionFee, ptFee }
 
 let currentPaymentMember = null;
 let currentFinalPrice = 0;
+let currentAdmissionFee = 0;
 let currentStream = null;
-let editingMemberId = null; 
-let allMembersCache = []; 
 
 function getPlanPrice(name)  { return (gymPlans.find(p=>p.name===name)||{}).price||0; }
 function getPlanMonths(name) { return (gymPlans.find(p=>p.name===name)||{}).months||1; }
@@ -777,15 +762,16 @@ function logout() { localStorage.removeItem('token'); localStorage.removeItem('u
 // ===== TOAST =====
 function toast(msg, type='') {
   const el = document.getElementById('toast');
-  if(el){ el.textContent = msg; el.className = `toast show ${type}`; setTimeout(() => el.className='toast', 3200); }
+  el.textContent = msg; el.className = `toast show ${type}`;
+  setTimeout(() => el.className='toast', 3200);
 }
 
 // ===== HELPERS =====
 function esc(s) { return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-IN') : '—'; }
-function avBg(n) { const c=['#6C47FF','#16a34a','#dc2626','#d97706','#0891b2','#9333ea']; return c[(String(n||'').charCodeAt(0)||0)%c.length]; }
+function avBg(n) { const c=['#6C47FF','#16a34a','#dc2626','#d97706','#0891b2','#9333ea']; return c[(n.charCodeAt(0)||0)%c.length]; }
 function avatar(name) {
-  const i=String(name||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
+  const i=(name||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
   return `<div class="avatar" style="background:${avBg(name)}">${esc(i)}</div>`;
 }
 function renderAvatar(m) {
@@ -802,6 +788,7 @@ function genderBadge(g) {
   return `<span class="badge ${m[g]||'badge-other'}">${esc(g)}</span>`;
 }
 
+// ===== EXPIRY SIGNAL (dashboard) =====
 function expiryCell(expiryDate, status) {
   if (status !== 'Active' && status !== 'Trial') return `<div class="expiry-cell"><span class="expiry-text green">${fmtDate(expiryDate)}</span></div>`;
   const days = Math.ceil((new Date(expiryDate) - new Date()) / (1000*60*60*24));
@@ -828,110 +815,16 @@ document.addEventListener('click', e => {
   }
 });
 
-// Specific Member Modal Controls
-function openAddMember() {
-  editingMemberId = null;
-  document.getElementById('memberModalTitle').textContent = 'Add New Member';
-  document.getElementById('memberSubmitBtn').textContent = 'Add Member';
-  document.getElementById('addMemberForm').reset();
-  document.getElementById('condContainer').innerHTML = '';
-  
-  if (gymSettings.admissionFee) document.getElementById('mAdmissionFee').value = gymSettings.admissionFee;
-  if (gymSettings.ptFee) document.getElementById('mPtFee').value = gymSettings.ptFee;
-  
-  document.getElementById('mPtEnabled').checked = false;
-  togglePT();
-  resetPhotoPreview();
-  populatePlanSelect(); // forces recalcPrice
-  openModal('addMemberModal');
-}
-
-function closeMemberModal() {
-  editingMemberId = null;
-  closeModal('addMemberModal');
-}
-
-function openEditMember(id) {
-  const m = allMembersCache.find(x => x._id === id);
-  if(!m) return toast('Member details not found', 'error');
-
-  editingMemberId = id;
-  const meta = memberMeta[id] || {};
-  const actualPlan = meta.customPlanName || m.plan;
-
-  document.getElementById('memberModalTitle').textContent = 'Edit Member';
-  document.getElementById('memberSubmitBtn').textContent = 'Save Changes';
-
-  document.getElementById('mName').value = m.name || '';
-  document.getElementById('mPhone').value = m.phone || '';
-  document.getElementById('mEmail').value = m.email || '';
-  document.getElementById('mAge').value = m.age || '';
-  document.getElementById('mGender').value = meta.gender || m.gender || '';
-  document.getElementById('mPlan').value = actualPlan;
-  
-  if(m.expiryDate) document.getElementById('mExpiry').value = new Date(m.expiryDate).toISOString().split('T')[0];
-  document.getElementById('mStatus').value = m.status || 'Active';
-
-  document.getElementById('mAdmissionFee').value = meta.admissionFee || 0;
-  document.getElementById('mWaiveAdmission').value = meta.admissionWaived ? 'yes' : 'no';
-  
-  const ptCheckbox = document.getElementById('mPtEnabled');
-  ptCheckbox.checked = meta.ptEnabled || false;
-  document.getElementById('mPtFee').value = meta.ptFee || gymSettings.ptFee || 0;
-  document.getElementById('mPtTrainer').value = meta.ptTrainer || '';
-  document.getElementById('mPtNotes').value = meta.ptNotes || '';
-  togglePT();
-
-  if(m.emergencyContact) {
-    document.getElementById('mEcName').value = m.emergencyContact.name || '';
-    document.getElementById('mEcPhone').value = m.emergencyContact.phone || '';
-    document.getElementById('mEcRel').value = m.emergencyContact.relationship || '';
-  }
-
-  document.getElementById('mNotes').value = m.medicalNotes || '';
-  const cCont = document.getElementById('condContainer');
-  cCont.innerHTML = '';
-  if(m.healthConditions && m.healthConditions.length > 0) {
-    m.healthConditions.forEach(hc => {
-      addCondition(); 
-      const rows = cCont.querySelectorAll('.condition-row');
-      const lastRow = rows[rows.length - 1];
-      lastRow.querySelector('.cType').value = hc.condition || '';
-      lastRow.querySelector('.cSev').value = hc.severity || 'Mild';
-      lastRow.querySelector('.cNote').value = hc.notes || '';
-    });
-  }
-
-  if(m.photo) {
-    document.getElementById('member-photo-preview').src = m.photo;
-    document.getElementById('photo-data').value = m.photo;
-    document.getElementById('clear-photo-btn').style.display = 'inline-flex';
-  } else {
-    resetPhotoPreview();
-  }
-
-  document.querySelector('input[name="dType"][value="none"]').checked = true;
-  document.getElementById('dValue').value = '';
-  
-  recalcPrice();
-  openModal('addMemberModal');
-}
-
 // ===== NAVIGATION =====
 function showPage(page, btn) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
-  const target = document.getElementById(`page-${page}`);
-  if(target) target.classList.add('active');
+  document.getElementById(`page-${page}`).classList.add('active');
   if (btn) btn.classList.add('active');
-  
-  const titles = { dashboard:'Dashboard', members:'Members', attendance:'Attendance', trainers:'Trainers', plans:'Plans', discounts:'Discounts', payments:'Payments', settings:'Settings' };
-  const pt = document.getElementById('pageTitle');
-  if(pt) pt.textContent = titles[page] || page;
-  
+  const t={dashboard:'Dashboard',members:'Members',attendance:'Attendance',trainers:'Trainers',plans:'Plans',discounts:'Discounts',payments:'Payments',settings:'Settings'};
+  document.getElementById('pageTitle').textContent = t[page]||page;
   closeSidebar();
-
-  const loaders = { dashboard: loadDashboard, members: loadAllMembers, attendance: () => loadAttendance(), trainers: loadTrainers, plans: loadPlans, discounts: renderDiscounts, payments: loadPayments, settings: loadSettings };
+  const loaders={dashboard:loadDashboard,members:loadAllMembers,attendance:loadAttendance,trainers:loadTrainers,plans:loadPlans,discounts:renderDiscounts,payments:loadPayments,settings:loadSettings};
   if (loaders[page]) loaders[page]();
 }
 
@@ -957,7 +850,7 @@ function setupCamera() {
 
   if (captureBtn) captureBtn.addEventListener('click',()=>{
     canvas.width=video.videoWidth; canvas.height=video.videoHeight;
-    canvas.getContext('2d').drawImage(video,0,0, canvas.width, canvas.height);
+    canvas.getContext('2d').drawImage(video,0,0);
     const d=canvas.toDataURL('image/jpeg',0.7);
     preview.src=d; photoData.value=d; clearBtn.style.display='inline-flex';
     closeModal('cameraModal');
@@ -981,73 +874,51 @@ function setupCamera() {
 }
 
 function resetPhotoPreview() {
-  const p = document.getElementById('member-photo-preview');
-  if(p) p.src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%23c4b5fd'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
-  const d = document.getElementById('photo-data'); if(d) d.value='';
-  const c = document.getElementById('clear-photo-btn'); if(c) c.style.display='none';
-  const u = document.getElementById('photo-upload'); if(u) u.value='';
+  document.getElementById('member-photo-preview').src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%23c4b5fd'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+  document.getElementById('photo-data').value='';
+  document.getElementById('clear-photo-btn').style.display='none';
+  document.getElementById('photo-upload').value='';
 }
 
 // ===== PLAN SELECT POPULATE =====
 function populatePlanSelect() {
   const sel = document.getElementById('mPlan');
-  if(sel) {
-    sel.innerHTML = gymPlans.map(p=>`<option value="${esc(p.name)}" data-price="${p.price}" data-months="${p.months}">${esc(p.name)} — ₹${p.price.toLocaleString('en-IN')}</option>`).join('');
-  }
+  sel.innerHTML = gymPlans.map(p=>`<option value="${esc(p.name)}" data-price="${p.price}" data-months="${p.months}">${esc(p.name)} — ₹${p.price.toLocaleString('en-IN')}</option>`).join('');
+  // also populate discount plan select
   const dp = document.getElementById('discPlan');
   if (dp) dp.innerHTML = gymPlans.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
   recalcPrice();
 }
 
+// ===== PT TOGGLE =====
 function togglePT() {
-  const c = document.getElementById('mPtEnabled');
-  const d = document.getElementById('ptDetails');
-  if(c && d) d.style.display = c.checked ? 'block' : 'none';
+  document.getElementById('ptDetails').style.display = document.getElementById('mPtEnabled').checked ? 'block' : 'none';
 }
 
 // ===== PRICE CALC =====
 function recalcPrice() {
   const sel = document.getElementById('mPlan');
   if (!sel || !sel.options[sel.selectedIndex]) return;
-  
   const origPrice = parseInt(sel.options[sel.selectedIndex].getAttribute('data-price'))||0;
-  
   const dType = document.querySelector('input[name="dType"]:checked')?.value||'none';
   const dVal  = parseFloat(document.getElementById('dValue')?.value)||0;
-  
-  let discountAmt = 0;
-  if (dType==='percentage' && dVal>0) discountAmt = origPrice * (dVal/100);
-  else if (dType==='fixed' && dVal>0) discountAmt = dVal;
-  
-  let finalPlan = Math.max(0, origPrice - discountAmt);
-  finalPlan = Math.round(finalPlan);
+  let final = origPrice;
+  if (dType==='percentage' && dVal>0) final = origPrice - origPrice*dVal/100;
+  else if (dType==='fixed' && dVal>0) final = Math.max(0, origPrice-dVal);
+  final = Math.round(final);
+  currentFinalPrice = final;
+  document.getElementById('origPrice').textContent = `₹${origPrice.toLocaleString('en-IN')}`;
+  document.getElementById('finalPrice').textContent = `₹${final.toLocaleString('en-IN')}`;
 
-  const waiveAdm = document.getElementById('mWaiveAdmission')?.value === 'yes';
-  const admissionFee = waiveAdm ? 0 : (parseFloat(document.getElementById('mAdmissionFee')?.value)||0);
-
-  const ptEnabled = document.getElementById('mPtEnabled')?.checked;
-  const ptFee = ptEnabled ? (parseFloat(document.getElementById('mPtFee')?.value)||0) : 0;
-
-  const grandTotal = finalPlan + admissionFee + ptFee;
-  currentFinalPrice = grandTotal;
-
-  const oEl = document.getElementById('origPrice'); if(oEl) oEl.textContent = `₹${origPrice.toLocaleString('en-IN')}`;
-  const dEl = document.getElementById('dispDiscount'); if(dEl) dEl.textContent = `₹${Math.round(discountAmt).toLocaleString('en-IN')}`;
-  const aEl = document.getElementById('dispAdmFee'); if(aEl) aEl.textContent = `₹${admissionFee.toLocaleString('en-IN')}`;
-  const pEl = document.getElementById('dispPtFee'); if(pEl) pEl.textContent = `₹${ptFee.toLocaleString('en-IN')}`;
-  const fEl = document.getElementById('finalPrice'); if(fEl) fEl.textContent = `₹${grandTotal.toLocaleString('en-IN')}`;
-
-  if(!editingMemberId) {
-    const months = parseInt(sel.options[sel.selectedIndex].getAttribute('data-months'))||1;
-    const exp = new Date(); exp.setMonth(exp.getMonth()+months);
-    const mExp = document.getElementById('mExpiry');
-    if(mExp) mExp.value = exp.toISOString().split('T')[0];
-  }
+  // Auto expiry
+  const months = parseInt(sel.options[sel.selectedIndex].getAttribute('data-months'))||1;
+  const exp = new Date(); exp.setMonth(exp.getMonth()+months);
+  document.getElementById('mExpiry').value = exp.toISOString().split('T')[0];
 }
 
+// ===== CONDITION ROW =====
 function addCondition() {
   const c=document.getElementById('condContainer');
-  if(!c) return;
   const row=document.createElement('div'); row.className='condition-row';
   row.style.cssText='display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center';
   row.innerHTML=`
@@ -1063,99 +934,71 @@ async function loadDashboard() {
   try {
     const res=await fetch(API,{headers:headers()});
     if (res.status===401) { logout(); return; }
-    let members=await res.json();
-    if(!Array.isArray(members)) members = [];
+    const members=await res.json();
 
-    const tm=document.getElementById('totalMembers'); if(tm) tm.textContent=members.length;
+    document.getElementById('totalMembers').textContent=members.length;
     const active=members.filter(m=>m.status==='Active');
-    const am=document.getElementById('activeMembers'); if(am) am.textContent=active.length;
+    document.getElementById('activeMembers').textContent=active.length;
 
+    // Revenue calculation
     let monthlyRev=0, admissionRev=0, ptRev=0;
     members.forEach(m=>{
       const meta=memberMeta[m._id]||{};
-      const actualPlanName = meta.customPlanName || m.plan;
-      const pDetails = getPlanDetails(actualPlanName);
-      monthlyRev += memberDiscounts[m._id] !== undefined ? memberDiscounts[m._id] : (pDetails.price||0);
+      monthlyRev += memberDiscounts[m._id] || getPlanPrice(m.plan);
       if (!meta.admissionWaived) admissionRev += meta.admissionFee||0;
       if (meta.ptEnabled) ptRev += meta.ptFee||0;
     });
-    
     const totalRev = monthlyRev + admissionRev + ptRev;
-    const trEl=document.getElementById('totalRevenue'); if(trEl) trEl.textContent = `₹${Math.round(totalRev).toLocaleString('en-IN')}`;
-    const mrEl=document.getElementById('monthlyRevenue'); if(mrEl) mrEl.textContent = `₹${Math.round(monthlyRev).toLocaleString('en-IN')}`;
-    const arEl=document.getElementById('admissionRevenue'); if(arEl) arEl.textContent=`₹${Math.round(admissionRev).toLocaleString('en-IN')}`;
-    const prEl=document.getElementById('ptRevenue'); if(prEl) prEl.textContent = `₹${Math.round(ptRev).toLocaleString('en-IN')}`;
+    document.getElementById('totalRevenue').textContent   = `₹${Math.round(totalRev).toLocaleString('en-IN')}`;
+    document.getElementById('monthlyRevenue').textContent = `₹${Math.round(monthlyRev).toLocaleString('en-IN')}`;
+    document.getElementById('admissionRevenue').textContent=`₹${Math.round(admissionRev).toLocaleString('en-IN')}`;
+    document.getElementById('ptRevenue').textContent      = `₹${Math.round(ptRev).toLocaleString('en-IN')}`;
 
+    // Reminder
     const due=members.filter(m=>m.status==='Active'&&new Date(m.expiryDate)<=new Date(Date.now()+7*86400000));
     const rc=document.getElementById('reminderCard');
-    if(rc) {
-      if (!due.length) {
-        rc.className='reminder green';
-        rc.innerHTML='<div class="reminder-text"><h3>✅ All Good!</h3><p>No pending payments</p></div>';
-      } else {
-        rc.className='reminder orange';
-        rc.innerHTML=`<div class="reminder-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due Soon</h3><p>Members expiring within 7 days</p></div>
-          <button class="btn btn-sm" style="background:white;color:var(--warning);font-weight:700" onclick="showPage('payments',document.querySelector('[data-page=payments]'));updateBNav('none')">View →</button>`;
-      }
+    if (!due.length) {
+      rc.className='reminder green';
+      rc.innerHTML='<div class="reminder-text"><h3>✅ All Good!</h3><p>No pending payments</p></div>';
+    } else {
+      rc.className='reminder orange';
+      rc.innerHTML=`<div class="reminder-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due Soon</h3><p>Members expiring within 7 days</p></div>
+        <button class="btn btn-sm" style="background:white;color:var(--warning);font-weight:700" onclick="showPage('payments',document.querySelector('[data-page=payments]'));updateBNav('none')">View →</button>`;
     }
 
+    // Table
     const tbody=document.getElementById('dashMembersBody');
-    if(tbody) {
-      const today = new Date(); today.setHours(0,0,0,0);
-      const expiring = members.filter(m=>{
-        if(m.status!=='Active') return false;
-        const d = Math.ceil((new Date(m.expiryDate) - today)/(1000*60*60*24));
-        return d <= 5;
-      }).sort((a,b)=>new Date(a.expiryDate)-new Date(b.expiryDate));
-
-      if (!expiring.length) { 
-        tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="e-icon">✅</div><p>No active members expiring soon.</p></div></td></tr>'; 
-      } else {
-        tbody.innerHTML=expiring.map(m=>{
-          const meta = memberMeta[m._id]||{};
-          const planToDisplay = meta.customPlanName || m.plan;
-          return `
-          <tr>
-            <td><div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.phone)}</small></div></div></td>
-            <td style="font-size:0.85rem">${esc(planToDisplay)}</td>
-            <td>${genderBadge(meta.gender||m.gender)}</td>
-            <td>${expiryCell(m.expiryDate, m.status)}</td>
-            <td>${badge(m.status)}</td>
-          </tr>`
-        }).join('');
-      }
-    }
+    if (!members.length) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="e-icon">👥</div><p>No members yet. Add your first member!</p></div></td></tr>'; return; }
+    tbody.innerHTML=members.slice(0,8).map(m=>`
+      <tr>
+        <td><div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.phone)}</small></div></div></td>
+        <td style="font-size:0.85rem">${esc(m.plan)}</td>
+        <td>${genderBadge((memberMeta[m._id]||{}).gender||m.gender)}</td>
+        <td>${expiryCell(m.expiryDate, m.status)}</td>
+        <td>${badge(m.status)}</td>
+      </tr>`).join('');
   } catch(e) { toast('Error loading dashboard','error'); }
 }
 
 // ===== ALL MEMBERS =====
 async function loadAllMembers() {
   const tbody=document.getElementById('allMembersBody');
-  if(!tbody) return;
   try {
     const res=await fetch(API,{headers:headers()});
     if (res.status===401){logout();return;}
-    let members=await res.json();
-    if(!Array.isArray(members)) members = [];
-    allMembersCache = members;
-
+    const members=await res.json();
     if (!members.length) { tbody.innerHTML='<tr><td colspan="8"><div class="empty"><div class="e-icon">👥</div><p>No members yet.</p></div></td></tr>'; return; }
-    
     tbody.innerHTML=members.map(m=>{
       const meta=memberMeta[m._id]||{};
-      const planToDisplay = meta.customPlanName || m.plan;
       return `<tr>
         <td><div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.email||'')}</small></div></div></td>
         <td>${esc(m.phone)}</td>
         <td>${genderBadge(meta.gender||m.gender)}</td>
-        <td style="font-size:0.85rem">${esc(planToDisplay)}</td>
+        <td style="font-size:0.85rem">${esc(m.plan)}</td>
         <td>${fmtDate(m.expiryDate)}</td>
         <td>${meta.ptEnabled?'<span class="badge badge-active">Yes</span>':'<span style="color:var(--muted);font-size:0.8rem">No</span>'}</td>
         <td>${badge(m.status)}</td>
-        <td style="white-space:nowrap">
-          <button class="btn btn-outline btn-sm" onclick="openEditMember('${esc(m._id)}')">Edit</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteMember('${esc(m._id)}','${esc(String(m.name||'').replace(/'/g,"\\'"))}')">Delete</button>
-        </td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteMember('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\'"))}')">Delete</button></td>
       </tr>`;
     }).join('');
   } catch(e) { tbody.innerHTML='<tr><td colspan="8"><div class="empty"><p style="color:var(--danger)">Error loading members</p></div></td></tr>'; }
@@ -1171,18 +1014,12 @@ async function deleteMember(id,name) {
 }
 
 async function confirmDeleteAll() {
-  if (prompt('Type DELETE ALL to confirm:') !== 'DELETE ALL') return;
+  const v = prompt('⚠️ Type DELETE ALL to confirm deleting every member:');
+  if (v !== 'DELETE ALL') return;
   try {
     const res=await fetch(API,{headers:headers()});
-    let members=await res.json();
-    if(!Array.isArray(members)) members=[];
-    for (const m of members) {
-      try{ await fetch(`${API}/${m._id}`,{method:'DELETE',headers:headers()}); } catch(e){}
-    }
-    
-    localStorage.removeItem('gympro_member_meta');
-    localStorage.removeItem('gympro_member_discounts');
-    memberMeta = {}; memberDiscounts = {};
+    const members=await res.json();
+    for (const m of members) await fetch(`${API}/${m._id}`,{method:'DELETE',headers:headers()});
     toast('All members deleted'); loadAllMembers(); loadDashboard();
   } catch(e){toast('Error','error');}
 }
@@ -1190,68 +1027,58 @@ async function confirmDeleteAll() {
 // ===== ATTENDANCE =====
 async function loadAttendance() {
   const dateEl=document.getElementById('attendanceDate');
-  const date=dateEl?.value||new Date().toISOString().split('T')[0];
-  if(dateEl) dateEl.value=date;
+  const date=dateEl.value||new Date().toISOString().split('T')[0];
+  dateEl.value=date;
   const tbody=document.getElementById('attendanceBody');
   try {
     const res=await fetch(API,{headers:headers()});
     if (res.status===401){logout();return;}
-    let members=await res.json();
-    if(!Array.isArray(members)) members=[];
+    const members=await res.json();
     const active=members.filter(m=>m.status==='Active'||m.status==='Trial');
-    
     const attKey=`gympro_att_${date}`;
-    let saved=safeJSON(attKey, {});
+    let saved={};
+    try{saved=JSON.parse(localStorage.getItem(attKey)||'{}');}catch(e){}
     const presentCount=Object.values(saved).filter(s=>s==='Present').length;
-    
-    const sTotal=document.getElementById('statTotal'); if(sTotal) sTotal.textContent=active.length;
-    const sPres=document.getElementById('statPresent'); if(sPres) sPres.textContent=presentCount;
-    const sPct=document.getElementById('statPct'); if(sPct) sPct.textContent=active.length?`${Math.min(100,Math.round(presentCount/active.length*100))}%`:'0%';
-    
-    if(tbody) {
-      if (!active.length){tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p>No active members found</p></div></td></tr>';return;}
-      tbody.innerHTML=active.map(m=>{
-        const st=saved[m._id]||'Absent';
-        const planToDisplay = (memberMeta[m._id]||{}).customPlanName || m.plan;
-        return `<tr>
-          <td><div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<strong>${esc(m.name)}</strong></div></td>
-          <td style="font-size:0.85rem">${esc(planToDisplay)}</td><td>${esc(m.phone)}</td>
-          <td><span id="attbadge-${m._id}" class="badge ${st==='Present'?'badge-present':'badge-absent'}">${st}</span></td>
-          <td style="white-space:nowrap">
-            <button class="att-btn att-btn-present" onclick="markAtt('${m._id}','${date}','Present')">Present</button>
-            <button class="att-btn att-btn-absent"  onclick="markAtt('${m._id}','${date}','Absent')">Absent</button>
-          </td></tr>`;
-      }).join('');
-    }
-  } catch(e){if(tbody) tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading attendance</p></div></td></tr>';}
+    document.getElementById('statTotal').textContent=active.length;
+    document.getElementById('statPresent').textContent=presentCount;
+    document.getElementById('statPct').textContent=active.length?`${Math.min(100,Math.round(presentCount/active.length*100))}%`:'0%';
+    if (!active.length){tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p>No active members found</p></div></td></tr>';return;}
+    tbody.innerHTML=active.map(m=>{
+      const st=saved[m._id]||'Absent';
+      return `<tr>
+        <td><div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<strong>${esc(m.name)}</strong></div></td>
+        <td style="font-size:0.85rem">${esc(m.plan)}</td><td>${esc(m.phone)}</td>
+        <td><span id="attbadge-${m._id}" class="badge ${st==='Present'?'badge-present':'badge-absent'}">${st}</span></td>
+        <td style="white-space:nowrap">
+          <button class="att-btn att-btn-present" onclick="markAtt('${m._id}','${date}','Present')">Present</button>
+          <button class="att-btn att-btn-absent"  onclick="markAtt('${m._id}','${date}','Absent')">Absent</button>
+        </td></tr>`;
+    }).join('');
+  } catch(e){tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading attendance</p></div></td></tr>';}
 }
 
 function markAtt(memberId,date,status) {
   const attKey=`gympro_att_${date}`;
-  let saved=safeJSON(attKey, {});
+  let saved={};try{saved=JSON.parse(localStorage.getItem(attKey)||'{}');}catch(e){}
   saved[memberId]=status; localStorage.setItem(attKey,JSON.stringify(saved));
-  
   const b=document.getElementById(`attbadge-${memberId}`);
   if(b){b.textContent=status;b.className=`badge ${status==='Present'?'badge-present':'badge-absent'}`;}
-  
-  const total=parseInt(document.getElementById('statTotal')?.textContent)||0;
+  const total=parseInt(document.getElementById('statTotal').textContent)||0;
   const present=Object.values(saved).filter(s=>s==='Present').length;
-  const sPres=document.getElementById('statPresent'); if(sPres) sPres.textContent=present;
-  const sPct=document.getElementById('statPct'); if(sPct) sPct.textContent=total?`${Math.min(100,Math.round(present/total*100))}%`:'0%';
+  document.getElementById('statPresent').textContent=present;
+  document.getElementById('statPct').textContent=total?`${Math.min(100,Math.round(present/total*100))}%`:'0%';
 }
 
 async function markAllPresent() {
   const dateEl=document.getElementById('attendanceDate');
-  const date=dateEl?.value||new Date().toISOString().split('T')[0];
+  const date=dateEl.value||new Date().toISOString().split('T')[0];
   if(!confirm(`Mark all active members Present for ${new Date(date).toLocaleDateString('en-IN')}?`))return;
   try{
     const res=await fetch(API,{headers:headers()});
-    let members=await res.json();
-    if(!Array.isArray(members)) members=[];
+    const members=await res.json();
     const active=members.filter(m=>m.status==='Active'||m.status==='Trial');
-    
     const attKey=`gympro_att_${date}`;
-    let saved=safeJSON(attKey, {});
+    let saved={};try{saved=JSON.parse(localStorage.getItem(attKey)||'{}');}catch(e){}
     active.forEach(m=>{saved[m._id]='Present';});
     localStorage.setItem(attKey,JSON.stringify(saved));
     toast(`${active.length} members marked Present`,'success'); loadAttendance();
@@ -1264,24 +1091,21 @@ async function loadTrainers() {
   try{
     const res=await fetch(TAPI,{headers:headers()});
     if(res.status===401){logout();return;}
-    let trainers=await res.json();
-    if(!Array.isArray(trainers)) trainers=[];
-    
-    if(tbody) {
-      if(!trainers.length){tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="e-icon">🏋️</div><p>No trainers yet.</p></div></td></tr>';return;}
-      tbody.innerHTML=trainers.map(t=>`
-        <tr>
-          <td><div style="display:flex;align-items:center;gap:10px">${avatar(t.name)}<strong>${esc(t.name)}</strong></div></td>
-          <td>${esc(t.specialty)}</td><td>${esc(t.phone)}</td><td>${badge(t.status)}</td>
-          <td>
-            <button class="btn btn-sm btn-outline" onclick="editTrainer('${esc(t._id)}')">Edit</button>
-            <button class="btn btn-sm btn-danger"  onclick="deleteTrainer('${esc(t._id)}','${esc(String(t.name||'').replace(/'/g,"\\'"))}')">Delete</button>
-          </td>
-        </tr>`).join('');
-    }
+    const trainers=await res.json();
+    if(!trainers.length){tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="e-icon">🏋️</div><p>No trainers yet.</p></div></td></tr>';return;}
+    tbody.innerHTML=trainers.map(t=>`
+      <tr>
+        <td><div style="display:flex;align-items:center;gap:10px">${avatar(t.name)}<strong>${esc(t.name)}</strong></div></td>
+        <td>${esc(t.specialty)}</td><td>${esc(t.phone)}</td><td>${badge(t.status)}</td>
+        <td>
+          <button class="btn btn-sm btn-outline" onclick="editTrainer('${esc(t._id)}')">Edit</button>
+          <button class="btn btn-sm btn-danger"  onclick="deleteTrainer('${esc(t._id)}','${esc(t.name.replace(/'/g,"\\'"))}')">Delete</button>
+        </td>
+      </tr>`).join('');
+    // Populate PT trainer dropdown
     const ptSel=document.getElementById('mPtTrainer');
-    if(ptSel) ptSel.innerHTML='<option value="">Select Trainer</option>'+trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
-  }catch(e){if(tbody) tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading trainers</p></div></td></tr>';}
+    ptSel.innerHTML='<option value="">Select Trainer</option>'+trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
+  }catch(e){tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading trainers</p></div></td></tr>';}
 }
 
 async function editTrainer(id) {
@@ -1306,7 +1130,6 @@ async function deleteTrainer(id,name) {
 // ===== PLANS =====
 function loadPlans() {
   const grid=document.getElementById('plansGrid');
-  if(!grid) return;
   if (!gymPlans.length) { grid.innerHTML='<div class="empty"><div class="e-icon">💎</div><p>No plans yet. Add one!</p></div>'; return; }
   const plans=gymPlans.map(p=>{
     let discounted=p.price,discInfo=null;
@@ -1336,15 +1159,14 @@ function loadPlans() {
 }
 
 function selectPlan(name) {
-  const mPlan=document.getElementById('mPlan'); if(mPlan) mPlan.value=name; 
-  recalcPrice(); openAddMember();
+  document.getElementById('mPlan').value=name; recalcPrice(); openModal('addMemberModal');
 }
 
 function addGymPlan() {
-  const name=getVal('newPlanName');
-  const price=getNum('newPlanPrice');
-  const months=getNum('newPlanMonths');
-  if(!name||isNaN(price)||isNaN(months)){toast('Please fill all fields correctly','error');return;}
+  const name=document.getElementById('newPlanName').value.trim();
+  const price=parseFloat(document.getElementById('newPlanPrice').value);
+  const months=parseInt(document.getElementById('newPlanMonths').value);
+  if(!name||!price||!months){toast('Please fill all fields','error');return;}
   if(gymPlans.find(p=>p.name===name)){toast('Plan with this name already exists','error');return;}
   gymPlans.push({name,price,months});
   localStorage.setItem('gymPlans',JSON.stringify(gymPlans));
@@ -1352,9 +1174,9 @@ function addGymPlan() {
   populatePlanSelect();
   loadPlans();
   toast('Plan added!','success');
-  const np=document.getElementById('newPlanName'); if(np) np.value='';
-  const pp=document.getElementById('newPlanPrice'); if(pp) pp.value='';
-  const pm=document.getElementById('newPlanMonths'); if(pm) pm.value='';
+  document.getElementById('newPlanName').value='';
+  document.getElementById('newPlanPrice').value='';
+  document.getElementById('newPlanMonths').value='';
 }
 
 function removePlan(name) {
@@ -1367,7 +1189,6 @@ function removePlan(name) {
 // ===== DISCOUNTS =====
 function renderDiscounts() {
   const c=document.getElementById('discountsTable');
-  if(!c) return;
   if(!activeDiscounts.length){c.innerHTML='<div class="empty"><div class="e-icon">🏷️</div><p>No active discounts. Add one above.</p></div>';return;}
   c.innerHTML=`<div class="table-wrap"><table class="discount-table">
     <thead><tr><th>Name</th><th>Applies To</th><th>Type</th><th>Value</th><th>Valid Until</th><th>Action</th></tr></thead>
@@ -1384,19 +1205,17 @@ function renderDiscounts() {
 }
 
 function toggleDiscPlan() {
-  const el=document.getElementById('discPlanGroup');
-  const app=document.getElementById('discApplies');
-  if(el && app) el.style.display=app.value==='specific'?'block':'none';
+  document.getElementById('discPlanGroup').style.display=document.getElementById('discApplies').value==='specific'?'block':'none';
 }
 
 function addDiscount() {
-  const name=getVal('discName');
-  const val=getNum('discVal');
-  if(!name||isNaN(val)||val<=0){toast('Please fill all required fields','error');return;}
-  const type=getVal('discType');
+  const name=document.getElementById('discName').value.trim();
+  const val=parseFloat(document.getElementById('discVal').value);
+  if(!name||!val||val<=0){toast('Please fill all required fields','error');return;}
+  const type=document.getElementById('discType').value;
   if(type==='percentage'&&val>100){toast('Percentage cannot exceed 100%','error');return;}
-  const appliesTo=getVal('discApplies');
-  activeDiscounts.push({name,type,value:val,appliesTo,planName:appliesTo==='specific'?getVal('discPlan'):null,validUntil:getVal('discExpiry')||null});
+  const appliesTo=document.getElementById('discApplies').value;
+  activeDiscounts.push({name,type,value:val,appliesTo,planName:appliesTo==='specific'?document.getElementById('discPlan').value:null,validUntil:document.getElementById('discExpiry').value||null});
   localStorage.setItem('gympro_discounts',JSON.stringify(activeDiscounts));
   closeModal('addDiscountModal'); renderDiscounts(); toast('Discount added','success');
 }
@@ -1414,105 +1233,167 @@ async function loadPayments() {
   try{
     const res=await fetch(API,{headers:headers()});
     if(res.status===401){logout();return;}
-    let members=await res.json();
-    if(!Array.isArray(members)) members=[];
-    
+    const members=await res.json();
     const today=new Date();
     const due=members.filter(m=>m.status==='Active'&&new Date(m.expiryDate)<=new Date(today.getTime()+14*86400000));
-    
-    if(container) {
-      if(!due.length){container.innerHTML='<div class="empty"><div class="e-icon">✅</div><p>No payments due in the next 14 days!</p></div>';return;}
-      container.innerHTML=due.map(m=>{
-        const exp=new Date(m.expiryDate);
-        const daysLeft=Math.ceil((exp-today)/(1000*60*60*24));
-        const planToDisplay = getDisplayPlan(m);
-        return `<div class="payment-row">
-          <div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(planToDisplay)}</small><br><small style="color:var(--muted)">Expires: ${fmtDate(m.expiryDate)}</small></div></div>
-          <span class="badge ${daysLeft<0?'badge-inactive':'badge-trial'}">${daysLeft<0?'Overdue':daysLeft+'d left'}</span>
-          <button class="btn btn-success btn-sm" onclick="openPaymentFor('${esc(m._id)}','${esc(String(m.name||'').replace(/'/g,"\\'"))}','${esc(planToDisplay)}')">Pay Now</button>
-        </div>`;
-      }).join('');
-    }
-  }catch(e){if(container) container.innerHTML='<div class="empty"><p style="color:var(--danger)">Error loading payments</p></div>';}
+    if(!due.length){container.innerHTML='<div class="empty"><div class="e-icon">✅</div><p>No payments due in the next 14 days!</p></div>';return;}
+    container.innerHTML=due.map(m=>{
+      const exp=new Date(m.expiryDate);
+      const daysLeft=Math.ceil((exp-today)/(1000*60*60*24));
+      return `<div class="payment-row">
+        <div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.plan)}</small><br><small style="color:var(--muted)">Expires: ${fmtDate(m.expiryDate)}</small></div></div>
+        <span class="badge ${daysLeft<0?'badge-inactive':'badge-trial'}">${daysLeft<0?'Overdue':daysLeft+'d left'}</span>
+        <button class="btn btn-success btn-sm" onclick="openPaymentFor('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\'"))}','${esc(m.plan)}')">Pay Now</button>
+      </div>`;
+    }).join('');
+  }catch(e){container.innerHTML='<div class="empty"><p style="color:var(--danger)">Error loading payments</p></div>';}
 }
 
+// ✅ Payment modal shows PLAN AMOUNT ONLY
+// Admission fee and PT fee are separate charges — not included here
 function openPaymentFor(id, name, plan) {
-  const meta = memberMeta[id] || {};
-  const planAmt = memberDiscounts[id] !== undefined ? memberDiscounts[id] : getPlanPrice(plan);
-  const admFee = meta.admissionWaived ? 0 : (meta.admissionFee || 0);
-  const ptFee = meta.ptEnabled ? (meta.ptFee || 0) : 0;
-  
-  const amt = planAmt + admFee + ptFee;
-  currentPaymentMember = { id, name, plan }; 
-  currentFinalPrice = amt;
+  // Use discounted price if available, else standard plan price
+  const planAmt = memberDiscounts[id] || getPlanPrice(plan) || 1000;
+  currentPaymentMember = { id, name, plan };
+  currentFinalPrice = planAmt;
 
   const upiId   = gymSettings.upiId   || 'your-upi@bank';
   const upiName = gymSettings.upiName || 'GymPro';
 
-  const pi=document.getElementById('paymentInfo');
-  if(pi) {
-    pi.innerHTML = `
-      <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:1rem">
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-          <span style="color:var(--muted)">Member</span><strong>${esc(name)}</strong>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-          <span style="color:var(--muted)">Plan</span><strong style="font-size:0.85rem">${esc(plan)} (₹${planAmt})</strong>
-        </div>
-        ${admFee > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--muted)">Admission Fee</span><strong>₹${admFee}</strong></div>` : ''}
-        ${ptFee > 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--muted)">PT Fee</span><strong>₹${ptFee}</strong></div>` : ''}
-        <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border)">
-          <span style="font-weight:700">Grand Total</span>
-          <strong style="color:var(--success);font-size:1.1rem">₹${Math.round(amt).toLocaleString('en-IN')}</strong>
-        </div>
-      </div>`;
-  }
-  const du=document.getElementById('displayUpiId'); if(du) du.textContent = upiId;
-  const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${Math.round(amt)}&cu=INR`;
-  const qr=document.getElementById('payQR'); if(qr) qr.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
+  document.getElementById('paymentInfo').innerHTML = `
+    <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:1rem">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="color:var(--muted)">Member</span>
+        <strong>${esc(name)}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="color:var(--muted)">Plan</span>
+        <strong style="font-size:0.85rem">${esc(plan)}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border)">
+        <span style="font-weight:700">Plan Amount</span>
+        <strong style="color:var(--success);font-size:1.1rem">₹${Math.round(planAmt).toLocaleString('en-IN')}</strong>
+      </div>
+    </div>
+    <p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem;text-align:center">
+      💡 Admission fee &amp; PT fee are collected separately
+    </p>`;
+
+  document.getElementById('displayUpiId').textContent = upiId;
+  const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${Math.round(planAmt)}&cu=INR`;
+  document.getElementById('payQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
+  openModal('paymentModal');
+}
+
+// Separate function to collect admission fee via UPI
+function openAdmissionPayment(id, name, admissionFee) {
+  if (!admissionFee || admissionFee <= 0) return;
+  const upiId   = gymSettings.upiId   || 'your-upi@bank';
+  const upiName = gymSettings.upiName || 'GymPro';
+  const upiUrl  = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${Math.round(admissionFee)}&cu=INR`;
+
+  // Show a simple confirmation toast with QR — reuse payment modal
+  currentPaymentMember = { id, name, plan: 'Admission Fee' };
+  currentFinalPrice = admissionFee;
+
+  document.getElementById('paymentInfo').innerHTML = `
+    <div style="background:#f0fdf4;border-radius:10px;padding:14px;margin-bottom:1rem;border:1px solid #86efac">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="color:var(--muted)">Member</span><strong>${esc(name)}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid #86efac">
+        <span style="font-weight:700">🎟️ Admission Fee</span>
+        <strong style="color:var(--success);font-size:1.1rem">₹${Math.round(admissionFee).toLocaleString('en-IN')}</strong>
+      </div>
+    </div>`;
+
+  document.getElementById('displayUpiId').textContent = upiId;
+  document.getElementById('payQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
   openModal('paymentModal');
 }
 
 async function confirmPayment() {
-  if(!currentPaymentMember)return;
-  const months=getPlanMonths(currentPaymentMember.plan);
-  const expiry=new Date(); expiry.setMonth(expiry.getMonth()+months);
-  try{
-    const res = await fetch(`${API}/${currentPaymentMember.id}`,{
-      method:'PUT',headers:headers(),
-      body:JSON.stringify({expiryDate:expiry.toISOString().split('T')[0],status:'Active'})
-    });
-    if(!res.ok) { toast('Failed to record payment on server','error'); return; }
-    toast(`Payment confirmed! Extended to ${expiry.toLocaleDateString('en-IN')}`,'success');
-    closeModal('paymentModal'); currentPaymentMember=null; loadDashboard(); loadPayments();
-  }catch(e){toast('Network error','error');}
+  if (!currentPaymentMember) return;
+
+  const isAdmission = currentPaymentMember.plan === 'Admission Fee';
+
+  if (!isAdmission) {
+    // Plan payment confirmed — extend expiry
+    const months = getPlanMonths(currentPaymentMember.plan);
+    const expiry = new Date(); expiry.setMonth(expiry.getMonth() + months);
+    try {
+      await fetch(`${API}/${currentPaymentMember.id}`, {
+        method: 'PUT', headers: headers(),
+        body: JSON.stringify({ expiryDate: expiry.toISOString().split('T')[0], status: 'Active' })
+      }).catch(()=>{});
+    } catch(e) {}
+    toast(`✅ Plan payment confirmed! Extended to ${expiry.toLocaleDateString('en-IN')}`, 'success');
+
+    // Check if there's a pending admission fee to collect
+    const pendingAdmission = currentPaymentMember._admissionFee;
+    const pendingName      = currentPaymentMember._admissionName;
+    const pendingId        = currentPaymentMember._admissionId;
+
+    closeModal('paymentModal');
+    currentPaymentMember = null;
+    loadDashboard(); loadPayments();
+
+    // Show admission fee payment next (after short delay)
+    if (pendingAdmission && pendingAdmission > 0) {
+      setTimeout(() => {
+        if (confirm(`Collect Admission Fee ₹${Math.round(pendingAdmission).toLocaleString('en-IN')} for ${pendingName}?\n\nClick OK to open UPI payment.`)) {
+          openAdmissionPayment(pendingId, pendingName, pendingAdmission);
+        }
+      }, 600);
+    }
+  } else {
+    // Admission fee payment confirmed
+    toast(`✅ Admission fee collected!`, 'success');
+    closeModal('paymentModal');
+    currentPaymentMember = null;
+  }
 }
 
-// ===== ADD / EDIT MEMBER SUBMIT =====
-document.getElementById('addMemberForm')?.addEventListener('submit', async e=>{
+// ===== SETTINGS =====
+function loadSettings() {
+  document.getElementById('settingsUpiId').value=gymSettings.upiId||'';
+  document.getElementById('settingsUpiName').value=gymSettings.upiName||'';
+  document.getElementById('settingsAdmissionFee').value=gymSettings.admissionFee||'';
+  document.getElementById('settingsPtFee').value=gymSettings.ptFee||'';
+}
+
+function saveSettings() {
+  gymSettings.upiId=document.getElementById('settingsUpiId').value.trim();
+  gymSettings.upiName=document.getElementById('settingsUpiName').value.trim();
+  gymSettings.admissionFee=parseFloat(document.getElementById('settingsAdmissionFee').value)||0;
+  gymSettings.ptFee=parseFloat(document.getElementById('settingsPtFee').value)||0;
+  localStorage.setItem('gymSettings',JSON.stringify(gymSettings));
+  toast('Settings saved!','success');
+}
+
+// ===== ADD MEMBER SUBMIT =====
+document.getElementById('addMemberForm').addEventListener('submit', async e=>{
   e.preventDefault();
-  const phone=getVal('mPhone');
+  const phone=document.getElementById('mPhone').value.trim();
   if(!/^\d{10}$/.test(phone)){toast('Please enter a valid 10-digit phone number','error');return;}
-  const gender=getVal('mGender');
+  const gender=document.getElementById('mGender').value;
   if(!gender){toast('Please select gender','error');return;}
 
-  const customPlanName = getVal('mPlan');
-  const origPrice = getPlanPrice(customPlanName);
-  
+  const sel=document.getElementById('mPlan');
+  const origPrice=parseInt(sel.options[sel.selectedIndex].getAttribute('data-price'))||0;
   const dType=document.querySelector('input[name="dType"]:checked')?.value||'none';
-  const dVal=getNum('dValue');
-  
-  let finalPlanPrice=origPrice;
-  if(dType==='percentage'&&dVal>0) finalPlanPrice=origPrice-origPrice*dVal/100;
-  else if(dType==='fixed'&&dVal>0) finalPlanPrice=Math.max(0,origPrice-dVal);
-  finalPlanPrice=Math.round(finalPlanPrice);
+  const dVal=parseFloat(document.getElementById('dValue').value)||0;
+  let finalPrice=origPrice;
+  if(dType==='percentage'&&dVal>0) finalPrice=origPrice-origPrice*dVal/100;
+  else if(dType==='fixed'&&dVal>0) finalPrice=Math.max(0,origPrice-dVal);
+  finalPrice=Math.round(finalPrice);
 
-  const admissionFee=getNum('mAdmissionFee');
-  const admissionWaived=getVal('mWaiveAdmission')==='yes';
-  const ptEnabled=document.getElementById('mPtEnabled')?.checked||false;
-  const ptFee=getNum('mPtFee');
-  const ptTrainer=getVal('mPtTrainer');
-  const ptNotes=getVal('mPtNotes');
+  const admissionFee=parseFloat(document.getElementById('mAdmissionFee').value)||gymSettings.admissionFee||0;
+  const admissionWaived=document.getElementById('mWaiveAdmission').value==='yes';
+  const ptEnabled=document.getElementById('mPtEnabled').checked;
+  const ptFee=parseFloat(document.getElementById('mPtFee').value)||gymSettings.ptFee||0;
+  const ptTrainer=document.getElementById('mPtTrainer').value;
+  const ptNotes=document.getElementById('mPtNotes').value.trim();
 
   const conditions=[];
   document.querySelectorAll('#condContainer .condition-row').forEach(row=>{
@@ -1520,84 +1401,101 @@ document.getElementById('addMemberForm')?.addEventListener('submit', async e=>{
     if(cond) conditions.push({condition:cond,severity:row.querySelector('.cSev')?.value||'Mild',notes:row.querySelector('.cNote')?.value||''});
   });
 
-  const backendPlan = VALID_BACKEND_PLANS.includes(customPlanName) ? customPlanName : VALID_BACKEND_PLANS[0];
-
   const data={
-    name:getVal('mName'),
+    name:document.getElementById('mName').value.trim(),
     phone,
-    email:getVal('mEmail'),
-    age:getNum('mAge', null) || null,
-    photo:getVal('photo-data'),
-    plan:backendPlan,
-    expiryDate:getVal('mExpiry'),
-    status:getVal('mStatus') || 'Active',
-    emergencyContact:{name:getVal('mEcName'),phone:getVal('mEcPhone'),relationship:getVal('mEcRel')},
+    email:document.getElementById('mEmail').value.trim(),
+    age:parseInt(document.getElementById('mAge').value)||null,
+    photo:document.getElementById('photo-data').value||'',
+    plan:sel.value,
+    expiryDate:document.getElementById('mExpiry').value,
+    status:document.getElementById('mStatus').value,
+    emergencyContact:{name:document.getElementById('mEcName').value.trim(),phone:document.getElementById('mEcPhone').value.trim(),relationship:document.getElementById('mEcRel').value.trim()},
     healthConditions:conditions,
-    medicalNotes:getVal('mNotes')
+    medicalNotes:document.getElementById('mNotes').value.trim()
   };
 
   if(!data.name){toast('Name is required','error');return;}
   if(!data.expiryDate){toast('Expiry date is required','error');return;}
 
-  const btn=e.submitter; if(btn){btn.disabled=true; btn.textContent= editingMemberId ? 'Saving…' : 'Adding…';}
+  const btn=e.submitter; btn.disabled=true; btn.textContent='Adding…';
 
   try{
-    const method = editingMemberId ? 'PUT' : 'POST';
-    const url = editingMemberId ? `${API}/${editingMemberId}` : API;
-
-    const res=await fetch(url,{method,headers:headers(),body:JSON.stringify(data)});
+    const res=await fetch(API,{method:'POST',headers:headers(),body:JSON.stringify(data)});
     if(res.ok){
-      const savedMem = await res.json();
-      const targetId = savedMem._id || editingMemberId;
+      const added=await res.json();
 
-      if (customPlanName !== backendPlan) {
-        memberCustomPlans[targetId] = customPlanName;
-        localStorage.setItem('gympro_member_custom_plans', JSON.stringify(memberCustomPlans));
-      }
+      // Save discount
+      if(finalPrice!==origPrice){memberDiscounts[added._id]=finalPrice;localStorage.setItem('gympro_member_discounts',JSON.stringify(memberDiscounts));}
 
-      if(finalPlanPrice!==origPrice) memberDiscounts[targetId]=finalPlanPrice;
-      else delete memberDiscounts[targetId];
-      localStorage.setItem('gympro_member_discounts',JSON.stringify(memberDiscounts));
-
-      memberMeta[targetId]={gender,admissionFee,admissionWaived,ptEnabled,ptFee,ptTrainer,ptNotes, customPlanName};
+      // Save meta (gender, admission, PT)
+      memberMeta[added._id]={gender,admissionFee,admissionWaived,ptEnabled,ptFee,ptTrainer,ptNotes};
       localStorage.setItem('gympro_member_meta',JSON.stringify(memberMeta));
 
-      const wasEditing = editingMemberId !== null;
-      closeMemberModal();
-      
-      toast(wasEditing ? `${data.name} updated!` : `${data.name} added!`,'success');
+      closeModal('addMemberModal');
+      e.target.reset();
+      document.getElementById('condContainer').innerHTML='';
+      document.getElementById('mPtEnabled').checked=false;
+      document.getElementById('ptDetails').style.display='none';
+      resetPhotoPreview();
+      recalcPrice();
+      toast(`${added.name} added!`,'success');
       loadDashboard();
-      if(!wasEditing) loadAllMembers(); 
 
-      if (!wasEditing) openPaymentFor(targetId, data.name, customPlanName);
+      // ✅ Show PLAN payment only
+      openPaymentFor(added._id, added.name, added.plan);
+
+      // ✅ After plan payment modal closes, prompt for admission fee separately (if not waived)
+      if (!admissionWaived && admissionFee > 0) {
+        // Store admission info so after confirmPayment we can show it
+        currentPaymentMember._admissionFee = admissionFee;
+        currentPaymentMember._admissionName = added.name;
+        currentPaymentMember._admissionId = added._id;
+      }
     } else {
-      const err=await res.json(); toast(err.error||'Could not save member','error');
+      const err=await res.json(); toast(err.error||'Could not add member','error');
     }
   } catch(err){ toast('Network error. Please try again.','error'); }
-  if(btn){btn.disabled=false; btn.textContent= editingMemberId ? 'Save Changes' : 'Add Member';}
+  btn.disabled=false; btn.textContent='Add Member';
+});
+
+// ===== ADD TRAINER SUBMIT =====
+document.getElementById('addTrainerForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const phone=document.getElementById('tPhone').value.trim();
+  if(!/^\d{10}$/.test(phone)){toast('Please enter a valid 10-digit phone number','error');return;}
+  const data={name:document.getElementById('tName').value.trim(),phone,specialty:document.getElementById('tSpecialty').value.trim(),status:document.getElementById('tStatus').value};
+  const btn=e.submitter; btn.disabled=true; btn.textContent='Adding…';
+  try{
+    const res=await fetch(TAPI,{method:'POST',headers:headers(),body:JSON.stringify(data)});
+    if(res.ok){closeModal('addTrainerModal');e.target.reset();toast('Trainer added!','success');loadTrainers();}
+    else{const err=await res.json();toast(err.error||'Could not add trainer','error');}
+  }catch(err){toast('Network error','error');}
+  btn.disabled=false; btn.textContent='Add Trainer';
 });
 
 // ===== INIT =====
 window.addEventListener('DOMContentLoaded', ()=>{
   if (!checkAuth()) return;
   setupCamera();
-  const d=document.getElementById('topbarDate'); if(d) d.textContent=new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
-  const ad=document.getElementById('attendanceDate'); if(ad) ad.value=new Date().toISOString().split('T')[0];
+  document.getElementById('topbarDate').textContent=new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+  document.getElementById('attendanceDate').value=new Date().toISOString().split('T')[0];
+
+  // Set admission fee default
+  if (gymSettings.admissionFee) document.getElementById('mAdmissionFee').value=gymSettings.admissionFee;
 
   try{
-    const user=safeJSON('user', {});
-    if(user.name) {
-      const ui=document.getElementById('userInfo');
-      if(ui) ui.innerHTML=`<div class="u-name">👤 ${esc(user.name)}</div><div class="u-role">${user.role==='admin'?'Administrator':'Staff Member'}</div>`;
-    }
+    const user=JSON.parse(localStorage.getItem('user')||'{}');
+    if(user.name) document.getElementById('userInfo').innerHTML=`<div class="u-name">👤 ${esc(user.name)}</div><div class="u-role">${user.role==='admin'?'Administrator':'Staff Member'}</div>`;
   }catch(e){}
 
   populatePlanSelect();
+  recalcPrice();
   loadDashboard();
-  
+  // Pre-load trainers for PT dropdown
   fetch(TAPI,{headers:headers()}).then(r=>r.json()).then(trainers=>{
     const ptSel=document.getElementById('mPtTrainer');
-    if(ptSel && Array.isArray(trainers)) ptSel.innerHTML='<option value="">Select Trainer</option>'+trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
+    ptSel.innerHTML='<option value="">Select Trainer</option>'+trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
   }).catch(()=>{});
 });
 </script>
