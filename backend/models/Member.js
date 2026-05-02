@@ -27,6 +27,11 @@ const memberSchema = new mongoose.Schema({
     min: [12, 'Age must be at least 12'],
     max: [100, 'Age must be less than 100']
   },
+  gender: {
+    type: String,
+    enum: ['Male', 'Female', 'Other', ''],
+    default: ''
+  },
   photo: { 
     type: String, 
     default: '' 
@@ -47,6 +52,17 @@ const memberSchema = new mongoose.Schema({
     required: [true, 'Plan is required'],
     trim: true
   },
+  // Financial fields — stored in DB so they sync across devices
+  planPrice: { type: Number, default: 0 },          // actual price charged (after discount)
+  discountType: { type: String, default: 'none' },  // 'none' | 'percentage' | 'fixed'
+  discountValue: { type: Number, default: 0 },
+  discountReason: { type: String, default: '' },
+  admissionFee: { type: Number, default: 0 },
+  admissionWaived: { type: Boolean, default: false },
+  ptEnabled: { type: Boolean, default: false },
+  ptFee: { type: Number, default: 0 },
+  ptTrainer: { type: String, default: '' },
+  ptNotes: { type: String, default: '' },
   joinDate: { 
     type: Date, 
     default: Date.now 
