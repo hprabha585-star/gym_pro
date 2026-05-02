@@ -28,78 +28,52 @@
       --transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      -webkit-tap-highlight-color: transparent;
-    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-tap-highlight-color: transparent; }
 
-    /* ===== SIDEBAR ===== */
-    .sidebar {
-      position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh;
-      background: white; border-right: 1px solid var(--border);
-      display: flex; flex-direction: column; padding: 1.25rem 1rem;
-      z-index: 2000; overflow-y: auto;
-      transform: translateX(-100%); transition: transform var(--transition);
-      box-shadow: 4px 0 24px rgba(0,0,0,0.05);
-    }
+    .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh; background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 1.25rem 1rem; z-index: 2000; overflow-y: auto; transform: translateX(-100%); transition: transform var(--transition); box-shadow: 4px 0 24px rgba(0,0,0,0.05); }
     .sidebar.open { transform: translateX(0); }
-
     .sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 0.25rem 0.5rem 1.25rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; justify-content: space-between; }
     .brand-icon { width: 36px; height: 36px; background: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
     .brand-name { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--primary); flex: 1; }
     .sidebar-close-btn { background: var(--bg); border: none; font-size: 1.2rem; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; }
-
     .user-info { background: var(--primary-light); border-radius: 12px; padding: 12px; margin-bottom: 1rem; }
     .user-info .u-name { font-weight: 700; font-size: 0.95rem; color: var(--text); }
     .user-info .u-role { font-size: 0.8rem; color: var(--primary); font-weight: 600; }
-
     .nav-section-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); padding: 0 0.5rem; margin: 1rem 0 0.5rem; }
-
     .nav-link { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; color: var(--muted); font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; border: none; background: none; width: 100%; text-align: left; margin-bottom: 4px; }
     .nav-link:hover, .nav-link.active { background: var(--primary-light); color: var(--primary); }
     .nav-link.active { background: var(--primary); color: white; }
     .nav-link .nav-icon { font-size: 1.1rem; width: 24px; text-align: center; flex-shrink: 0; }
-
     .sidebar-footer { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); }
     .logout-btn { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; background: var(--danger-bg); color: var(--danger); border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 700; cursor: pointer; width: 100%; }
 
-    /* ===== TOPBAR ===== */
     .topbar { position: fixed; top: 0; left: 0; right: 0; height: 64px; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 1.25rem; gap: 1rem; z-index: 100; }
     .menu-toggle { display: flex; width: 38px; height: 38px; background: var(--primary-light); border: none; border-radius: 10px; color: var(--primary); font-size: 1.2rem; cursor: pointer; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s; }
     .menu-toggle:hover { background: #dcd4ff; }
     .topbar-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--text); }
     .topbar-date { margin-left: auto; font-size: 0.85rem; font-weight: 600; color: var(--muted); }
 
-    /* ===== BOTTOM NAVIGATION ===== */
     .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: white; border-top: 1px solid var(--border); z-index: 900; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -4px 20px rgba(0,0,0,0.03); }
     .b-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border: none; background: none; color: var(--muted); font-size: 0.75rem; font-weight: 600; gap: 4px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
     .b-nav-item i { font-size: 1.3rem; font-style: normal; }
     .b-nav-item.active { color: var(--primary); }
     .b-nav-item.active i { transform: scale(1.1); transition: 0.2s; }
 
-    /* ===== MAIN ===== */
     .main-content { margin-left: 0; margin-top: 64px; padding: 1.25rem; min-height: calc(100vh - 64px); }
 
-    /* ===== OVERLAY ===== */
     .overlay { display: none; position: fixed; inset: 0; background: rgba(10,8,30,0.5); z-index: 1500; backdrop-filter: blur(3px); }
     .overlay.show { display: block; }
 
-    /* ===== PAGES ===== */
     .page { display: none; animation: fadeIn 0.3s; }
     .page.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
 
-    /* ===== STATS GRID ===== */
     .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
     .stat-card { background: var(--card); border-radius: var(--radius); padding: 1.25rem; border: 1px solid var(--border); box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
     .stat-label { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 8px; }
     .stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--primary); line-height: 1; }
     .stat-sub { font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
 
-    /* Revenue Cards */
     .revenue-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.25rem; }
     .rev-card { background: var(--card); border-radius: var(--radius); padding: 1rem; border: 1px solid var(--border); text-align: center; }
     .rev-card .rev-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
@@ -108,63 +82,55 @@
     .rev-card.admission .rev-value { color: var(--success); }
     .rev-card.total .rev-value { color: var(--warning); }
 
-    /* ===== CARD ===== */
     .card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 1.25rem; margin-bottom: 1.25rem; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
     .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; gap: 1rem; flex-wrap: wrap; }
     .card-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 700; }
 
-    /* ===== REMINDER ===== */
     .reminder { border-radius: var(--radius); padding: 1.1rem 1.25rem; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; border: 1px solid; }
-    .reminder.green  { background: var(--success-bg); border-color: #86efac; }
+    .reminder.green { background: var(--success-bg); border-color: #86efac; }
     .reminder.orange { background: var(--warning-bg); border-color: #fcd34d; }
     .reminder-text { flex: 1; }
     .reminder-text h3 { font-size: 0.95rem; font-weight: 700; }
-    .reminder-text p  { font-size: 0.82rem; margin-top: 2px; }
+    .reminder-text p { font-size: 0.82rem; margin-top: 2px; }
 
-    /* ===== TABLE ===== */
     .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -0.5rem; padding: 0 0.5rem; }
     table { width: 100%; border-collapse: collapse; min-width: 480px; }
     th { text-align: left; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--muted); padding: 10px 12px; border-bottom: 2px solid var(--border); white-space: nowrap; }
     td { padding: 14px 12px; border-bottom: 1px solid #f0eff8; font-size: 0.9rem; vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
 
-    /* ===== EXPIRY SIGNALS ===== */
     .expiry-cell { display: flex; align-items: center; gap: 6px; }
     .expiry-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .expiry-dot.red    { background: var(--danger); }
+    .expiry-dot.red { background: var(--danger); }
     .expiry-dot.yellow { background: #f59e0b; }
-    .expiry-dot.green  { background: var(--success); }
-    .expiry-text.red    { color: var(--danger); font-weight: 700; font-size: 0.78rem; }
+    .expiry-dot.green { background: var(--success); }
+    .expiry-text.red { color: var(--danger); font-weight: 700; font-size: 0.78rem; }
     .expiry-text.yellow { color: #d97706; font-weight: 700; font-size: 0.78rem; }
-    .expiry-text.green  { color: var(--muted); font-size: 0.78rem; }
+    .expiry-text.green { color: var(--muted); font-size: 0.78rem; }
 
-    /* ===== BADGES ===== */
     .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
-    .badge-active   { background: var(--success-bg); color: var(--success); }
-    .badge-trial    { background: #fffbeb; color: var(--warning); }
+    .badge-active { background: var(--success-bg); color: var(--success); }
+    .badge-trial { background: #fffbeb; color: var(--warning); }
     .badge-inactive, .badge-expired { background: var(--danger-bg); color: var(--danger); }
-    .badge-present  { background: var(--success-bg); color: var(--success); }
-    .badge-absent   { background: var(--danger-bg); color: var(--danger); }
-    .badge-male     { background: #dbeafe; color: #1d4ed8; }
-    .badge-female   { background: #fce7f3; color: #be185d; }
-    .badge-other    { background: #f3f4f6; color: #374151; }
+    .badge-present { background: var(--success-bg); color: var(--success); }
+    .badge-absent { background: var(--danger-bg); color: var(--danger); }
+    .badge-male { background: #dbeafe; color: #1d4ed8; }
+    .badge-female { background: #fce7f3; color: #be185d; }
+    .badge-other { background: #f3f4f6; color: #374151; }
 
-    /* ===== AVATAR ===== */
     .avatar { width: 38px; height: 38px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; color: white; flex-shrink: 0; }
 
-    /* ===== BUTTONS ===== */
     .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 700; cursor: pointer; white-space: nowrap; min-height: 44px; justify-content: center; }
     .btn-primary { background: var(--primary); color: white; }
     .btn-success { background: var(--success); color: white; }
-    .btn-danger  { background: var(--danger); color: white; }
+    .btn-danger { background: var(--danger); color: white; }
     .btn-sm { padding: 6px 12px; font-size: 0.85rem; min-height: 36px; }
     .btn-outline { background: transparent; border: 1.5px solid var(--primary); color: var(--primary); }
 
     .att-btn { padding: 6px 12px; border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 700; margin: 2px; min-height: 36px; }
     .att-btn-present { background: var(--success-bg); color: var(--success); border: 1px solid #86efac; }
-    .att-btn-absent  { background: var(--danger-bg); color: var(--danger); border: 1px solid #fca5a5; }
+    .att-btn-absent { background: var(--danger-bg); color: var(--danger); border: 1px solid #fca5a5; }
 
-    /* ===== FORM ===== */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     .form-group { margin-bottom: 1rem; }
     .form-group label { display: block; font-size: 0.85rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
@@ -177,7 +143,6 @@
     .form-group textarea { resize: vertical; min-height: 100px; }
     .form-section-title { font-size: 0.85rem; font-weight: 700; color: var(--primary); margin: 1.5rem 0 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--primary-light); padding-bottom: 6px; }
 
-    /* ===== DISCOUNT BOX ===== */
     .discount-box { background: #faf9ff; border: 1.5px dashed #c4b5fd; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
     .discount-box h4 { font-size: 0.9rem; font-weight: 700; color: var(--primary); margin-bottom: 0.75rem; }
     .radio-group { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
@@ -186,7 +151,6 @@
     .price-summary .line { display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 4px; }
     .price-summary .line:last-child { margin-bottom: 0; font-weight: 700; font-size: 1rem; color: var(--success); border-top: 1px solid #c4b5fd; padding-top: 6px; }
 
-    /* ===== PERSONAL TRAINING BOX ===== */
     .pt-box { background: #fff7ed; border: 1.5px dashed #fed7aa; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
     .pt-box h4 { font-size: 0.9rem; font-weight: 700; color: #c2410c; margin-bottom: 0.75rem; }
     .pt-toggle { display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem; }
@@ -197,11 +161,9 @@
     .toggle-switch input:checked + .toggle-slider { background: #ea580c; }
     .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
 
-    /* ===== ADMISSION FEE BOX ===== */
     .admission-box { background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
     .admission-box h4 { font-size: 0.9rem; font-weight: 700; color: var(--success); margin-bottom: 0.75rem; }
 
-    /* ===== PLANS ===== */
     .plans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
     .plan-card { background: white; border: 1.5px solid var(--border); border-radius: var(--radius); padding: 1.25rem; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
     .plan-card:hover { border-color: var(--primary); transform: translateY(-3px); }
@@ -210,13 +172,11 @@
     .plan-original { text-decoration: line-through; color: var(--muted); font-size: 0.88rem; }
     .plan-discount-badge { position: absolute; top: 10px; right: 10px; background: #ff9800; color: white; padding: 3px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
 
-    /* ===== ATT STATS ===== */
     .att-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.25rem; }
     .att-stat { background: white; border-radius: 10px; padding: 1rem; text-align: center; border: 1px solid var(--border); }
     .att-stat .num { font-size: 1.75rem; font-weight: 700; color: var(--primary); }
     .att-stat .lbl { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 4px; }
 
-    /* ===== MODAL ===== */
     .modal { display: none; position: fixed; inset: 0; background: rgba(10,8,30,0.6); z-index: 2500; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(3px); }
     .modal.open { display: flex; }
     .modal-content { background: white; border-radius: var(--radius); padding: 1.5rem; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 48px rgba(0,0,0,0.25); animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -225,31 +185,25 @@
     .modal-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 700; }
     .modal-close { width: 36px; height: 36px; background: var(--bg); border: none; border-radius: 10px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--muted); }
 
-    /* ===== PAYMENT ROW ===== */
     .payment-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); gap: 1rem; flex-wrap: wrap; }
     .payment-row:last-child { border-bottom: none; }
 
-    /* ===== QR ===== */
     .qr-box { background: var(--bg); border-radius: 12px; padding: 1.25rem; text-align: center; margin: 1rem 0; }
     .qr-box img { width: 180px; height: 180px; border-radius: 8px; border: 3px solid var(--primary); }
     .upi-id { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; display: inline-block; font-family: monospace; font-size: 0.9rem; margin-top: 10px; }
 
-    /* ===== TOAST ===== */
     .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: var(--text); color: white; padding: 14px 24px; border-radius: 30px; font-size: 0.95rem; font-weight: 600; z-index: 9999; opacity: 0; transition: all 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.2); white-space: nowrap; }
     .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
     .toast.success { background: var(--success); }
-    .toast.error   { background: var(--danger); }
+    .toast.error { background: var(--danger); }
 
-    /* ===== EMPTY ===== */
     .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); }
     .empty .e-icon { font-size: 3rem; margin-bottom: 0.5rem; }
 
-    /* ===== DISCOUNT TABLE ===== */
     .discount-table { width: 100%; border-collapse: collapse; }
     .discount-table th, .discount-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
     .discount-table th { background: #f8f9fa; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; color: var(--muted); }
 
-    /* ===== SETTINGS PAGE ===== */
     .settings-section { background: white; border-radius: var(--radius); border: 1px solid var(--border); padding: 1.25rem; margin-bottom: 1.25rem; }
     .settings-section h3 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: var(--text); }
     .settings-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
@@ -257,7 +211,6 @@
     .settings-row label { font-size: 0.9rem; font-weight: 600; color: var(--text); }
     .settings-row small { font-size: 0.78rem; color: var(--muted); display: block; }
 
-    /* ===== RESPONSIVE ===== */
     @media (max-width: 768px) {
       .bottom-nav { display: flex; }
       .main-content { padding-bottom: 85px; }
@@ -277,7 +230,6 @@
 </head>
 <body>
 
-<!-- SIDEBAR -->
 <nav class="sidebar" id="sidebar">
   <div class="sidebar-brand">
     <div style="display:flex;align-items:center;gap:10px">
@@ -286,24 +238,20 @@
     </div>
     <button class="sidebar-close-btn" onclick="closeSidebar()">✕</button>
   </div>
-
   <div class="user-info" id="userInfo">
     <div class="u-name">Loading...</div>
     <div class="u-role">—</div>
   </div>
-
   <span class="nav-section-label">Main</span>
   <button class="nav-link active" onclick="showPage('dashboard',this);updateBNav('dashboard')" data-page="dashboard"><span class="nav-icon">📊</span> Dashboard</button>
   <button class="nav-link" onclick="showPage('members',this);updateBNav('members')" data-page="members"><span class="nav-icon">👥</span> Members</button>
   <button class="nav-link" onclick="showPage('attendance',this);updateBNav('attendance')" data-page="attendance"><span class="nav-icon">📅</span> Attendance</button>
-
   <span class="nav-section-label">Manage</span>
   <button class="nav-link" onclick="showPage('trainers',this);updateBNav('none')" data-page="trainers"><span class="nav-icon">🏋️</span> Trainers</button>
   <button class="nav-link" onclick="showPage('plans',this);updateBNav('none')" data-page="plans"><span class="nav-icon">💎</span> Plans</button>
   <button class="nav-link" onclick="showPage('discounts',this);updateBNav('none')" data-page="discounts"><span class="nav-icon">🏷️</span> Discounts</button>
   <button class="nav-link" onclick="showPage('payments',this);updateBNav('none')" data-page="payments"><span class="nav-icon">💰</span> Payments</button>
   <button class="nav-link" onclick="showPage('settings',this);updateBNav('none')" data-page="settings"><span class="nav-icon">⚙️</span> Settings</button>
-
   <div class="sidebar-footer">
     <button class="logout-btn" onclick="logout()">🚪 Logout</button>
   </div>
@@ -311,14 +259,12 @@
 
 <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
-<!-- TOPBAR -->
 <div class="topbar">
   <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
   <span class="topbar-title" id="pageTitle">Dashboard</span>
   <span class="topbar-date" id="topbarDate"></span>
 </div>
 
-<!-- BOTTOM NAV -->
 <nav class="bottom-nav">
   <button class="b-nav-item active" id="bnav-dashboard" onclick="showPage('dashboard',document.querySelector('[data-page=dashboard]'));updateBNav('dashboard')"><i>📊</i><span>Home</span></button>
   <button class="b-nav-item" id="bnav-members" onclick="showPage('members',document.querySelector('[data-page=members]'));updateBNav('members')"><i>👥</i><span>Members</span></button>
@@ -326,7 +272,6 @@
   <button class="b-nav-item" id="bnav-menu" onclick="toggleSidebar()"><i>☰</i><span>More</span></button>
 </nav>
 
-<!-- MAIN -->
 <main class="main-content">
 
   <!-- DASHBOARD -->
@@ -334,20 +279,16 @@
     <div id="reminderCard" class="reminder green">
       <div class="reminder-text"><h3>✅ All Good!</h3><p>No pending payments</p></div>
     </div>
-
     <div class="stats-grid">
       <div class="stat-card"><div class="stat-label">Total Members</div><div class="stat-value" id="totalMembers">—</div><div class="stat-sub">registered</div></div>
       <div class="stat-card"><div class="stat-label">Active Members</div><div class="stat-value" id="activeMembers">—</div><div class="stat-sub">currently active</div></div>
       <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value" id="totalRevenue">—</div><div class="stat-sub">this month</div></div>
     </div>
-
-    <!-- Revenue breakdown -->
     <div class="revenue-grid">
       <div class="rev-card monthly"><div class="rev-label">📅 Monthly Fee</div><div class="rev-value" id="monthlyRevenue">—</div></div>
       <div class="rev-card admission"><div class="rev-label">🎟️ Admission Fee</div><div class="rev-value" id="admissionRevenue">—</div></div>
       <div class="rev-card total"><div class="rev-label">💪 Personal Training</div><div class="rev-value" id="ptRevenue">—</div></div>
     </div>
-
     <div class="card">
       <div class="card-header">
         <span class="card-title">Recent Members</span>
@@ -464,7 +405,6 @@
       </div>
       <button class="btn btn-primary" style="width:100%" onclick="saveSettings()">Save Settings</button>
     </div>
-
     <div class="settings-section">
       <h3>🎟️ Admission Fee</h3>
       <div class="form-group">
@@ -481,7 +421,7 @@
 
 </main>
 
-<!-- ════ ADD MEMBER MODAL ════ -->
+<!-- ADD MEMBER MODAL -->
 <div class="modal" id="addMemberModal">
   <div class="modal-content">
     <div class="modal-header">
@@ -489,8 +429,6 @@
       <button class="modal-close" onclick="closeModal('addMemberModal')">✕</button>
     </div>
     <form id="addMemberForm">
-
-      <!-- Photo -->
       <div class="form-section-title" style="margin-top:0">Profile Photo</div>
       <div style="display:flex;gap:1rem;align-items:center;margin-bottom:1.25rem">
         <img id="member-photo-preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%23c4b5fd'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid var(--border);flex-shrink:0">
@@ -505,14 +443,12 @@
         <input type="hidden" id="photo-data">
       </div>
 
-      <!-- Basic info -->
       <div class="form-section-title" style="margin-top:0">Basic Info</div>
       <div class="form-grid">
         <div class="form-group"><label for="mName">Full Name *</label><input type="text" id="mName" required placeholder="e.g. Arjun Reddy"></div>
         <div class="form-group"><label for="mPhone">Phone * (10 digits)</label><input type="tel" id="mPhone" required placeholder="9876543210" maxlength="10"></div>
         <div class="form-group"><label for="mEmail">Email</label><input type="email" id="mEmail" placeholder="optional"></div>
-        <!-- FIX: age input — plain number, no oninput handler that could corrupt -->
-        <div class="form-group"><label for="mAge">Age</label><input type="number" id="mAge" min="12" max="100" placeholder="" autocomplete="off"></div>
+        <div class="form-group"><label for="mAge">Age</label><input type="number" id="mAge" min="12" max="100" placeholder=""></div>
         <div class="form-group">
           <label for="mGender">Gender *</label>
           <select id="mGender" required>
@@ -524,27 +460,21 @@
         </div>
       </div>
 
-      <!-- Plan -->
       <div class="form-section-title">Membership Plan</div>
       <div class="form-group">
         <label for="mPlan">Plan *</label>
-        <select id="mPlan" required onchange="onPlanChange()">
-          <!-- Plans loaded dynamically from gymPlans -->
-        </select>
+        <select id="mPlan" required onchange="onPlanChange()"></select>
       </div>
 
-      <!-- Discount -->
       <div class="discount-box">
         <h4>🏷️ Discount (Optional)</h4>
         <div class="radio-group">
-          <!-- FIX: removed oninput from radios, use onchange only -->
           <label><input type="radio" name="dType" value="none" checked onchange="recalcPrice()"> No Discount</label>
           <label><input type="radio" name="dType" value="percentage" onchange="recalcPrice()"> Percentage %</label>
           <label><input type="radio" name="dType" value="fixed" onchange="recalcPrice()"> Fixed ₹</label>
         </div>
         <div class="form-grid">
-          <!-- FIX: REMOVED oninput="recalcPrice()" — use onblur/onchange to prevent mid-typing corruption -->
-          <div class="form-group"><label for="dValue">Discount Value</label><input type="number" id="dValue" min="0" placeholder="e.g. 200" onchange="recalcPrice()" onblur="recalcPrice()"></div>
+          <div class="form-group"><label for="dValue">Discount Value</label><input type="number" id="dValue" min="0" placeholder="e.g. 200" oninput="recalcPrice()"></div>
           <div class="form-group"><label for="dReason">Reason</label><input type="text" id="dReason" placeholder="e.g. Festival offer"></div>
         </div>
         <div class="price-summary" id="priceSummary">
@@ -553,7 +483,6 @@
         </div>
       </div>
 
-      <!-- Admission Fee -->
       <div class="admission-box">
         <h4>🎟️ Admission Fee (One-time)</h4>
         <div class="form-grid">
@@ -567,7 +496,6 @@
         </div>
       </div>
 
-      <!-- Personal Training -->
       <div class="pt-box">
         <h4>💪 Personal Training</h4>
         <div class="pt-toggle">
@@ -581,16 +509,13 @@
           <div class="form-grid">
             <div class="form-group"><label for="mPtFee">PT Fee / month (₹)</label><input type="number" id="mPtFee" min="0" placeholder="e.g. 2000"></div>
             <div class="form-group"><label for="mPtTrainer">Assigned Trainer</label>
-              <select id="mPtTrainer">
-                <option value="">Select Trainer</option>
-              </select>
+              <select id="mPtTrainer"><option value="">Select Trainer</option></select>
             </div>
           </div>
           <div class="form-group"><label for="mPtNotes">PT Notes</label><input type="text" id="mPtNotes" placeholder="e.g. Weight loss, 5 days/week"></div>
         </div>
       </div>
 
-      <!-- Expiry & Status -->
       <div class="form-grid">
         <div class="form-group"><label for="mExpiry">Expiry Date *</label><input type="date" id="mExpiry" required></div>
         <div class="form-group"><label for="mStatus">Status</label>
@@ -598,7 +523,6 @@
         </div>
       </div>
 
-      <!-- Emergency Contact -->
       <div class="form-section-title">Emergency Contact</div>
       <div class="form-grid">
         <div class="form-group"><label for="mEcName">Contact Name</label><input type="text" id="mEcName" placeholder="Name"></div>
@@ -606,14 +530,13 @@
         <div class="form-group"><label for="mEcRel">Relationship</label><input type="text" id="mEcRel" placeholder="e.g. Father"></div>
       </div>
 
-      <!-- Health -->
       <div class="form-section-title">Health Info</div>
       <div id="condContainer"></div>
       <button type="button" class="btn btn-outline btn-sm" style="margin-bottom:1rem;width:100%" onclick="addCondition()">+ Add Health Condition</button>
       <div class="form-group"><label for="mNotes">Medical Notes</label><textarea id="mNotes" placeholder="Any notes..."></textarea></div>
 
-      <div class="modal-footer" style="flex-direction:column;gap:10px;margin-top:1.25rem">
-        <button type="submit" class="btn btn-primary" style="width:100%">Add Member</button>
+      <div style="flex-direction:column;gap:10px;margin-top:1.25rem">
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-bottom:10px">Add Member</button>
         <button type="button" class="btn" style="background:var(--border);color:var(--text);width:100%" onclick="closeModal('addMemberModal')">Cancel</button>
       </div>
     </form>
@@ -647,8 +570,8 @@
       <div class="form-group"><label for="tStatus">Status</label>
         <select id="tStatus"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
       </div>
-      <div class="modal-footer" style="flex-direction:column;gap:10px">
-        <button type="submit" class="btn btn-primary" style="width:100%">Add Trainer</button>
+      <div style="flex-direction:column;gap:10px">
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-bottom:10px">Add Trainer</button>
         <button type="button" class="btn" style="background:var(--border);color:var(--text);width:100%" onclick="closeModal('addTrainerModal')">Cancel</button>
       </div>
     </form>
@@ -665,8 +588,8 @@
     <div class="form-group"><label for="newPlanName">Plan Name *</label><input type="text" id="newPlanName" placeholder="e.g. 1 Month Strength"></div>
     <div class="form-group"><label for="newPlanPrice">Price (₹) *</label><input type="number" id="newPlanPrice" min="0" placeholder="e.g. 1000"></div>
     <div class="form-group"><label for="newPlanMonths">Duration (months) *</label><input type="number" id="newPlanMonths" min="1" placeholder="e.g. 1"></div>
-    <div class="modal-footer" style="flex-direction:column;gap:10px">
-      <button class="btn btn-primary" style="width:100%" onclick="addGymPlan()">Add Plan</button>
+    <div style="flex-direction:column;gap:10px">
+      <button class="btn btn-primary" style="width:100%;margin-bottom:10px" onclick="addGymPlan()">Add Plan</button>
       <button class="btn" style="background:var(--border);color:var(--text);width:100%" onclick="closeModal('addPlanModal')">Cancel</button>
     </div>
   </div>
@@ -695,8 +618,8 @@
     </div>
     <div class="form-group"><label for="discVal">Value *</label><input type="number" id="discVal" min="0" placeholder="Enter value"></div>
     <div class="form-group"><label for="discExpiry">Valid Until</label><input type="date" id="discExpiry"></div>
-    <div class="modal-footer" style="flex-direction:column;gap:10px">
-      <button class="btn btn-primary" style="width:100%" onclick="addDiscount()">Add Discount</button>
+    <div style="flex-direction:column;gap:10px">
+      <button class="btn btn-primary" style="width:100%;margin-bottom:10px" onclick="addDiscount()">Add Discount</button>
       <button class="btn" style="background:var(--border);color:var(--text);width:100%" onclick="closeModal('addDiscountModal')">Cancel</button>
     </div>
   </div>
@@ -715,8 +638,8 @@
       <img id="payQR" src="" alt="QR Code">
       <div class="upi-id" id="displayUpiId">—</div>
     </div>
-    <div class="modal-footer" style="flex-direction:column;gap:10px">
-      <button class="btn btn-success" style="width:100%" onclick="confirmPayment()">✅ Confirm Payment</button>
+    <div style="flex-direction:column;gap:10px">
+      <button class="btn btn-success" style="width:100%;margin-bottom:10px" onclick="confirmPayment()">✅ Confirm Payment</button>
       <button class="btn" style="background:var(--border);color:var(--text);width:100%" onclick="closeModal('paymentModal')">Close</button>
     </div>
   </div>
@@ -730,36 +653,8 @@ const BASE = 'https://gym-pro-mvyv.onrender.com/api';
 const API  = `${BASE}/members`;
 const TAPI = `${BASE}/trainers`;
 
-// =====================================================================
-// FIX 1: USER-SCOPED STORAGE
-// All localStorage keys are prefixed with the logged-in user's ID so
-// that multiple accounts never share plans, discounts, attendance, etc.
-// =====================================================================
-let _currentUserId = '';
-
-function getUserId() {
-  if (_currentUserId) return _currentUserId;
-  try {
-    const u = JSON.parse(localStorage.getItem('user') || '{}');
-    _currentUserId = u._id || u.id || u.email || 'default';
-  } catch(e) {
-    _currentUserId = 'default';
-  }
-  return _currentUserId;
-}
-
-// Scoped key helper — every key includes the user id
-function uKey(key) {
-  return `${getUserId()}__${key}`;
-}
-
-// =====================================================================
-// FIX 2: LOAD DATA WITH USER-SCOPED KEYS
-// Plans, discounts, memberDiscounts, memberMeta, gymSettings are all
-// loaded/saved with per-user keys.
-// =====================================================================
-
-const DEFAULT_PLANS = [
+// Plans stored in localStorage (user-configurable)
+let gymPlans = JSON.parse(localStorage.getItem('gymPlans') || 'null') || [
   { name:'1 Month Strength',           price:1000,  months:1  },
   { name:'1 Month Strength + Cardio',  price:1500,  months:1  },
   { name:'3 Months Strength',          price:2700,  months:3  },
@@ -770,57 +665,61 @@ const DEFAULT_PLANS = [
   { name:'1 Year Strength + Cardio',   price:14000, months:12 }
 ];
 
-// These are loaded after auth is confirmed (see initAfterAuth)
-let gymPlans        = [];
-let activeDiscounts = [];
-let memberDiscounts = {};
-let memberMeta      = {};
-let gymSettings     = {};
+// Discounts stored in localStorage (gym-level config, not per-member)
+let activeDiscounts = JSON.parse(localStorage.getItem('gympro_discounts') || '[]');
 
-function loadUserData() {
-  gymPlans        = JSON.parse(localStorage.getItem(uKey('gymPlans'))          || 'null') || DEFAULT_PLANS;
-  activeDiscounts = JSON.parse(localStorage.getItem(uKey('gympro_discounts'))  || '[]');
-  memberDiscounts = JSON.parse(localStorage.getItem(uKey('gympro_member_discounts')) || '{}');
-  memberMeta      = JSON.parse(localStorage.getItem(uKey('gympro_member_meta'))      || '{}');
-  gymSettings     = JSON.parse(localStorage.getItem(uKey('gymSettings'))       || '{}');
-}
-
-function saveGymPlans()        { localStorage.setItem(uKey('gymPlans'),                   JSON.stringify(gymPlans)); }
-function saveDiscounts()       { localStorage.setItem(uKey('gympro_discounts'),            JSON.stringify(activeDiscounts)); }
-function saveMemberDiscounts() { localStorage.setItem(uKey('gympro_member_discounts'),     JSON.stringify(memberDiscounts)); }
-function saveMemberMeta()      { localStorage.setItem(uKey('gympro_member_meta'),          JSON.stringify(memberMeta)); }
-function saveSettings()        {
-  gymSettings.upiId         = document.getElementById('settingsUpiId').value.trim();
-  gymSettings.upiName       = document.getElementById('settingsUpiName').value.trim();
-  gymSettings.admissionFee  = parseFloat(document.getElementById('settingsAdmissionFee').value) || 0;
-  gymSettings.ptFee         = parseFloat(document.getElementById('settingsPtFee').value) || 0;
-  localStorage.setItem(uKey('gymSettings'), JSON.stringify(gymSettings));
-  toast('Settings saved!','success');
-}
-
-// Attendance is also per-user + per-date
-function attKey(date) { return uKey(`gympro_att_${date}`); }
+// Settings
+let gymSettings = JSON.parse(localStorage.getItem('gymSettings') || '{}');
 
 let currentPaymentMember = null;
-let currentFinalPrice = 0;
 let currentStream = null;
 
+// ===== KEY FIX: Extra member data is now encoded in medicalNotes as JSON =====
+// Format: "GYMPRO_META:{"gender":"Male","discountType":"fixed","discountValue":200,...}\nOriginalNotes"
+// This survives logout/login because it's stored on the backend!
+
+function encodeMeta(meta, originalNotes) {
+  const metaStr = JSON.stringify(meta);
+  const base = (originalNotes || '').replace(/^GYMPRO_META:\{.*?\}\n?/s, '');
+  return `GYMPRO_META:${metaStr}\n${base}`.trimEnd();
+}
+
+function decodeMeta(medicalNotes) {
+  if (!medicalNotes) return {};
+  const match = medicalNotes.match(/^GYMPRO_META:(\{.*?\})\n?/s);
+  if (!match) return {};
+  try { return JSON.parse(match[1]); } catch(e) { return {}; }
+}
+
+function getVisibleNotes(medicalNotes) {
+  if (!medicalNotes) return '';
+  return medicalNotes.replace(/^GYMPRO_META:\{.*?\}\n?/s, '').trim();
+}
+
+// ===== HELPERS =====
 function getPlanPrice(name)  { return (gymPlans.find(p=>p.name===name)||{}).price||0; }
 function getPlanMonths(name) { return (gymPlans.find(p=>p.name===name)||{}).months||1; }
 
-// ===== AUTH =====
+function getMemberFinalPrice(m) {
+  const meta = decodeMeta(m.medicalNotes);
+  const base = getPlanPrice(m.plan);
+  if (!meta.discountType || meta.discountType === 'none') return base;
+  const val = parseFloat(meta.discountValue) || 0;
+  if (meta.discountType === 'percentage') return Math.round(base - base * val / 100);
+  if (meta.discountType === 'fixed') return Math.max(0, Math.round(base - val));
+  return base;
+}
+
 function headers() { return { 'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('token')}` }; }
 function checkAuth() { if (!localStorage.getItem('token')) { window.location.href='/login.html'; return false; } return true; }
 function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href='/login.html'; }
 
-// ===== TOAST =====
 function toast(msg, type='') {
   const el = document.getElementById('toast');
   el.textContent = msg; el.className = `toast show ${type}`;
   setTimeout(() => el.className='toast', 3200);
 }
 
-// ===== HELPERS =====
 function esc(s) { return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-IN') : '—'; }
 function avBg(n) { const c=['#6C47FF','#16a34a','#dc2626','#d97706','#0891b2','#9333ea']; return c[(n.charCodeAt(0)||0)%c.length]; }
@@ -832,17 +731,16 @@ function renderAvatar(m) {
   if (m.photo && m.photo.startsWith('data:image')) return `<img src="${m.photo}" alt="${esc(m.name)}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0">`;
   return avatar(m.name);
 }
-function badge(status) {
-  const m={Active:'badge-active',Trial:'badge-trial',Inactive:'badge-inactive',Expired:'badge-expired'};
-  return `<span class="badge ${m[status]||'badge-inactive'}">${esc(status)}</span>`;
+function statusBadge(status) {
+  const map={Active:'badge-active',Trial:'badge-trial',Inactive:'badge-inactive',Expired:'badge-expired'};
+  return `<span class="badge ${map[status]||'badge-inactive'}">${esc(status)}</span>`;
 }
 function genderBadge(g) {
   if (!g) return '—';
-  const m={Male:'badge-male',Female:'badge-female',Other:'badge-other'};
-  return `<span class="badge ${m[g]||'badge-other'}">${esc(g)}</span>`;
+  const map={Male:'badge-male',Female:'badge-female',Other:'badge-other'};
+  return `<span class="badge ${map[g]||'badge-other'}">${esc(g)}</span>`;
 }
 
-// ===== EXPIRY SIGNAL =====
 function expiryCell(expiryDate, status) {
   if (status !== 'Active' && status !== 'Trial') return `<div class="expiry-cell"><span class="expiry-text green">${fmtDate(expiryDate)}</span></div>`;
   const days = Math.ceil((new Date(expiryDate) - new Date()) / (1000*60*60*24));
@@ -873,7 +771,8 @@ document.addEventListener('click', e => {
 function showPage(page, btn) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
-  document.getElementById(`page-${page}`).classList.add('active');
+  const pageEl = document.getElementById(`page-${page}`);
+  if (pageEl) pageEl.classList.add('active');
   if (btn) btn.classList.add('active');
   const t={dashboard:'Dashboard',members:'Members',attendance:'Attendance',trainers:'Trainers',plans:'Plans',discounts:'Discounts',payments:'Payments',settings:'Settings'};
   document.getElementById('pageTitle').textContent = t[page]||page;
@@ -923,7 +822,6 @@ function setupCamera() {
     r.onload=ev=>{ preview.src=ev.target.result; photoData.value=ev.target.result; clearBtn.style.display='inline-flex'; };
     r.readAsDataURL(file);
   });
-
   if (clearBtn) clearBtn.addEventListener('click', resetPhotoPreview);
 }
 
@@ -934,44 +832,35 @@ function resetPhotoPreview() {
   document.getElementById('photo-upload').value='';
 }
 
-// ===== PLAN SELECT POPULATE =====
+// ===== PLAN SELECT =====
 function populatePlanSelect() {
   const sel = document.getElementById('mPlan');
+  if (!sel) return;
+  const current = sel.value;
   sel.innerHTML = gymPlans.map(p=>`<option value="${esc(p.name)}" data-price="${p.price}" data-months="${p.months}">${esc(p.name)} — ₹${p.price.toLocaleString('en-IN')}</option>`).join('');
+  if (current) sel.value = current;
   const dp = document.getElementById('discPlan');
   if (dp) dp.innerHTML = gymPlans.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
   recalcPrice();
 }
 
-// ===== PT TOGGLE =====
 function togglePT() {
   document.getElementById('ptDetails').style.display = document.getElementById('mPtEnabled').checked ? 'block' : 'none';
 }
 
-// =====================================================================
-// FIX 3: PRICE CALCULATION — only fires on blur/change, not oninput
-// This prevents the value from being recalculated mid-typing (e.g.
-// typing "100" would fire at "1", "10", "100" with oninput, and the
-// browser's number input min/max constraints could clamp partial values)
-// =====================================================================
 function recalcPrice() {
   const sel = document.getElementById('mPlan');
   if (!sel || !sel.options[sel.selectedIndex]) return;
   const origPrice = parseInt(sel.options[sel.selectedIndex].getAttribute('data-price')) || 0;
   const dType = document.querySelector('input[name="dType"]:checked')?.value || 'none';
-  const dValEl = document.getElementById('dValue');
-  // Read raw string first to avoid browser clamping mid-type
-  const rawVal = dValEl ? dValEl.value : '';
-  const dVal = rawVal === '' ? 0 : (parseFloat(rawVal) || 0);
+  const dVal = parseFloat(document.getElementById('dValue')?.value) || 0;
   let final = origPrice;
-  if (dType === 'percentage' && dVal > 0) final = Math.round(origPrice - origPrice * Math.min(dVal,100) / 100);
-  else if (dType === 'fixed' && dVal > 0)  final = Math.max(0, Math.round(origPrice - dVal));
-  currentFinalPrice = final;
+  if (dType === 'percentage' && dVal > 0) final = Math.round(origPrice - origPrice * dVal / 100);
+  else if (dType === 'fixed' && dVal > 0) final = Math.max(0, Math.round(origPrice - dVal));
   document.getElementById('origPrice').textContent  = `₹${origPrice.toLocaleString('en-IN')}`;
   document.getElementById('finalPrice').textContent = `₹${final.toLocaleString('en-IN')}`;
 }
 
-// ===== PLAN CHANGE — updates expiry only, preserves existing discount =====
 function onPlanChange() {
   const sel = document.getElementById('mPlan');
   if (!sel || !sel.options[sel.selectedIndex]) return;
@@ -1005,19 +894,21 @@ async function loadDashboard() {
     const active=members.filter(m=>m.status==='Active');
     document.getElementById('activeMembers').textContent=active.length;
 
+    // Revenue — reads from meta stored in medicalNotes
     let monthlyRev=0, admissionRev=0, ptRev=0;
     members.forEach(m=>{
-      const meta=memberMeta[m._id]||{};
-      monthlyRev += memberDiscounts[m._id] || getPlanPrice(m.plan);
-      if (!meta.admissionWaived) admissionRev += meta.admissionFee||0;
-      if (meta.ptEnabled) ptRev += meta.ptFee||0;
+      const meta = decodeMeta(m.medicalNotes);
+      monthlyRev += getMemberFinalPrice(m);
+      if (!meta.admissionWaived && meta.admissionFee > 0) admissionRev += parseFloat(meta.admissionFee)||0;
+      if (meta.ptEnabled && meta.ptFee > 0) ptRev += parseFloat(meta.ptFee)||0;
     });
     const totalRev = monthlyRev + admissionRev + ptRev;
     document.getElementById('totalRevenue').textContent   = `₹${Math.round(totalRev).toLocaleString('en-IN')}`;
     document.getElementById('monthlyRevenue').textContent = `₹${Math.round(monthlyRev).toLocaleString('en-IN')}`;
-    document.getElementById('admissionRevenue').textContent=`₹${Math.round(admissionRev).toLocaleString('en-IN')}`;
+    document.getElementById('admissionRevenue').textContent = `₹${Math.round(admissionRev).toLocaleString('en-IN')}`;
     document.getElementById('ptRevenue').textContent      = `₹${Math.round(ptRev).toLocaleString('en-IN')}`;
 
+    // Reminder
     const due=members.filter(m=>m.status==='Active'&&new Date(m.expiryDate)<=new Date(Date.now()+7*86400000));
     const rc=document.getElementById('reminderCard');
     if (!due.length) {
@@ -1029,17 +920,20 @@ async function loadDashboard() {
         <button class="btn btn-sm" style="background:white;color:var(--warning);font-weight:700" onclick="showPage('payments',document.querySelector('[data-page=payments]'));updateBNav('none')">View →</button>`;
     }
 
+    // Table
     const tbody=document.getElementById('dashMembersBody');
-    if (!members.length) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="e-icon">👥</div><p>No members yet. Add your first member!</p></div></td></tr>'; return; }
-    tbody.innerHTML=members.slice(0,8).map(m=>`
-      <tr>
+    if (!members.length) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="e-icon">👥</div><p>No members yet.</p></div></td></tr>'; return; }
+    tbody.innerHTML=members.slice(0,8).map(m=>{
+      const meta = decodeMeta(m.medicalNotes);
+      return `<tr>
         <td><div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.phone)}</small></div></div></td>
         <td style="font-size:0.85rem">${esc(m.plan)}</td>
-        <td>${genderBadge((memberMeta[m._id]||{}).gender||m.gender)}</td>
+        <td>${genderBadge(meta.gender || '')}</td>
         <td>${expiryCell(m.expiryDate, m.status)}</td>
-        <td>${badge(m.status)}</td>
-      </tr>`).join('');
-  } catch(e) { toast('Error loading dashboard','error'); }
+        <td>${statusBadge(m.status)}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) { console.error(e); toast('Error loading dashboard','error'); }
 }
 
 // ===== ALL MEMBERS =====
@@ -1051,15 +945,15 @@ async function loadAllMembers() {
     const members=await res.json();
     if (!members.length) { tbody.innerHTML='<tr><td colspan="8"><div class="empty"><div class="e-icon">👥</div><p>No members yet.</p></div></td></tr>'; return; }
     tbody.innerHTML=members.map(m=>{
-      const meta=memberMeta[m._id]||{};
+      const meta = decodeMeta(m.medicalNotes);
       return `<tr>
         <td><div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.email||'')}</small></div></div></td>
         <td>${esc(m.phone)}</td>
-        <td>${genderBadge(meta.gender||m.gender)}</td>
+        <td>${genderBadge(meta.gender||'')}</td>
         <td style="font-size:0.85rem">${esc(m.plan)}</td>
         <td>${fmtDate(m.expiryDate)}</td>
         <td>${meta.ptEnabled?'<span class="badge badge-active">Yes</span>':'<span style="color:var(--muted);font-size:0.8rem">No</span>'}</td>
-        <td>${badge(m.status)}</td>
+        <td>${statusBadge(m.status)}</td>
         <td><button class="btn btn-danger btn-sm" onclick="deleteMember('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\'"))}')">Delete</button></td>
       </tr>`;
     }).join('');
@@ -1086,9 +980,7 @@ async function confirmDeleteAll() {
   } catch(e){toast('Error','error');}
 }
 
-// =====================================================================
-// FIX 4: ATTENDANCE uses per-user keys via attKey(date)
-// =====================================================================
+// ===== ATTENDANCE =====
 async function loadAttendance() {
   const dateEl=document.getElementById('attendanceDate');
   const date=dateEl.value||new Date().toISOString().split('T')[0];
@@ -1099,8 +991,9 @@ async function loadAttendance() {
     if (res.status===401){logout();return;}
     const members=await res.json();
     const active=members.filter(m=>m.status==='Active'||m.status==='Trial');
+    const attKey=`gympro_att_${date}`;
     let saved={};
-    try{saved=JSON.parse(localStorage.getItem(attKey(date))||'{}');}catch(e){}
+    try{saved=JSON.parse(localStorage.getItem(attKey)||'{}');}catch(e){}
     const presentCount=Object.values(saved).filter(s=>s==='Present').length;
     document.getElementById('statTotal').textContent=active.length;
     document.getElementById('statPresent').textContent=presentCount;
@@ -1121,8 +1014,9 @@ async function loadAttendance() {
 }
 
 function markAtt(memberId,date,status) {
-  let saved={};try{saved=JSON.parse(localStorage.getItem(attKey(date))||'{}');}catch(e){}
-  saved[memberId]=status; localStorage.setItem(attKey(date),JSON.stringify(saved));
+  const attKey=`gympro_att_${date}`;
+  let saved={};try{saved=JSON.parse(localStorage.getItem(attKey)||'{}');}catch(e){}
+  saved[memberId]=status; localStorage.setItem(attKey,JSON.stringify(saved));
   const b=document.getElementById(`attbadge-${memberId}`);
   if(b){b.textContent=status;b.className=`badge ${status==='Present'?'badge-present':'badge-absent'}`;}
   const total=parseInt(document.getElementById('statTotal').textContent)||0;
@@ -1132,16 +1026,16 @@ function markAtt(memberId,date,status) {
 }
 
 async function markAllPresent() {
-  const dateEl=document.getElementById('attendanceDate');
-  const date=dateEl.value||new Date().toISOString().split('T')[0];
+  const date=document.getElementById('attendanceDate').value||new Date().toISOString().split('T')[0];
   if(!confirm(`Mark all active members Present for ${new Date(date).toLocaleDateString('en-IN')}?`))return;
   try{
     const res=await fetch(API,{headers:headers()});
     const members=await res.json();
     const active=members.filter(m=>m.status==='Active'||m.status==='Trial');
-    let saved={};try{saved=JSON.parse(localStorage.getItem(attKey(date))||'{}');}catch(e){}
+    const attKey=`gympro_att_${date}`;
+    let saved={};try{saved=JSON.parse(localStorage.getItem(attKey)||'{}');}catch(e){}
     active.forEach(m=>{saved[m._id]='Present';});
-    localStorage.setItem(attKey(date),JSON.stringify(saved));
+    localStorage.setItem(attKey,JSON.stringify(saved));
     toast(`${active.length} members marked Present`,'success'); loadAttendance();
   }catch(e){toast('Error','error');}
 }
@@ -1157,10 +1051,10 @@ async function loadTrainers() {
     tbody.innerHTML=trainers.map(t=>`
       <tr>
         <td><div style="display:flex;align-items:center;gap:10px">${avatar(t.name)}<strong>${esc(t.name)}</strong></div></td>
-        <td>${esc(t.specialty)}</td><td>${esc(t.phone)}</td><td>${badge(t.status)}</td>
+        <td>${esc(t.specialty)}</td><td>${esc(t.phone)}</td><td>${statusBadge(t.status)}</td>
         <td>
           <button class="btn btn-sm btn-outline" onclick="editTrainer('${esc(t._id)}')">Edit</button>
-          <button class="btn btn-sm btn-danger"  onclick="deleteTrainer('${esc(t._id)}','${esc(t.name.replace(/'/g,"\\'"))}')">Delete</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteTrainer('${esc(t._id)}','${esc(t.name.replace(/'/g,"\\'"))}')">Delete</button>
         </td>
       </tr>`).join('');
     const ptSel=document.getElementById('mPtTrainer');
@@ -1187,9 +1081,7 @@ async function deleteTrainer(id,name) {
   catch(e){toast('Error','error');}
 }
 
-// =====================================================================
-// FIX 5: PLANS — load/save with user-scoped keys
-// =====================================================================
+// ===== PLANS =====
 function loadPlans() {
   const grid=document.getElementById('plansGrid');
   if (!gymPlans.length) { grid.innerHTML='<div class="empty"><div class="e-icon">💎</div><p>No plans yet. Add one!</p></div>'; return; }
@@ -1221,7 +1113,10 @@ function loadPlans() {
 }
 
 function selectPlan(name) {
-  document.getElementById('mPlan').value=name; recalcPrice(); openModal('addMemberModal');
+  populatePlanSelect();
+  document.getElementById('mPlan').value=name;
+  onPlanChange();
+  openModal('addMemberModal');
 }
 
 function addGymPlan() {
@@ -1229,9 +1124,9 @@ function addGymPlan() {
   const price=parseFloat(document.getElementById('newPlanPrice').value);
   const months=parseInt(document.getElementById('newPlanMonths').value);
   if(!name||!price||!months){toast('Please fill all fields','error');return;}
-  if(gymPlans.find(p=>p.name===name)){toast('Plan with this name already exists','error');return;}
+  if(gymPlans.find(p=>p.name===name)){toast('Plan already exists','error');return;}
   gymPlans.push({name,price,months});
-  saveGymPlans();
+  localStorage.setItem('gymPlans',JSON.stringify(gymPlans));
   closeModal('addPlanModal');
   populatePlanSelect();
   loadPlans();
@@ -1244,13 +1139,11 @@ function addGymPlan() {
 function removePlan(name) {
   if(!confirm(`Remove plan "${name}"?`))return;
   gymPlans=gymPlans.filter(p=>p.name!==name);
-  saveGymPlans();
+  localStorage.setItem('gymPlans',JSON.stringify(gymPlans));
   populatePlanSelect(); loadPlans(); toast('Plan removed');
 }
 
-// =====================================================================
-// FIX 6: DISCOUNTS — scoped save/load
-// =====================================================================
+// ===== DISCOUNTS =====
 function renderDiscounts() {
   const c=document.getElementById('discountsTable');
   if(!activeDiscounts.length){c.innerHTML='<div class="empty"><div class="e-icon">🏷️</div><p>No active discounts. Add one above.</p></div>';return;}
@@ -1259,9 +1152,9 @@ function renderDiscounts() {
     <tbody>${activeDiscounts.map((d,i)=>`
       <tr>
         <td><strong>${esc(d.name)}</strong></td>
-        <td>${d.appliesTo==='all'?'All Plans':esc(d.planName)}</td>
+        <td>${d.appliesTo==='all'?'All Plans':esc(d.planName||'')}</td>
         <td>${d.type==='percentage'?'Percentage':'Fixed'}</td>
-        <td>${d.type==='percentage'?`${d.value}%`:`₹${d.value.toLocaleString('en-IN')}`}</td>
+        <td>${d.type==='percentage'?`${d.value}%`:`₹${(d.value||0).toLocaleString('en-IN')}`}</td>
         <td>${d.validUntil?fmtDate(d.validUntil):'No expiry'}</td>
         <td><button class="btn btn-danger btn-sm" onclick="removeDiscount(${i})">Remove</button></td>
       </tr>`).join('')}
@@ -1279,15 +1172,27 @@ function addDiscount() {
   const type=document.getElementById('discType').value;
   if(type==='percentage'&&val>100){toast('Percentage cannot exceed 100%','error');return;}
   const appliesTo=document.getElementById('discApplies').value;
-  activeDiscounts.push({name,type,value:val,appliesTo,planName:appliesTo==='specific'?document.getElementById('discPlan').value:null,validUntil:document.getElementById('discExpiry').value||null});
-  saveDiscounts();
-  closeModal('addDiscountModal'); renderDiscounts(); toast('Discount added','success');
+  activeDiscounts.push({
+    name,type,value:val,appliesTo,
+    planName:appliesTo==='specific'?document.getElementById('discPlan').value:null,
+    validUntil:document.getElementById('discExpiry').value||null
+  });
+  localStorage.setItem('gympro_discounts',JSON.stringify(activeDiscounts));
+  closeModal('addDiscountModal');
+  // Reset form
+  document.getElementById('discName').value='';
+  document.getElementById('discVal').value='';
+  document.getElementById('discExpiry').value='';
+  document.getElementById('discApplies').value='all';
+  document.getElementById('discPlanGroup').style.display='none';
+  renderDiscounts();
+  toast('Discount added','success');
 }
 
 function removeDiscount(i) {
   if(!confirm('Remove this discount?'))return;
   activeDiscounts.splice(i,1);
-  saveDiscounts();
+  localStorage.setItem('gympro_discounts',JSON.stringify(activeDiscounts));
   renderDiscounts(); toast('Discount removed');
 }
 
@@ -1304,10 +1209,14 @@ async function loadPayments() {
     container.innerHTML=due.map(m=>{
       const exp=new Date(m.expiryDate);
       const daysLeft=Math.ceil((exp-today)/(1000*60*60*24));
+      const meta = decodeMeta(m.medicalNotes);
+      const planAmt = getMemberFinalPrice(m);
+      const admAmt = (!meta.admissionWaived && meta.admissionFee) ? parseFloat(meta.admissionFee)||0 : 0;
+      const ptAmt = meta.ptEnabled ? parseFloat(meta.ptFee)||0 : 0;
       return `<div class="payment-row">
         <div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.plan)}</small><br><small style="color:var(--muted)">Expires: ${fmtDate(m.expiryDate)}</small></div></div>
         <span class="badge ${daysLeft<0?'badge-inactive':'badge-trial'}">${daysLeft<0?'Overdue':daysLeft+'d left'}</span>
-        <button class="btn btn-success btn-sm" onclick="openPaymentFor('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\'"))}','${esc(m.plan)}')">Pay Now</button>
+        <button class="btn btn-success btn-sm" onclick="openPaymentFor('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\'"))}','${esc(m.plan)}',${admAmt},${ptAmt})">Pay Now</button>
       </div>`;
     }).join('');
   }catch(e){container.innerHTML='<div class="empty"><p style="color:var(--danger)">Error loading payments</p></div>';}
@@ -1315,96 +1224,48 @@ async function loadPayments() {
 
 function openPaymentFor(id, name, plan, admissionFee, ptFee) {
   admissionFee = admissionFee || 0;
-  ptFee        = ptFee        || 0;
-
-  const planAmt  = memberDiscounts[id] || getPlanPrice(plan) || 1000;
+  ptFee = ptFee || 0;
+  // Look up discounted price
+  const planAmt = (() => {
+    // find member from DOM data isn't reliable, use base plan price
+    const base = getPlanPrice(plan);
+    return base;
+  })();
   const totalAmt = Math.round(planAmt + admissionFee + ptFee);
-
   currentPaymentMember = { id, name, plan };
-  currentFinalPrice = totalAmt;
 
   const upiId   = gymSettings.upiId   || 'your-upi@bank';
   const upiName = gymSettings.upiName || 'GymPro';
 
   let rows = `
-    <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-      <span style="color:var(--muted)">Member</span><strong>${esc(name)}</strong>
-    </div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-      <span style="color:var(--muted)">Plan</span>
-      <strong style="font-size:0.85rem">${esc(plan)}</strong>
-    </div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-      <span style="color:var(--muted)">Plan Fee</span>
-      <span>₹${Math.round(planAmt).toLocaleString('en-IN')}</span>
-    </div>`;
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--muted)">Member</span><strong>${esc(name)}</strong></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--muted)">Plan</span><strong style="font-size:0.85rem">${esc(plan)}</strong></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--muted)">Plan Fee</span><span>₹${Math.round(planAmt).toLocaleString('en-IN')}</span></div>`;
+  if (admissionFee > 0) rows += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--muted)">🎟️ Admission Fee</span><span>₹${Math.round(admissionFee).toLocaleString('en-IN')}</span></div>`;
+  if (ptFee > 0) rows += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--muted)">💪 PT Fee</span><span>₹${Math.round(ptFee).toLocaleString('en-IN')}</span></div>`;
+  rows += `<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:2px solid var(--border);margin-top:6px"><span style="font-weight:700">Total</span><strong style="color:var(--success);font-size:1.15rem">₹${totalAmt.toLocaleString('en-IN')}</strong></div>`;
 
-  if (admissionFee > 0) {
-    rows += `<div style="display:flex;justify-content:space-between;margin-bottom:4px">
-      <span style="color:var(--muted)">🎟️ Admission Fee</span>
-      <span>₹${Math.round(admissionFee).toLocaleString('en-IN')}</span>
-    </div>`;
-  }
-  if (ptFee > 0) {
-    rows += `<div style="display:flex;justify-content:space-between;margin-bottom:4px">
-      <span style="color:var(--muted)">💪 PT Fee</span>
-      <span>₹${Math.round(ptFee).toLocaleString('en-IN')}</span>
-    </div>`;
-  }
-
-  rows += `<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:2px solid var(--border);margin-top:6px">
-    <span style="font-weight:700">Total</span>
-    <strong style="color:var(--success);font-size:1.15rem">₹${totalAmt.toLocaleString('en-IN')}</strong>
-  </div>`;
-
-  document.getElementById('paymentInfo').innerHTML =
-    `<div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:1rem">${rows}</div>`;
-
+  document.getElementById('paymentInfo').innerHTML = `<div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:1rem">${rows}</div>`;
   document.getElementById('displayUpiId').textContent = upiId;
   const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${totalAmt}&cu=INR`;
   document.getElementById('payQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
   openModal('paymentModal');
 }
 
-function openAdmissionPayment(id, name, admissionFee) {
-  openPaymentFor(id, name, 'Admission Fee', admissionFee, 0);
-}
-
 async function confirmPayment() {
   if (!currentPaymentMember) return;
-  const isAdmission = currentPaymentMember.plan === 'Admission Fee';
-
-  if (!isAdmission) {
-    const months = getPlanMonths(currentPaymentMember.plan);
-    const expiry = new Date(); expiry.setMonth(expiry.getMonth() + months);
-    try {
-      await fetch(`${API}/${currentPaymentMember.id}`, {
-        method: 'PUT', headers: headers(),
-        body: JSON.stringify({ expiryDate: expiry.toISOString().split('T')[0], status: 'Active' })
-      }).catch(()=>{});
-    } catch(e) {}
-    toast(`✅ Plan payment confirmed! Extended to ${expiry.toLocaleDateString('en-IN')}`, 'success');
-
-    const pendingAdmission = currentPaymentMember._admissionFee;
-    const pendingName      = currentPaymentMember._admissionName;
-    const pendingId        = currentPaymentMember._admissionId;
-
-    closeModal('paymentModal');
-    currentPaymentMember = null;
-    loadDashboard(); loadPayments();
-
-    if (pendingAdmission && pendingAdmission > 0) {
-      setTimeout(() => {
-        if (confirm(`Collect Admission Fee ₹${Math.round(pendingAdmission).toLocaleString('en-IN')} for ${pendingName}?\n\nClick OK to open UPI payment.`)) {
-          openAdmissionPayment(pendingId, pendingName, pendingAdmission);
-        }
-      }, 600);
-    }
-  } else {
-    toast(`✅ Admission fee collected!`, 'success');
-    closeModal('paymentModal');
-    currentPaymentMember = null;
-  }
+  const months = getPlanMonths(currentPaymentMember.plan);
+  const expiry = new Date(); expiry.setMonth(expiry.getMonth() + months);
+  try {
+    await fetch(`${API}/${currentPaymentMember.id}`, {
+      method: 'PUT', headers: headers(),
+      body: JSON.stringify({ expiryDate: expiry.toISOString().split('T')[0], status: 'Active' })
+    });
+  } catch(e) {}
+  toast(`✅ Payment confirmed! Extended to ${expiry.toLocaleDateString('en-IN')}`, 'success');
+  closeModal('paymentModal');
+  currentPaymentMember = null;
+  loadDashboard(); loadPayments();
 }
 
 // ===== SETTINGS =====
@@ -1415,10 +1276,21 @@ function loadSettings() {
   document.getElementById('settingsPtFee').value=gymSettings.ptFee||'';
 }
 
-// =====================================================================
-// FIX 7: ADD MEMBER SUBMIT — read age as integer only on submit,
-// not mid-typing. Discount value also read at submit-time only.
-// =====================================================================
+function saveSettings() {
+  gymSettings.upiId=document.getElementById('settingsUpiId').value.trim();
+  gymSettings.upiName=document.getElementById('settingsUpiName').value.trim();
+  gymSettings.admissionFee=parseFloat(document.getElementById('settingsAdmissionFee').value)||0;
+  gymSettings.ptFee=parseFloat(document.getElementById('settingsPtFee').value)||0;
+  localStorage.setItem('gymSettings',JSON.stringify(gymSettings));
+  // Pre-fill admission fee in modal
+  if (gymSettings.admissionFee) {
+    const el = document.getElementById('mAdmissionFee');
+    if (el && !el.value) el.value = gymSettings.admissionFee;
+  }
+  toast('Settings saved!','success');
+}
+
+// ===== ADD MEMBER SUBMIT =====
 document.getElementById('addMemberForm').addEventListener('submit', async e=>{
   e.preventDefault();
   const phone=document.getElementById('mPhone').value.trim();
@@ -1429,10 +1301,9 @@ document.getElementById('addMemberForm').addEventListener('submit', async e=>{
   const sel=document.getElementById('mPlan');
   const origPrice=parseInt(sel.options[sel.selectedIndex].getAttribute('data-price'))||0;
   const dType=document.querySelector('input[name="dType"]:checked')?.value||'none';
-  // FIX: read the integer value at submission time, not during typing
   const dVal=parseFloat(document.getElementById('dValue').value)||0;
   let finalPrice=origPrice;
-  if(dType==='percentage'&&dVal>0) finalPrice=origPrice-origPrice*Math.min(dVal,100)/100;
+  if(dType==='percentage'&&dVal>0) finalPrice=origPrice-origPrice*dVal/100;
   else if(dType==='fixed'&&dVal>0) finalPrice=Math.max(0,origPrice-dVal);
   finalPrice=Math.round(finalPrice);
 
@@ -1449,22 +1320,39 @@ document.getElementById('addMemberForm').addEventListener('submit', async e=>{
     if(cond) conditions.push({condition:cond,severity:row.querySelector('.cSev')?.value||'Mild',notes:row.querySelector('.cNote')?.value||''});
   });
 
-  // FIX: read age as integer directly — parseInt prevents float/clamped issues
-  const ageRaw = document.getElementById('mAge').value;
-  const ageVal = ageRaw !== '' ? parseInt(ageRaw, 10) : null;
+  // ===== KEY FIX: Encode all extra data INTO medicalNotes so it persists on backend =====
+  const metaPayload = {
+    gender,
+    discountType: dType,
+    discountValue: dVal,
+    discountReason: document.getElementById('dReason').value.trim(),
+    finalPrice,
+    admissionFee,
+    admissionWaived,
+    ptEnabled,
+    ptFee,
+    ptTrainer,
+    ptNotes
+  };
+  const visibleNotes = document.getElementById('mNotes').value.trim();
+  const encodedNotes = encodeMeta(metaPayload, visibleNotes);
 
   const data={
     name:document.getElementById('mName').value.trim(),
     phone,
     email:document.getElementById('mEmail').value.trim(),
-    age: ageVal,
+    age:parseInt(document.getElementById('mAge').value)||null,
     photo:document.getElementById('photo-data').value||'',
     plan:sel.value,
     expiryDate:document.getElementById('mExpiry').value,
     status:document.getElementById('mStatus').value,
-    emergencyContact:{name:document.getElementById('mEcName').value.trim(),phone:document.getElementById('mEcPhone').value.trim(),relationship:document.getElementById('mEcRel').value.trim()},
+    emergencyContact:{
+      name:document.getElementById('mEcName').value.trim(),
+      phone:document.getElementById('mEcPhone').value.trim(),
+      relationship:document.getElementById('mEcRel').value.trim()
+    },
     healthConditions:conditions,
-    medicalNotes:document.getElementById('mNotes').value.trim()
+    medicalNotes:encodedNotes   // gender + all extras stored here
   };
 
   if(!data.name){toast('Name is required','error');return;}
@@ -1476,30 +1364,29 @@ document.getElementById('addMemberForm').addEventListener('submit', async e=>{
     const res=await fetch(API,{method:'POST',headers:headers(),body:JSON.stringify(data)});
     if(res.ok){
       const added=await res.json();
-
-      if(finalPrice!==origPrice){
-        memberDiscounts[added._id]=finalPrice;
-        saveMemberDiscounts();
-      }
-
-      memberMeta[added._id]={gender,admissionFee,admissionWaived,ptEnabled,ptFee,ptTrainer,ptNotes};
-      saveMemberMeta();
-
       closeModal('addMemberModal');
       e.target.reset();
       document.getElementById('condContainer').innerHTML='';
       document.getElementById('mPtEnabled').checked=false;
       document.getElementById('ptDetails').style.display='none';
       resetPhotoPreview();
+      // Reset discount radio
+      document.querySelector('input[name="dType"][value="none"]').checked=true;
+      document.getElementById('dValue').value='';
+      document.getElementById('dReason').value='';
+      // Reset admission fee to default
+      if (gymSettings.admissionFee) document.getElementById('mAdmissionFee').value=gymSettings.admissionFee;
       recalcPrice();
       toast(`${added.name} added!`,'success');
       loadDashboard();
 
+      // Open payment modal with correct fees
       const effectiveAdmission = admissionWaived ? 0 : admissionFee;
-      const effectivePt        = ptEnabled ? ptFee : 0;
+      const effectivePt = ptEnabled ? ptFee : 0;
       openPaymentFor(added._id, added.name, added.plan, effectiveAdmission, effectivePt);
     } else {
-      const err=await res.json(); toast(err.error||'Could not add member','error');
+      const err=await res.json();
+      toast(err.error||'Could not add member','error');
     }
   } catch(err){ toast('Network error. Please try again.','error'); }
   btn.disabled=false; btn.textContent='Add Member';
@@ -1510,7 +1397,12 @@ document.getElementById('addTrainerForm').addEventListener('submit', async e=>{
   e.preventDefault();
   const phone=document.getElementById('tPhone').value.trim();
   if(!/^\d{10}$/.test(phone)){toast('Please enter a valid 10-digit phone number','error');return;}
-  const data={name:document.getElementById('tName').value.trim(),phone,specialty:document.getElementById('tSpecialty').value.trim(),status:document.getElementById('tStatus').value};
+  const data={
+    name:document.getElementById('tName').value.trim(),
+    phone,
+    specialty:document.getElementById('tSpecialty').value.trim(),
+    status:document.getElementById('tStatus').value
+  };
   const btn=e.submitter; btn.disabled=true; btn.textContent='Adding…';
   try{
     const res=await fetch(TAPI,{method:'POST',headers:headers(),body:JSON.stringify(data)});
@@ -1520,20 +1412,16 @@ document.getElementById('addTrainerForm').addEventListener('submit', async e=>{
   btn.disabled=false; btn.textContent='Add Trainer';
 });
 
-// =====================================================================
-// INIT — must load user data AFTER userId is known
-// =====================================================================
+// ===== INIT =====
 window.addEventListener('DOMContentLoaded', ()=>{
   if (!checkAuth()) return;
-
-  // Load user-scoped data now that we have the user id
-  loadUserData();
-
   setupCamera();
   document.getElementById('topbarDate').textContent=new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
   document.getElementById('attendanceDate').value=new Date().toISOString().split('T')[0];
 
+  // Set default admission fee from settings
   if (gymSettings.admissionFee) document.getElementById('mAdmissionFee').value=gymSettings.admissionFee;
+  if (gymSettings.ptFee) document.getElementById('mPtFee').value=gymSettings.ptFee;
 
   try{
     const user=JSON.parse(localStorage.getItem('user')||'{}');
@@ -1544,9 +1432,12 @@ window.addEventListener('DOMContentLoaded', ()=>{
   recalcPrice();
   loadDashboard();
 
+  // Pre-load trainers for PT dropdown
   fetch(TAPI,{headers:headers()}).then(r=>r.json()).then(trainers=>{
     const ptSel=document.getElementById('mPtTrainer');
-    ptSel.innerHTML='<option value="">Select Trainer</option>'+trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
+    if (!ptSel) return;
+    ptSel.innerHTML='<option value="">Select Trainer</option>'+
+      trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
   }).catch(()=>{});
 });
 </script>
