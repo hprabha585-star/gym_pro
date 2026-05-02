@@ -3,301 +3,341 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GymPro - Mobile Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <title>GymPro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 
-    :root {
-      --primary: #6C47FF;
-      --primary-dark: #5535e0;
-      --primary-light: #EDE9FF;
-      --success: #16a34a;
-      --success-bg: #dcfce7;
-      --danger: #dc2626;
-      --danger-bg: #fef2f2;
-      --warning: #d97706;
-      --warning-bg: #fffbeb;
-      --text: #1a1a2e;
-      --muted: #64748b;
-      --border: #e8e8f0;
-      --bg: #f8f9fc;
-      --card: #ffffff;
-      --sidebar-w: 260px;
-      --radius: 16px;
-      --transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    :root{
+      --p:#5B4CFF;--p2:#7B6DFF;--pd:#3D2FD9;--pl:#ECEAFF;--pl2:#F5F4FF;
+      --g:#0EA669;--gb:#D1FAE5;--gr:#E53E3E;--grb:#FEE2E2;
+      --am:#D97706;--amb:#FEF3C7;
+      --tx:#111827;--tx2:#6B7280;--tx3:#9CA3AF;
+      --bg:#F3F4F8;--card:#FFFFFF;--border:#E5E7EB;--border2:#D1D5DB;
+      --r:14px;--r2:10px;--r3:8px;
+      --sh:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.04);
+      --sh2:0 4px 24px rgba(91,76,255,.18);
     }
 
-    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-tap-highlight-color: transparent; }
+    html{-webkit-text-size-adjust:100%;}
+    body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;-webkit-tap-highlight-color:transparent;overscroll-behavior:none;}
 
-    .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh; background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 1.25rem 1rem; z-index: 2000; overflow-y: auto; transform: translateX(-100%); transition: transform var(--transition); box-shadow: 4px 0 24px rgba(0,0,0,0.05); }
-    .sidebar.open { transform: translateX(0); }
-    .sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 0.25rem 0.5rem 1.25rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; justify-content: space-between; }
-    .brand-icon { width: 36px; height: 36px; background: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
-    .brand-name { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--primary); flex: 1; }
-    .sidebar-close-btn { background: var(--bg); border: none; font-size: 1.2rem; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; }
-    .user-info { background: var(--primary-light); border-radius: 12px; padding: 12px; margin-bottom: 1rem; }
-    .user-info .u-name { font-weight: 700; font-size: 0.95rem; color: var(--text); }
-    .user-info .u-role { font-size: 0.8rem; color: var(--primary); font-weight: 600; }
-    .nav-section-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); padding: 0 0.5rem; margin: 1rem 0 0.5rem; }
-    .nav-link { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; color: var(--muted); font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; border: none; background: none; width: 100%; text-align: left; margin-bottom: 4px; }
-    .nav-link:hover, .nav-link.active { background: var(--primary-light); color: var(--primary); }
-    .nav-link.active { background: var(--primary); color: white; }
-    .nav-link .nav-icon { font-size: 1.1rem; width: 24px; text-align: center; flex-shrink: 0; }
-    .sidebar-footer { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); }
-    .logout-btn { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; background: var(--danger-bg); color: var(--danger); border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 700; cursor: pointer; width: 100%; }
+    /* ── PREVENT SCROLL WHEEL FROM CHANGING NUMBER INPUTS ── */
+    input[type=number]{-moz-appearance:textfield;}
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
 
-    .topbar { position: fixed; top: 0; left: 0; right: 0; height: 64px; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 1.25rem; gap: 1rem; z-index: 100; }
-    .menu-toggle { display: flex; width: 38px; height: 38px; background: var(--primary-light); border: none; border-radius: 10px; color: var(--primary); font-size: 1.2rem; cursor: pointer; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s; }
-    .menu-toggle:hover { background: #dcd4ff; }
-    .topbar-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--text); }
-    .topbar-date { margin-left: auto; font-size: 0.85rem; font-weight: 600; color: var(--muted); }
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar{width:3px;height:3px;}
+    ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
 
-    .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: white; border-top: 1px solid var(--border); z-index: 900; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -4px 20px rgba(0,0,0,0.03); }
-    .b-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border: none; background: none; color: var(--muted); font-size: 0.75rem; font-weight: 600; gap: 4px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
-    .b-nav-item i { font-size: 1.3rem; font-style: normal; }
-    .b-nav-item.active { color: var(--primary); }
-    .b-nav-item.active i { transform: scale(1.1); transition: 0.2s; }
-
-    .main-content { margin-left: 0; margin-top: 64px; padding: 1.25rem; min-height: calc(100vh - 64px); }
-
-    .overlay { display: none; position: fixed; inset: 0; background: rgba(10,8,30,0.5); z-index: 1500; backdrop-filter: blur(3px); }
-    .overlay.show { display: block; }
-
-    .page { display: none; animation: fadeIn 0.3s; }
-    .page.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
-
-    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
-    .stat-card { background: var(--card); border-radius: var(--radius); padding: 1.25rem; border: 1px solid var(--border); box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
-    .stat-label { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 8px; }
-    .stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--primary); line-height: 1; }
-    .stat-sub { font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
-
-    .revenue-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.25rem; }
-    .rev-card { background: var(--card); border-radius: var(--radius); padding: 1rem; border: 1px solid var(--border); text-align: center; }
-    .rev-card .rev-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
-    .rev-card .rev-value { font-family: 'Space Grotesk', sans-serif; font-size: 1.3rem; font-weight: 700; }
-    .rev-card.monthly .rev-value { color: var(--primary); }
-    .rev-card.admission .rev-value { color: var(--success); }
-    .rev-card.total .rev-value { color: var(--warning); }
-
-    .card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 1.25rem; margin-bottom: 1.25rem; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
-    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; gap: 1rem; flex-wrap: wrap; }
-    .card-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 700; }
-
-    .reminder { border-radius: var(--radius); padding: 1.1rem 1.25rem; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; border: 1px solid; }
-    .reminder.green { background: var(--success-bg); border-color: #86efac; }
-    .reminder.orange { background: var(--warning-bg); border-color: #fcd34d; }
-    .reminder-text { flex: 1; }
-    .reminder-text h3 { font-size: 0.95rem; font-weight: 700; }
-    .reminder-text p { font-size: 0.82rem; margin-top: 2px; }
-
-    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -0.5rem; padding: 0 0.5rem; }
-    table { width: 100%; border-collapse: collapse; min-width: 480px; }
-    th { text-align: left; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--muted); padding: 10px 12px; border-bottom: 2px solid var(--border); white-space: nowrap; }
-    td { padding: 14px 12px; border-bottom: 1px solid #f0eff8; font-size: 0.9rem; vertical-align: middle; }
-    tr:last-child td { border-bottom: none; }
-
-    .expiry-cell { display: flex; align-items: center; gap: 6px; }
-    .expiry-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .expiry-dot.red { background: var(--danger); }
-    .expiry-dot.yellow { background: #f59e0b; }
-    .expiry-dot.green { background: var(--success); }
-    .expiry-text.red { color: var(--danger); font-weight: 700; font-size: 0.78rem; }
-    .expiry-text.yellow { color: #d97706; font-weight: 700; font-size: 0.78rem; }
-    .expiry-text.green { color: var(--muted); font-size: 0.78rem; }
-
-    .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
-    .badge-active { background: var(--success-bg); color: var(--success); }
-    .badge-trial { background: #fffbeb; color: var(--warning); }
-    .badge-inactive, .badge-expired { background: var(--danger-bg); color: var(--danger); }
-    .badge-present { background: var(--success-bg); color: var(--success); }
-    .badge-absent { background: var(--danger-bg); color: var(--danger); }
-    .badge-male { background: #dbeafe; color: #1d4ed8; }
-    .badge-female { background: #fce7f3; color: #be185d; }
-    .badge-other { background: #f3f4f6; color: #374151; }
-
-    .avatar { width: 38px; height: 38px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; color: white; flex-shrink: 0; }
-
-    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 700; cursor: pointer; white-space: nowrap; min-height: 44px; justify-content: center; }
-    .btn-primary { background: var(--primary); color: white; }
-    .btn-success { background: var(--success); color: white; }
-    .btn-danger { background: var(--danger); color: white; }
-    .btn-sm { padding: 6px 12px; font-size: 0.85rem; min-height: 36px; }
-    .btn-outline { background: transparent; border: 1.5px solid var(--primary); color: var(--primary); }
-
-    .att-btn { padding: 6px 12px; border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 700; margin: 2px; min-height: 36px; }
-    .att-btn-present { background: var(--success-bg); color: var(--success); border: 1px solid #86efac; }
-    .att-btn-absent { background: var(--danger-bg); color: var(--danger); border: 1px solid #fca5a5; }
-
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .form-group { margin-bottom: 1rem; }
-    .form-group label { display: block; font-size: 0.85rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
-    .form-group input, .form-group select, .form-group textarea, .condition-row select, .condition-row input {
-      width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px;
-      font-family: 'DM Sans', sans-serif; font-size: 0.95rem; color: var(--text); background: white;
-      min-height: 48px; -webkit-appearance: none; appearance: none;
+    /* ══════════ SIDEBAR ══════════ */
+    .sidebar{
+      position:fixed;top:0;left:0;width:272px;height:100vh;
+      background:var(--card);border-right:1px solid var(--border);
+      display:flex;flex-direction:column;z-index:2000;overflow:hidden;
+      transform:translateX(-100%);transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s;
     }
-    .form-group input[type="date"] { padding: 10px 14px; }
-    .form-group textarea { resize: vertical; min-height: 100px; }
-    .form-section-title { font-size: 0.85rem; font-weight: 700; color: var(--primary); margin: 1.5rem 0 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--primary-light); padding-bottom: 6px; }
+    .sidebar.open{transform:translateX(0);box-shadow:4px 0 40px rgba(0,0,0,.12);}
+    .sb-top{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1rem .9rem;border-bottom:1px solid var(--border);}
+    .sb-brand{display:flex;align-items:center;gap:9px;}
+    .sb-logo{width:34px;height:34px;background:var(--p);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0;box-shadow:var(--sh2);}
+    .sb-name{font-size:1.1rem;font-weight:800;color:var(--tx);letter-spacing:-.3px;}
+    .sb-close{width:30px;height:30px;background:var(--bg);border:none;border-radius:var(--r3);color:var(--tx2);font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 
-    .discount-box { background: #faf9ff; border: 1.5px dashed #c4b5fd; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
-    .discount-box h4 { font-size: 0.9rem; font-weight: 700; color: var(--primary); margin-bottom: 0.75rem; }
-    .radio-group { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
-    .radio-group label { display: flex; align-items: center; gap: 5px; font-size: 0.85rem; font-weight: 600; color: var(--muted); cursor: pointer; }
-    .price-summary { background: var(--primary-light); border-radius: 8px; padding: 10px 14px; margin-top: 0.75rem; }
-    .price-summary .line { display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 4px; }
-    .price-summary .line:last-child { margin-bottom: 0; font-weight: 700; font-size: 1rem; color: var(--success); border-top: 1px solid #c4b5fd; padding-top: 6px; }
+    .sb-user{margin:.85rem 1rem;background:var(--pl2);border:1.5px solid var(--pl);border-radius:var(--r2);padding:10px 12px;}
+    .sb-user .u-name{font-size:.85rem;font-weight:700;color:var(--tx);}
+    .sb-user .u-role{font-size:.7rem;color:var(--p);font-weight:700;margin-top:2px;text-transform:uppercase;letter-spacing:.5px;}
 
-    .pt-box { background: #fff7ed; border: 1.5px dashed #fed7aa; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
-    .pt-box h4 { font-size: 0.9rem; font-weight: 700; color: #c2410c; margin-bottom: 0.75rem; }
-    .pt-toggle { display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem; }
-    .toggle-switch { position: relative; width: 44px; height: 24px; }
-    .toggle-switch input { opacity: 0; width: 0; height: 0; }
-    .toggle-slider { position: absolute; inset: 0; background: var(--border); border-radius: 24px; cursor: pointer; transition: 0.2s; }
-    .toggle-slider::before { content:''; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.2s; }
-    .toggle-switch input:checked + .toggle-slider { background: #ea580c; }
-    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+    .sb-section{font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--tx3);padding:.5rem 1.1rem .25rem;}
+    .sb-body{flex:1;overflow-y:auto;padding-bottom:.75rem;}
 
-    .admission-box { background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
-    .admission-box h4 { font-size: 0.9rem; font-weight: 700; color: var(--success); margin-bottom: 0.75rem; }
+    .nav-btn{display:flex;align-items:center;gap:10px;padding:9px 1rem;margin:2px .65rem;border-radius:var(--r3);color:var(--tx2);font-size:.85rem;font-weight:600;cursor:pointer;transition:all .15s;border:none;background:none;width:calc(100% - 1.3rem);text-align:left;}
+    .nav-btn .ni{font-size:.95rem;width:20px;text-align:center;flex-shrink:0;}
+    .nav-btn:hover{background:var(--pl2);color:var(--p);}
+    .nav-btn.active{background:var(--p);color:#fff;}
 
-    .plans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
-    .plan-card { background: white; border: 1.5px solid var(--border); border-radius: var(--radius); padding: 1.25rem; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
-    .plan-card:hover { border-color: var(--primary); transform: translateY(-3px); }
-    .plan-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem; }
-    .plan-price { font-family: 'Space Grotesk', sans-serif; font-size: 1.7rem; font-weight: 700; color: var(--primary); margin: 0.75rem 0; }
-    .plan-original { text-decoration: line-through; color: var(--muted); font-size: 0.88rem; }
-    .plan-discount-badge { position: absolute; top: 10px; right: 10px; background: #ff9800; color: white; padding: 3px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
+    .sb-foot{padding:.75rem 1rem;border-top:1px solid var(--border);}
+    .logout-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:9px;background:var(--grb);color:var(--gr);border:1.5px solid #FCA5A5;border-radius:var(--r3);font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;width:100%;transition:all .15s;}
+    .logout-btn:hover{background:var(--gr);color:#fff;}
 
-    .att-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.25rem; }
-    .att-stat { background: white; border-radius: 10px; padding: 1rem; text-align: center; border: 1px solid var(--border); }
-    .att-stat .num { font-size: 1.75rem; font-weight: 700; color: var(--primary); }
-    .att-stat .lbl { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 4px; }
+    /* ══════════ OVERLAY ══════════ */
+    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1500;backdrop-filter:blur(2px);}
+    .overlay.show{display:block;}
 
-    .modal { display: none; position: fixed; inset: 0; background: rgba(10,8,30,0.6); z-index: 2500; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(3px); }
-    .modal.open { display: flex; }
-    .modal-content { background: white; border-radius: var(--radius); padding: 1.5rem; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 48px rgba(0,0,0,0.25); animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-    @keyframes modalIn { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: none; } }
-    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
-    .modal-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 700; }
-    .modal-close { width: 36px; height: 36px; background: var(--bg); border: none; border-radius: 10px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--muted); }
+    /* ══════════ TOPBAR ══════════ */
+    .topbar{position:fixed;top:0;left:0;right:0;height:56px;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1rem;gap:.75rem;z-index:100;}
+    .menu-btn{width:36px;height:36px;background:var(--pl);border:none;border-radius:var(--r3);color:var(--p);font-size:1.05rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .topbar-title{font-size:.95rem;font-weight:800;color:var(--tx);flex:1;letter-spacing:-.2px;}
+    .topbar-date{font-size:.7rem;font-weight:600;color:var(--tx3);}
 
-    .payment-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); gap: 1rem; flex-wrap: wrap; }
-    .payment-row:last-child { border-bottom: none; }
+    /* ══════════ BOTTOM NAV ══════════ */
+    .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:62px;background:var(--card);border-top:1px solid var(--border);z-index:900;padding-bottom:env(safe-area-inset-bottom);}
+    .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border:none;background:none;color:var(--tx3);font-size:.62rem;font-weight:700;gap:3px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:color .15s;}
+    .bn-item i{font-size:1.15rem;font-style:normal;transition:transform .15s;}
+    .bn-item.active{color:var(--p);}
+    .bn-item.active i{transform:scale(1.15);}
 
-    .qr-box { background: var(--bg); border-radius: 12px; padding: 1.25rem; text-align: center; margin: 1rem 0; }
-    .qr-box img { width: 180px; height: 180px; border-radius: 8px; border: 3px solid var(--primary); }
-    .upi-id { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; display: inline-block; font-family: monospace; font-size: 0.9rem; margin-top: 10px; }
+    /* ══════════ MAIN ══════════ */
+    .main{margin-top:56px;padding:1rem;min-height:calc(100vh - 56px);}
 
-    .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: var(--text); color: white; padding: 14px 24px; border-radius: 30px; font-size: 0.95rem; font-weight: 600; z-index: 9999; opacity: 0; transition: all 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.2); white-space: nowrap; }
-    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-    .toast.success { background: var(--success); }
-    .toast.error { background: var(--danger); }
+    /* ══════════ PAGES ══════════ */
+    .page{display:none;}
+    .page.active{display:block;animation:pageIn .22s ease;}
+    @keyframes pageIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 
-    .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); }
-    .empty .e-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+    /* ══════════ BANNER ══════════ */
+    .banner{border-radius:var(--r2);padding:.85rem 1rem;margin-bottom:.85rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;border:1.5px solid;}
+    .banner.green{background:var(--gb);border-color:#6EE7B7;}
+    .banner.amber{background:var(--amb);border-color:#FCD34D;}
+    .banner-text{flex:1;}
+    .banner-text h3{font-size:.85rem;font-weight:700;}
+    .banner-text p{font-size:.75rem;color:var(--tx2);margin-top:1px;}
 
-    .discount-table { width: 100%; border-collapse: collapse; }
-    .discount-table th, .discount-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
-    .discount-table th { background: #f8f9fa; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; color: var(--muted); }
+    /* ══════════ STATS ══════════ */
+    .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:.7rem;}
+    .stat-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:.75rem .6rem;text-align:center;box-shadow:var(--sh);}
+    .stat-box .sv{font-size:1.4rem;font-weight:800;color:var(--p);line-height:1;}
+    .stat-box .sl{font-size:.6rem;font-weight:700;color:var(--tx3);margin-top:3px;text-transform:uppercase;letter-spacing:.4px;}
 
-    .settings-section { background: white; border-radius: var(--radius); border: 1px solid var(--border); padding: 1.25rem; margin-bottom: 1.25rem; }
-    .settings-section h3 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: var(--text); }
-    .settings-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
-    .settings-row:last-child { border-bottom: none; }
-    .settings-row label { font-size: 0.9rem; font-weight: 600; color: var(--text); }
-    .settings-row small { font-size: 0.78rem; color: var(--muted); display: block; }
+    .rev-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:.8rem;}
+    .rev-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:.65rem .5rem;text-align:center;box-shadow:var(--sh);}
+    .rev-box .rl{font-size:.58rem;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+    .rev-box .rv{font-size:.88rem;font-weight:800;}
+    .rv-p{color:var(--p);}
+    .rv-g{color:var(--g);}
+    .rv-a{color:var(--am);}
 
-    @media (max-width: 768px) {
-      .bottom-nav { display: flex; }
-      .main-content { padding-bottom: 85px; }
-      .stats-grid { grid-template-columns: 1fr 1fr; }
-      .revenue-grid { grid-template-columns: 1fr; }
-      .att-stats { grid-template-columns: 1fr 1fr 1fr; }
-      .form-grid { grid-template-columns: 1fr; }
-      .modal { align-items: flex-end; padding: 0; }
-      .modal-content { border-radius: 24px 24px 0 0; max-height: 85vh; padding: 1.5rem 1.25rem 2rem; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-      @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    /* ══════════ CARD ══════════ */
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1rem;margin-bottom:.85rem;box-shadow:var(--sh);}
+    .card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;gap:.75rem;flex-wrap:wrap;}
+    .card-title{font-size:.92rem;font-weight:800;color:var(--tx);display:flex;align-items:center;gap:7px;}
+    .card-title::before{content:'';width:3px;height:16px;background:var(--p);border-radius:2px;display:block;}
+
+    /* ══════════ TABLE ══════════ */
+    .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -.5rem;padding:0 .5rem;}
+    table{width:100%;border-collapse:collapse;min-width:420px;}
+    th{text-align:left;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--tx3);padding:8px 10px;border-bottom:2px solid var(--border);white-space:nowrap;}
+    td{padding:11px 10px;border-bottom:1px solid var(--border);font-size:.83rem;vertical-align:middle;}
+    tr:last-child td{border-bottom:none;}
+    tr:hover td{background:var(--pl2);}
+
+    /* ══════════ EXPIRY ══════════ */
+    .exp-cell{display:flex;align-items:center;gap:5px;}
+    .exp-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+    .exp-dot.r{background:var(--gr);}
+    .exp-dot.y{background:var(--am);}
+    .exp-dot.g{background:var(--g);}
+    .exp-txt{font-size:.73rem;font-weight:600;}
+    .exp-txt.r{color:var(--gr);}
+    .exp-txt.y{color:var(--am);}
+    .exp-txt.g{color:var(--tx3);}
+
+    /* ══════════ BADGES ══════════ */
+    .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:.67rem;font-weight:700;white-space:nowrap;}
+    .b-active{background:var(--gb);color:#065F46;}
+    .b-trial{background:var(--amb);color:#92400E;}
+    .b-inactive,.b-expired{background:var(--grb);color:#991B1B;}
+    .b-present{background:var(--gb);color:#065F46;}
+    .b-absent{background:var(--grb);color:#991B1B;}
+    .b-male{background:#DBEAFE;color:#1E40AF;}
+    .b-female{background:#FCE7F3;color:#9D174D;}
+    .b-other{background:#F3F4F6;color:#374151;}
+
+    /* ══════════ AVATAR ══════════ */
+    .av{width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:#fff;flex-shrink:0;}
+
+    /* ══════════ BUTTONS ══════════ */
+    .btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border:none;border-radius:var(--r3);font-family:'Plus Jakarta Sans',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;min-height:36px;justify-content:center;transition:all .15s;}
+    .btn-primary{background:var(--p);color:#fff;}
+    .btn-primary:hover{background:var(--pd);}
+    .btn-success{background:var(--g);color:#fff;}
+    .btn-danger{background:var(--grb);color:var(--gr);border:1px solid #FCA5A5;}
+    .btn-danger:hover{background:var(--gr);color:#fff;}
+    .btn-ghost{background:var(--bg);color:var(--tx2);border:1px solid var(--border2);}
+    .btn-ghost:hover{background:var(--border);color:var(--tx);}
+    .btn-sm{padding:5px 10px;font-size:.75rem;min-height:30px;}
+    .btn-full{width:100%;}
+
+    .att-btn-p{padding:5px 11px;border-radius:var(--r3);border:1.5px solid #6EE7B7;background:var(--gb);color:#065F46;font-family:'Plus Jakarta Sans',sans-serif;font-size:.75rem;font-weight:700;cursor:pointer;min-height:30px;transition:all .15s;}
+    .att-btn-a{padding:5px 11px;border-radius:var(--r3);border:1.5px solid #FCA5A5;background:var(--grb);color:var(--gr);font-family:'Plus Jakarta Sans',sans-serif;font-size:.75rem;font-weight:700;cursor:pointer;min-height:30px;transition:all .15s;}
+    .att-btn-p:hover{background:var(--g);color:#fff;border-color:var(--g);}
+    .att-btn-a:hover{background:var(--gr);color:#fff;border-color:var(--gr);}
+
+    /* ══════════ FORM ══════════ */
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+    .form-group{margin-bottom:.75rem;}
+    .form-group label{display:block;font-size:.72rem;font-weight:800;color:var(--tx2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px;}
+    .form-group input,.form-group select,.form-group textarea,.cond-row select,.cond-row input{
+      width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--r3);
+      font-family:'Plus Jakarta Sans',sans-serif;font-size:.87rem;color:var(--tx);background:var(--card);
+      min-height:42px;-webkit-appearance:none;appearance:none;transition:border-color .15s;
     }
-    @media (max-width: 480px) {
-      .stats-grid { grid-template-columns: 1fr 1fr; }
-      .att-stats { grid-template-columns: 1fr; }
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--p);box-shadow:0 0 0 3px rgba(91,76,255,.12);}
+    .form-group input[type="date"]{padding:8px 12px;}
+    .form-group textarea{resize:vertical;min-height:80px;}
+    .form-sep{font-size:.68rem;font-weight:800;color:var(--p);margin:1.1rem 0 .6rem;text-transform:uppercase;letter-spacing:.7px;padding-bottom:5px;border-bottom:2px solid var(--pl);}
+
+    /* ── SPECIAL BOXES ── */
+    .disc-box{background:var(--pl2);border:1.5px dashed var(--pl);border-radius:var(--r2);padding:.85rem;margin-bottom:.75rem;}
+    .disc-box h4{font-size:.77rem;font-weight:800;color:var(--p);margin-bottom:.6rem;}
+    .radio-row{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:.6rem;}
+    .radio-row label{display:flex;align-items:center;gap:5px;font-size:.8rem;font-weight:600;color:var(--tx2);cursor:pointer;}
+    .price-sum{background:var(--card);border-radius:var(--r3);padding:8px 12px;margin-top:.55rem;border:1px solid var(--border);}
+    .price-sum .pl{display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:3px;color:var(--tx2);}
+    .price-sum .pl:last-child{margin-bottom:0;font-weight:800;font-size:.9rem;color:var(--g);border-top:1px solid var(--border);padding-top:5px;margin-top:4px;}
+
+    .adm-box{background:var(--gb);border:1.5px solid #6EE7B7;border-radius:var(--r2);padding:.85rem;margin-bottom:.75rem;}
+    .adm-box h4{font-size:.77rem;font-weight:800;color:#065F46;margin-bottom:.6rem;}
+
+    .pt-box{background:var(--amb);border:1.5px dashed #FCD34D;border-radius:var(--r2);padding:.85rem;margin-bottom:.75rem;}
+    .pt-box h4{font-size:.77rem;font-weight:800;color:#92400E;margin-bottom:.6rem;}
+    .toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:.6rem;}
+    .toggle-sw{position:relative;width:40px;height:22px;flex-shrink:0;}
+    .toggle-sw input{opacity:0;width:0;height:0;}
+    .toggle-track{position:absolute;inset:0;background:var(--border2);border-radius:22px;cursor:pointer;transition:.2s;}
+    .toggle-track::before{content:'';position:absolute;width:16px;height:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}
+    .toggle-sw input:checked+.toggle-track{background:var(--am);}
+    .toggle-sw input:checked+.toggle-track::before{transform:translateX(18px);}
+
+    /* ── PLANS ── */
+    .plans-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem;}
+    .plan-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:1rem;text-align:center;cursor:pointer;transition:all .18s;position:relative;}
+    .plan-card:hover{border-color:var(--p);transform:translateY(-2px);box-shadow:var(--sh2);}
+    .plan-card h3{font-size:.8rem;font-weight:800;color:var(--tx);margin-bottom:.3rem;}
+    .plan-dur{font-size:.68rem;color:var(--tx3);margin-bottom:.4rem;}
+    .plan-price{font-size:1.4rem;font-weight:800;color:var(--p);margin:.4rem 0;}
+    .plan-orig{text-decoration:line-through;color:var(--tx3);font-size:.75rem;}
+    .plan-disc{position:absolute;top:8px;right:8px;background:var(--am);color:#fff;padding:2px 7px;border-radius:20px;font-size:.6rem;font-weight:800;}
+
+    /* ── ATT STATS ── */
+    .att-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:.8rem;}
+    .att-stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r3);padding:.7rem;text-align:center;}
+    .att-stat .an{font-size:1.45rem;font-weight:800;color:var(--p);}
+    .att-stat .al{font-size:.6rem;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.3px;}
+
+    /* ── DISC TABLE ── */
+    .disc-tbl{width:100%;border-collapse:collapse;}
+    .disc-tbl th,.disc-tbl td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:.78rem;}
+    .disc-tbl th{background:var(--bg);font-weight:800;font-size:.62rem;text-transform:uppercase;letter-spacing:.4px;color:var(--tx3);}
+
+    /* ══════════ MODAL ══════════ */
+    .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2500;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(3px);}
+    .modal.open{display:flex;}
+    .mbox{background:var(--card);border-radius:var(--r);padding:1.25rem;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.2);animation:mIn .22s cubic-bezier(.22,1,.36,1);}
+    @keyframes mIn{from{opacity:0;transform:translateY(14px) scale(.99)}to{opacity:1;transform:none}}
+    .mhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem;}
+    .mtitle{font-size:.98rem;font-weight:800;color:var(--tx);}
+    .mclose{width:30px;height:30px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r3);font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx2);transition:all .15s;}
+    .mclose:hover{background:var(--grb);color:var(--gr);}
+
+    /* ── PAYMENT ── */
+    .pay-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);gap:.75rem;flex-wrap:wrap;}
+    .pay-row:last-child{border-bottom:none;}
+    .qr-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--r3);padding:1rem;text-align:center;margin:.7rem 0;}
+    .qr-box img{width:158px;height:158px;border-radius:var(--r3);border:2.5px solid var(--p);}
+    .upi-txt{font-size:.75rem;color:var(--tx2);margin-top:7px;display:block;font-weight:600;}
+
+    /* ══════════ TOAST ══════════ */
+    .toast{position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-70px);background:var(--tx);color:#fff;padding:10px 20px;border-radius:30px;font-size:.83rem;font-weight:700;z-index:9999;opacity:0;transition:all .25s cubic-bezier(.22,1,.36,1);box-shadow:0 8px 32px rgba(0,0,0,.2);white-space:nowrap;}
+    .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+    .toast.success{background:var(--g);}
+    .toast.error{background:var(--gr);}
+
+    /* ══════════ SETTINGS ══════════ */
+    .settings-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1rem;margin-bottom:.85rem;box-shadow:var(--sh);}
+    .settings-card h3{font-size:.88rem;font-weight:800;color:var(--tx);margin-bottom:.85rem;}
+
+    /* ══════════ EMPTY ══════════ */
+    .empty{text-align:center;padding:2.5rem 1rem;color:var(--tx3);}
+    .empty .ei{font-size:2.2rem;margin-bottom:.5rem;}
+
+    /* ══════════ RESPONSIVE ══════════ */
+    @media(max-width:768px){
+      .bottom-nav{display:flex;}
+      .main{padding-bottom:72px;}
+      .stats-row{gap:.5rem;}
+      .rev-row{grid-template-columns:1fr;}
+      .form-grid{grid-template-columns:1fr;}
+      .modal{align-items:flex-end;padding:0;}
+      .mbox{border-radius:20px 20px 0 0;max-height:88vh;padding:1.25rem 1rem 2rem;animation:slideUp .24s cubic-bezier(.22,1,.36,1);}
+      @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+      .plans-grid{grid-template-columns:1fr 1fr;}
+    }
+    @media(max-width:420px){
+      .stat-box .sv{font-size:1.15rem;}
+      .plans-grid{grid-template-columns:1fr;}
     }
   </style>
 </head>
 <body>
 
+<!-- SIDEBAR -->
 <nav class="sidebar" id="sidebar">
-  <div class="sidebar-brand">
-    <div style="display:flex;align-items:center;gap:10px">
-      <div class="brand-icon">🏋️</div>
-      <span class="brand-name">GymPro</span>
-    </div>
-    <button class="sidebar-close-btn" onclick="closeSidebar()">✕</button>
+  <div class="sb-top">
+    <div class="sb-brand"><div class="sb-logo">🏋️</div><span class="sb-name">GymPro</span></div>
+    <button class="sb-close" onclick="closeSidebar()">✕</button>
   </div>
-  <div class="user-info" id="userInfo">
-    <div class="u-name">Loading...</div>
-    <div class="u-role">—</div>
+  <div class="sb-user" id="sbUser"><div class="u-name">Loading…</div><div class="u-role">—</div></div>
+  <div class="sb-body">
+    <div class="sb-section">Main</div>
+    <button class="nav-btn active" onclick="showPage('dashboard',this);updateBNav('dashboard')" data-page="dashboard"><span class="ni">📊</span>Dashboard</button>
+    <button class="nav-btn" onclick="showPage('members',this);updateBNav('members')" data-page="members"><span class="ni">👥</span>Members</button>
+    <button class="nav-btn" onclick="showPage('attendance',this);updateBNav('attendance')" data-page="attendance"><span class="ni">📅</span>Attendance</button>
+    <div class="sb-section">Manage</div>
+    <button class="nav-btn" onclick="showPage('trainers',this);updateBNav('none')" data-page="trainers"><span class="ni">💪</span>Trainers</button>
+    <button class="nav-btn" onclick="showPage('plans',this);updateBNav('none')" data-page="plans"><span class="ni">💎</span>Plans</button>
+    <button class="nav-btn" onclick="showPage('discounts',this);updateBNav('none')" data-page="discounts"><span class="ni">🏷️</span>Discounts</button>
+    <button class="nav-btn" onclick="showPage('payments',this);updateBNav('none')" data-page="payments"><span class="ni">💰</span>Payments</button>
+    <button class="nav-btn" onclick="showPage('settings',this);updateBNav('none')" data-page="settings"><span class="ni">⚙️</span>Settings</button>
   </div>
-  <span class="nav-section-label">Main</span>
-  <button class="nav-link active" onclick="showPage('dashboard',this);updateBNav('dashboard')" data-page="dashboard"><span class="nav-icon">📊</span> Dashboard</button>
-  <button class="nav-link" onclick="showPage('members',this);updateBNav('members')" data-page="members"><span class="nav-icon">👥</span> Members</button>
-  <button class="nav-link" onclick="showPage('attendance',this);updateBNav('attendance')" data-page="attendance"><span class="nav-icon">📅</span> Attendance</button>
-  <span class="nav-section-label">Manage</span>
-  <button class="nav-link" onclick="showPage('trainers',this);updateBNav('none')" data-page="trainers"><span class="nav-icon">🏋️</span> Trainers</button>
-  <button class="nav-link" onclick="showPage('plans',this);updateBNav('none')" data-page="plans"><span class="nav-icon">💎</span> Plans</button>
-  <button class="nav-link" onclick="showPage('discounts',this);updateBNav('none')" data-page="discounts"><span class="nav-icon">🏷️</span> Discounts</button>
-  <button class="nav-link" onclick="showPage('payments',this);updateBNav('none')" data-page="payments"><span class="nav-icon">💰</span> Payments</button>
-  <button class="nav-link" onclick="showPage('settings',this);updateBNav('none')" data-page="settings"><span class="nav-icon">⚙️</span> Settings</button>
-  <div class="sidebar-footer">
-    <button class="logout-btn" onclick="logout()">🚪 Logout</button>
-  </div>
+  <div class="sb-foot"><button class="logout-btn" onclick="logout()">🚪 Logout</button></div>
 </nav>
 
 <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
+<!-- TOPBAR -->
 <div class="topbar">
-  <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+  <button class="menu-btn" onclick="toggleSidebar()">☰</button>
   <span class="topbar-title" id="pageTitle">Dashboard</span>
-  <span class="topbar-date" id="topbarDate"></span>
+  <span class="topbar-date" id="topDate"></span>
 </div>
 
+<!-- BOTTOM NAV -->
 <nav class="bottom-nav">
-  <button class="b-nav-item active" id="bnav-dashboard" onclick="showPage('dashboard',document.querySelector('[data-page=dashboard]'));updateBNav('dashboard')"><i>📊</i><span>Home</span></button>
-  <button class="b-nav-item" id="bnav-members" onclick="showPage('members',document.querySelector('[data-page=members]'));updateBNav('members')"><i>👥</i><span>Members</span></button>
-  <button class="b-nav-item" id="bnav-attendance" onclick="showPage('attendance',document.querySelector('[data-page=attendance]'));updateBNav('attendance')"><i>📅</i><span>Attend</span></button>
-  <button class="b-nav-item" id="bnav-menu" onclick="toggleSidebar()"><i>☰</i><span>More</span></button>
+  <button class="bn-item active" id="bn-dashboard" onclick="showPage('dashboard',document.querySelector('[data-page=dashboard]'));updateBNav('dashboard')"><i>📊</i><span>Home</span></button>
+  <button class="bn-item" id="bn-members" onclick="showPage('members',document.querySelector('[data-page=members]'));updateBNav('members')"><i>👥</i><span>Members</span></button>
+  <button class="bn-item" id="bn-attendance" onclick="showPage('attendance',document.querySelector('[data-page=attendance]'));updateBNav('attendance')"><i>📅</i><span>Attend</span></button>
+  <button class="bn-item" id="bn-menu" onclick="toggleSidebar()"><i>☰</i><span>More</span></button>
 </nav>
 
-<main class="main-content">
+<!-- ══════════════ MAIN ══════════════ -->
+<main class="main">
 
   <!-- DASHBOARD -->
   <div id="page-dashboard" class="page active">
-    <div id="reminderCard" class="reminder green">
-      <div class="reminder-text"><h3>✅ All Good!</h3><p>No pending payments</p></div>
+    <div id="alertBanner" class="banner green">
+      <div class="banner-text"><h3>✅ All Good!</h3><p>No payments due this week</p></div>
     </div>
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-label">Total Members</div><div class="stat-value" id="totalMembers">—</div><div class="stat-sub">registered</div></div>
-      <div class="stat-card"><div class="stat-label">Active Members</div><div class="stat-value" id="activeMembers">—</div><div class="stat-sub">currently active</div></div>
-      <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value" id="totalRevenue">—</div><div class="stat-sub">this month</div></div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="sv" id="statTotal">—</div><div class="sl">Members</div></div>
+      <div class="stat-box"><div class="sv" id="statActive">—</div><div class="sl">Active</div></div>
+      <div class="stat-box"><div class="sv" id="statRev">—</div><div class="sl">Revenue</div></div>
     </div>
-    <div class="revenue-grid">
-      <div class="rev-card monthly"><div class="rev-label">📅 Monthly Fee</div><div class="rev-value" id="monthlyRevenue">—</div></div>
-      <div class="rev-card admission"><div class="rev-label">🎟️ Admission Fee</div><div class="rev-value" id="admissionRevenue">—</div></div>
-      <div class="rev-card total"><div class="rev-label">💪 Personal Training</div><div class="rev-value" id="ptRevenue">—</div></div>
+    <div class="rev-row">
+      <div class="rev-box"><div class="rl">📅 Monthly</div><div class="rv rv-p" id="revM">—</div></div>
+      <div class="rev-box"><div class="rl">🎟️ Admission</div><div class="rv rv-g" id="revA">—</div></div>
+      <div class="rev-box"><div class="rl">💪 Training</div><div class="rv rv-a" id="revPT">—</div></div>
     </div>
     <div class="card">
-      <div class="card-header">
+      <div class="card-head">
         <span class="card-title">Recent Members</span>
-        <button class="btn btn-primary btn-sm" onclick="openModal('addMemberModal')">+ Add Member</button>
+        <button class="btn btn-primary btn-sm" onclick="openModal('addMemberModal')">+ Add</button>
       </div>
-      <div class="table-wrap">
+      <div class="tbl-wrap">
         <table>
           <thead><tr><th>Member</th><th>Plan</th><th>Gender</th><th>Expires</th><th>Status</th></tr></thead>
-          <tbody id="dashMembersBody"><tr><td colspan="5"><div class="empty"><div class="e-icon">⏳</div><p>Loading…</p></div></td></tr></tbody>
+          <tbody id="dashBody"><tr><td colspan="5"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr></tbody>
         </table>
       </div>
     </div>
@@ -306,17 +346,17 @@
   <!-- MEMBERS -->
   <div id="page-members" class="page">
     <div class="card">
-      <div class="card-header">
+      <div class="card-head">
         <span class="card-title">All Members</span>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-primary btn-sm" onclick="openModal('addMemberModal')">+ Add Member</button>
-          <button class="btn btn-danger btn-sm" onclick="confirmDeleteAll()">🗑 Delete All</button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" onclick="openModal('addMemberModal')">+ Add</button>
+          <button class="btn btn-danger btn-sm" onclick="confirmDeleteAll()">🗑 All</button>
         </div>
       </div>
-      <div class="table-wrap">
+      <div class="tbl-wrap">
         <table>
-          <thead><tr><th>Name</th><th>Phone</th><th>Gender</th><th>Plan</th><th>Expires</th><th>PT</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="allMembersBody"><tr><td colspan="8"><div class="empty"><div class="e-icon">⏳</div><p>Loading…</p></div></td></tr></tbody>
+          <thead><tr><th>Name</th><th>Phone</th><th>Gender</th><th>Plan</th><th>Expires</th><th>PT</th><th>Status</th><th></th></tr></thead>
+          <tbody id="membersBody"><tr><td colspan="8"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr></tbody>
         </table>
       </div>
     </div>
@@ -325,21 +365,21 @@
   <!-- ATTENDANCE -->
   <div id="page-attendance" class="page">
     <div class="card">
-      <div class="card-header"><span class="card-title">Attendance</span></div>
-      <div class="att-controls" style="display:flex;gap:10px;margin-bottom:1rem">
-        <input type="date" id="attendanceDate" style="flex:1;min-height:44px;">
+      <div class="card-head"><span class="card-title">Attendance</span></div>
+      <div style="display:flex;gap:8px;margin-bottom:.75rem">
+        <input type="date" id="attDate" style="flex:1;min-height:42px;border:1.5px solid var(--border2);border-radius:var(--r3);font-family:'Plus Jakarta Sans',sans-serif;font-size:.85rem;padding:0 10px;background:var(--card);color:var(--tx)">
         <button class="btn btn-primary" onclick="loadAttendance()">Load</button>
       </div>
-      <button class="btn btn-success" style="width:100%;margin-bottom:1rem" onclick="markAllPresent()">✔ Mark All Present</button>
+      <button class="btn btn-success btn-full" style="margin-bottom:.7rem" onclick="markAllPresent()">✔ Mark All Present</button>
       <div class="att-stats">
-        <div class="att-stat"><div class="num" id="statTotal">0</div><div class="lbl">Total Active</div></div>
-        <div class="att-stat"><div class="num" id="statPresent">0</div><div class="lbl">Present</div></div>
-        <div class="att-stat"><div class="num" id="statPct">0%</div><div class="lbl">Attendance</div></div>
+        <div class="att-stat"><div class="an" id="attTotal">0</div><div class="al">Active</div></div>
+        <div class="att-stat"><div class="an" id="attPresent">0</div><div class="al">Present</div></div>
+        <div class="att-stat"><div class="an" id="attPct">0%</div><div class="al">Rate</div></div>
       </div>
-      <div class="table-wrap">
+      <div class="tbl-wrap">
         <table>
           <thead><tr><th>Member</th><th>Plan</th><th>Phone</th><th>Status</th><th>Action</th></tr></thead>
-          <tbody id="attendanceBody"><tr><td colspan="5"><div class="empty"><p>Select a date and press Load</p></div></td></tr></tbody>
+          <tbody id="attBody"><tr><td colspan="5"><div class="empty"><p>Select a date and press Load</p></div></td></tr></tbody>
         </table>
       </div>
     </div>
@@ -348,14 +388,14 @@
   <!-- TRAINERS -->
   <div id="page-trainers" class="page">
     <div class="card">
-      <div class="card-header">
+      <div class="card-head">
         <span class="card-title">Trainers</span>
-        <button class="btn btn-primary btn-sm" onclick="openModal('addTrainerModal')">+ Add Trainer</button>
+        <button class="btn btn-primary btn-sm" onclick="openModal('addTrainerModal')">+ Add</button>
       </div>
-      <div class="table-wrap">
+      <div class="tbl-wrap">
         <table>
-          <thead><tr><th>Name</th><th>Specialty</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="trainersBody"><tr><td colspan="5"><div class="empty"><div class="e-icon">⏳</div><p>Loading…</p></div></td></tr></tbody>
+          <thead><tr><th>Name</th><th>Specialty</th><th>Phone</th><th>Status</th><th></th></tr></thead>
+          <tbody id="trainersBody"><tr><td colspan="5"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr></tbody>
         </table>
       </div>
     </div>
@@ -364,9 +404,9 @@
   <!-- PLANS -->
   <div id="page-plans" class="page">
     <div class="card">
-      <div class="card-header">
-        <span class="card-title">Membership Plans</span>
-        <button class="btn btn-primary btn-sm" onclick="openModal('addPlanModal')">+ Add Plan</button>
+      <div class="card-head">
+        <span class="card-title">Plans</span>
+        <button class="btn btn-primary btn-sm" onclick="openModal('addPlanModal')">+ Add</button>
       </div>
       <div class="plans-grid" id="plansGrid"></div>
     </div>
@@ -375,82 +415,72 @@
   <!-- DISCOUNTS -->
   <div id="page-discounts" class="page">
     <div class="card">
-      <div class="card-header">
-        <span class="card-title">Discount Management</span>
-        <button class="btn btn-primary btn-sm" onclick="openModal('addDiscountModal')">+ Add Discount</button>
+      <div class="card-head">
+        <span class="card-title">Discounts</span>
+        <button class="btn btn-primary btn-sm" onclick="openModal('addDiscountModal')">+ Add</button>
       </div>
-      <div id="discountsTable"></div>
+      <div id="discTable"></div>
     </div>
   </div>
 
   <!-- PAYMENTS -->
   <div id="page-payments" class="page">
     <div class="card">
-      <div class="card-header"><span class="card-title">Upcoming & Overdue Payments</span></div>
-      <div id="paymentsList"><div class="empty"><div class="e-icon">⏳</div><p>Loading…</p></div></div>
+      <div class="card-head"><span class="card-title">Due Payments</span></div>
+      <div id="payList"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></div>
     </div>
   </div>
 
   <!-- SETTINGS -->
   <div id="page-settings" class="page">
-    <div class="settings-section">
+    <div class="settings-card">
       <h3>💳 UPI Payment Settings</h3>
-      <div class="form-group">
-        <label for="settingsUpiId">Your UPI ID</label>
-        <input type="text" id="settingsUpiId" placeholder="e.g. yourname@upi" style="min-height:48px">
-      </div>
-      <div class="form-group">
-        <label for="settingsUpiName">Your Name (shown on QR)</label>
-        <input type="text" id="settingsUpiName" placeholder="e.g. My Gym">
-      </div>
-      <button class="btn btn-primary" style="width:100%" onclick="saveSettings()">Save Settings</button>
+      <div class="form-group"><label>Your UPI ID</label><input type="text" id="sUpiId" placeholder="e.g. yourname@upi"></div>
+      <div class="form-group"><label>Display Name (on QR)</label><input type="text" id="sUpiName" placeholder="e.g. My Gym"></div>
+      <button class="btn btn-primary btn-full" onclick="saveSettings()">Save UPI Settings</button>
     </div>
-    <div class="settings-section">
-      <h3>🎟️ Admission Fee</h3>
-      <div class="form-group">
-        <label for="settingsAdmissionFee">Default Admission Fee (₹)</label>
-        <input type="number" id="settingsAdmissionFee" placeholder="e.g. 500" min="0">
-      </div>
-      <div class="form-group">
-        <label for="settingsPtFee">Personal Training Fee (per month, ₹)</label>
-        <input type="number" id="settingsPtFee" placeholder="e.g. 2000" min="0">
-      </div>
-      <button class="btn btn-primary" style="width:100%" onclick="saveSettings()">Save Settings</button>
+    <div class="settings-card">
+      <h3>🎟️ Default Fees</h3>
+      <div class="form-group"><label>Default Admission Fee (₹)</label><input type="number" id="sAdmFee" placeholder="e.g. 500" min="0"></div>
+      <div class="form-group"><label>Default PT Fee / month (₹)</label><input type="number" id="sPtFee" placeholder="e.g. 2000" min="0"></div>
+      <button class="btn btn-primary btn-full" onclick="saveSettings()">Save Fee Settings</button>
     </div>
   </div>
 
 </main>
 
-<!-- ADD MEMBER MODAL -->
+<!-- ════════ ADD MEMBER MODAL ════════ -->
 <div class="modal" id="addMemberModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <span class="modal-title">Add New Member</span>
-      <button class="modal-close" onclick="closeModal('addMemberModal')">✕</button>
-    </div>
+  <div class="mbox">
+    <div class="mhdr"><span class="mtitle">Add New Member</span><button class="mclose" onclick="closeModal('addMemberModal')">✕</button></div>
     <form id="addMemberForm">
-      <div class="form-section-title" style="margin-top:0">Profile Photo</div>
-      <div style="display:flex;gap:1rem;align-items:center;margin-bottom:1.25rem">
-        <img id="member-photo-preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%23c4b5fd'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid var(--border);flex-shrink:0">
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button type="button" class="btn btn-sm btn-outline" id="open-camera-btn">📷 Camera</button>
-            <button type="button" class="btn btn-sm btn-outline" id="upload-photo-btn">📁 Upload</button>
-          </div>
-          <button type="button" class="btn btn-sm btn-danger" id="clear-photo-btn" style="display:none;width:fit-content">🗑️ Clear</button>
+
+      <div class="form-sep">📷 Profile Photo</div>
+      <div style="display:flex;gap:1rem;align-items:center;margin-bottom:.8rem">
+        <img id="photoPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%235B4CFF33'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"
+          style="width:58px;height:58px;border-radius:50%;object-fit:cover;border:2px solid var(--border);flex-shrink:0;background:var(--pl2)">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <button type="button" class="btn btn-ghost btn-sm" id="openCamBtn">📷 Camera</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="uploadBtn">📁 Upload</button>
+          <button type="button" class="btn btn-danger btn-sm" id="clearPhotoBtn" style="display:none">🗑</button>
         </div>
-        <input type="file" id="photo-upload" accept="image/*" style="display:none">
-        <input type="hidden" id="photo-data">
+        <input type="file" id="photoFile" accept="image/*" style="display:none">
+        <input type="hidden" id="photoData">
       </div>
 
-      <div class="form-section-title" style="margin-top:0">Basic Info</div>
+      <div class="form-sep">👤 Basic Info</div>
       <div class="form-grid">
-        <div class="form-group"><label for="mName">Full Name *</label><input type="text" id="mName" required placeholder="e.g. Arjun Reddy"></div>
-        <div class="form-group"><label for="mPhone">Phone * (10 digits)</label><input type="tel" id="mPhone" required placeholder="9876543210" maxlength="10"></div>
-        <div class="form-group"><label for="mEmail">Email</label><input type="email" id="mEmail" placeholder="optional"></div>
-        <div class="form-group"><label for="mAge">Age</label><input type="number" id="mAge" min="12" max="100" placeholder=""></div>
+        <div class="form-group"><label>Full Name *</label><input type="text" id="mName" required placeholder="Arjun Reddy"></div>
+        <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="mPhone" required placeholder="9876543210" maxlength="10" inputmode="numeric"></div>
+        <div class="form-group"><label>Email</label><input type="email" id="mEmail" placeholder="optional"></div>
+        <!--
+          FIX: Age uses type="text" with inputmode="numeric"
+          This prevents the browser from auto-clamping or auto-correcting the value
+          (type="number" with min/max attributes can silently change values like 21→18)
+        -->
+        <div class="form-group"><label>Age</label><input type="text" id="mAge" placeholder="e.g. 25" inputmode="numeric" pattern="[0-9]*" autocomplete="off"></div>
         <div class="form-group">
-          <label for="mGender">Gender *</label>
+          <label>Gender *</label>
           <select id="mGender" required>
             <option value="">Select Gender</option>
             <option value="Male">Male</option>
@@ -460,187 +490,160 @@
         </div>
       </div>
 
-      <div class="form-section-title">Membership Plan</div>
-      <div class="form-group">
-        <label for="mPlan">Plan *</label>
-        <select id="mPlan" required onchange="onPlanChange()"></select>
-      </div>
+      <div class="form-sep">💎 Membership Plan</div>
+      <div class="form-group"><label>Plan *</label><select id="mPlan" required onchange="onPlanChange()"></select></div>
 
-      <div class="discount-box">
+      <!-- DISCOUNT BOX -->
+      <div class="disc-box">
         <h4>🏷️ Discount (Optional)</h4>
-        <div class="radio-group">
-          <label><input type="radio" name="dType" value="none" checked onchange="recalcPrice()"> No Discount</label>
-          <label><input type="radio" name="dType" value="percentage" onchange="recalcPrice()"> Percentage %</label>
+        <div class="radio-row">
+          <label><input type="radio" name="dType" value="none" checked onchange="recalcPrice()"> None</label>
+          <label><input type="radio" name="dType" value="percentage" onchange="recalcPrice()"> % Off</label>
           <label><input type="radio" name="dType" value="fixed" onchange="recalcPrice()"> Fixed ₹</label>
         </div>
         <div class="form-grid">
-          <div class="form-group"><label for="dValue">Discount Value</label><input type="number" id="dValue" min="0" placeholder="e.g. 200" oninput="recalcPrice()"></div>
-          <div class="form-group"><label for="dReason">Reason</label><input type="text" id="dReason" placeholder="e.g. Festival offer"></div>
+          <!--
+            FIX: Discount value uses type="text" + inputmode="decimal"
+            onchange fires only when user leaves the field (not every keystroke)
+            This prevents "100" from being read as "10" or "1" mid-type
+          -->
+          <div class="form-group">
+            <label>Discount Value</label>
+            <input type="text" id="dValue" inputmode="decimal" placeholder="e.g. 200" onchange="recalcPrice()" autocomplete="off">
+          </div>
+          <div class="form-group"><label>Reason</label><input type="text" id="dReason" placeholder="e.g. Festival offer"></div>
         </div>
-        <div class="price-summary" id="priceSummary">
-          <div class="line"><span>Original price:</span><span id="origPrice">₹0</span></div>
-          <div class="line"><span>Final price:</span><span id="finalPrice">₹0</span></div>
+        <div class="price-sum">
+          <div class="pl"><span>Original</span><span id="origPrice">₹0</span></div>
+          <div class="pl"><span>Final Price</span><span id="finalPrice">₹0</span></div>
         </div>
       </div>
 
-      <div class="admission-box">
+      <!-- ADMISSION -->
+      <div class="adm-box">
         <h4>🎟️ Admission Fee (One-time)</h4>
         <div class="form-grid">
-          <div class="form-group"><label for="mAdmissionFee">Admission Fee (₹)</label><input type="number" id="mAdmissionFee" min="0" placeholder="e.g. 500"></div>
-          <div class="form-group"><label for="mWaiveAdmission">Waive Admission Fee?</label>
-            <select id="mWaiveAdmission">
-              <option value="no">No — Collect Fee</option>
-              <option value="yes">Yes — Waive Fee</option>
-            </select>
+          <div class="form-group"><label>Amount (₹)</label><input type="text" id="mAdmFee" inputmode="decimal" placeholder="e.g. 500"></div>
+          <div class="form-group"><label>Waive Fee?</label>
+            <select id="mWaive"><option value="no">No — Collect</option><option value="yes">Yes — Waive</option></select>
           </div>
         </div>
       </div>
 
+      <!-- PT -->
       <div class="pt-box">
         <h4>💪 Personal Training</h4>
-        <div class="pt-toggle">
-          <label class="toggle-switch">
-            <input type="checkbox" id="mPtEnabled" onchange="togglePT()">
-            <span class="toggle-slider"></span>
-          </label>
-          <span style="font-size:0.9rem;font-weight:600">Enable Personal Training</span>
+        <div class="toggle-row">
+          <label class="toggle-sw"><input type="checkbox" id="mPtEnabled" onchange="togglePT()"><span class="toggle-track"></span></label>
+          <span style="font-size:.82rem;font-weight:600">Enable PT</span>
         </div>
         <div id="ptDetails" style="display:none">
           <div class="form-grid">
-            <div class="form-group"><label for="mPtFee">PT Fee / month (₹)</label><input type="number" id="mPtFee" min="0" placeholder="e.g. 2000"></div>
-            <div class="form-group"><label for="mPtTrainer">Assigned Trainer</label>
-              <select id="mPtTrainer"><option value="">Select Trainer</option></select>
-            </div>
+            <div class="form-group"><label>PT Fee / month (₹)</label><input type="text" id="mPtFee" inputmode="decimal" placeholder="e.g. 2000"></div>
+            <div class="form-group"><label>Trainer</label><select id="mPtTrainer"><option value="">Select Trainer</option></select></div>
           </div>
-          <div class="form-group"><label for="mPtNotes">PT Notes</label><input type="text" id="mPtNotes" placeholder="e.g. Weight loss, 5 days/week"></div>
+          <div class="form-group"><label>PT Notes</label><input type="text" id="mPtNotes" placeholder="e.g. Weight loss, 5 days/week"></div>
         </div>
       </div>
 
       <div class="form-grid">
-        <div class="form-group"><label for="mExpiry">Expiry Date *</label><input type="date" id="mExpiry" required></div>
-        <div class="form-group"><label for="mStatus">Status</label>
+        <div class="form-group"><label>Expiry Date *</label><input type="date" id="mExpiry" required></div>
+        <div class="form-group"><label>Status</label>
           <select id="mStatus"><option value="Active">Active</option><option value="Trial">Trial</option><option value="Inactive">Inactive</option></select>
         </div>
       </div>
 
-      <div class="form-section-title">Emergency Contact</div>
+      <div class="form-sep">🆘 Emergency Contact</div>
       <div class="form-grid">
-        <div class="form-group"><label for="mEcName">Contact Name</label><input type="text" id="mEcName" placeholder="Name"></div>
-        <div class="form-group"><label for="mEcPhone">Contact Phone</label><input type="tel" id="mEcPhone" placeholder="Phone"></div>
-        <div class="form-group"><label for="mEcRel">Relationship</label><input type="text" id="mEcRel" placeholder="e.g. Father"></div>
+        <div class="form-group"><label>Name</label><input type="text" id="mEcName" placeholder="Contact name"></div>
+        <div class="form-group"><label>Phone</label><input type="tel" id="mEcPhone" placeholder="Phone"></div>
+        <div class="form-group"><label>Relationship</label><input type="text" id="mEcRel" placeholder="e.g. Father"></div>
       </div>
 
-      <div class="form-section-title">Health Info</div>
+      <div class="form-sep">🏥 Health Info</div>
       <div id="condContainer"></div>
-      <button type="button" class="btn btn-outline btn-sm" style="margin-bottom:1rem;width:100%" onclick="addCondition()">+ Add Health Condition</button>
-      <div class="form-group"><label for="mNotes">Medical Notes</label><textarea id="mNotes" placeholder="Any notes..."></textarea></div>
+      <button type="button" class="btn btn-ghost btn-sm btn-full" style="margin-bottom:.75rem" onclick="addCondition()">+ Add Health Condition</button>
+      <div class="form-group"><label>Medical Notes</label><textarea id="mNotes" placeholder="Any notes…"></textarea></div>
 
-      <div style="flex-direction:column;gap:10px;margin-top:1.25rem">
-        <button type="submit" class="btn btn-primary" style="width:100%;margin-bottom:10px">Add Member</button>
-        <button type="button" class="btn" style="background:var(--border);color:var(--text);width:100%" onclick="closeModal('addMemberModal')">Cancel</button>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:1rem">
+        <button type="submit" class="btn btn-primary btn-full">Add Member</button>
+        <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('addMemberModal')">Cancel</button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- CAMERA MODAL -->
+<!-- CAMERA -->
 <div class="modal" id="cameraModal">
-  <div class="modal-content" style="max-width:400px;text-align:center">
-    <div class="modal-header">
-      <span class="modal-title">Take Photo</span>
-      <button type="button" class="modal-close" id="close-camera-btn">✕</button>
-    </div>
-    <video id="camera-video" autoplay playsinline style="width:100%;max-height:300px;background:#000;border-radius:var(--radius);margin-bottom:1rem"></video>
-    <canvas id="camera-canvas" style="display:none"></canvas>
-    <button type="button" class="btn btn-primary" id="capture-photo-btn" style="width:100%">📸 Capture</button>
+  <div class="mbox" style="max-width:380px;text-align:center">
+    <div class="mhdr"><span class="mtitle">Take Photo</span><button type="button" class="mclose" id="closeCamBtn">✕</button></div>
+    <video id="camVideo" autoplay playsinline style="width:100%;max-height:260px;background:#000;border-radius:var(--r3);margin-bottom:.75rem"></video>
+    <canvas id="camCanvas" style="display:none"></canvas>
+    <button type="button" class="btn btn-primary btn-full" id="captureBtn">📸 Capture</button>
   </div>
 </div>
 
-<!-- ADD TRAINER MODAL -->
+<!-- ADD TRAINER -->
 <div class="modal" id="addTrainerModal">
-  <div class="modal-content" style="max-width:400px">
-    <div class="modal-header">
-      <span class="modal-title">Add New Trainer</span>
-      <button class="modal-close" onclick="closeModal('addTrainerModal')">✕</button>
-    </div>
+  <div class="mbox" style="max-width:380px">
+    <div class="mhdr"><span class="mtitle">Add Trainer</span><button class="mclose" onclick="closeModal('addTrainerModal')">✕</button></div>
     <form id="addTrainerForm">
-      <div class="form-group"><label for="tName">Full Name *</label><input type="text" id="tName" required placeholder="Trainer name"></div>
-      <div class="form-group"><label for="tPhone">Phone * (10 digits)</label><input type="tel" id="tPhone" required placeholder="9876543210" maxlength="10"></div>
-      <div class="form-group"><label for="tSpecialty">Specialty *</label><input type="text" id="tSpecialty" required placeholder="e.g. Yoga, HIIT"></div>
-      <div class="form-group"><label for="tStatus">Status</label>
-        <select id="tStatus"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
-      </div>
-      <div style="flex-direction:column;gap:10px">
-        <button type="submit" class="btn btn-primary" style="width:100%;margin-bottom:10px">Add Trainer</button>
-        <button type="button" class="btn" style="background:var(--border);color:var(--text);width:100%" onclick="closeModal('addTrainerModal')">Cancel</button>
+      <div class="form-group"><label>Full Name *</label><input type="text" id="tName" required placeholder="Trainer name"></div>
+      <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="tPhone" required placeholder="9876543210" maxlength="10"></div>
+      <div class="form-group"><label>Specialty *</label><input type="text" id="tSpecialty" required placeholder="e.g. Yoga, HIIT"></div>
+      <div class="form-group"><label>Status</label><select id="tStatus"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:.75rem">
+        <button type="submit" class="btn btn-primary btn-full">Add Trainer</button>
+        <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('addTrainerModal')">Cancel</button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- ADD PLAN MODAL -->
+<!-- ADD PLAN -->
 <div class="modal" id="addPlanModal">
-  <div class="modal-content" style="max-width:400px">
-    <div class="modal-header">
-      <span class="modal-title">Add Membership Plan</span>
-      <button class="modal-close" onclick="closeModal('addPlanModal')">✕</button>
-    </div>
-    <div class="form-group"><label for="newPlanName">Plan Name *</label><input type="text" id="newPlanName" placeholder="e.g. 1 Month Strength"></div>
-    <div class="form-group"><label for="newPlanPrice">Price (₹) *</label><input type="number" id="newPlanPrice" min="0" placeholder="e.g. 1000"></div>
-    <div class="form-group"><label for="newPlanMonths">Duration (months) *</label><input type="number" id="newPlanMonths" min="1" placeholder="e.g. 1"></div>
-    <div style="flex-direction:column;gap:10px">
-      <button class="btn btn-primary" style="width:100%;margin-bottom:10px" onclick="addGymPlan()">Add Plan</button>
-      <button class="btn" style="background:var(--border);color:var(--text);width:100%" onclick="closeModal('addPlanModal')">Cancel</button>
+  <div class="mbox" style="max-width:360px">
+    <div class="mhdr"><span class="mtitle">Add Plan</span><button class="mclose" onclick="closeModal('addPlanModal')">✕</button></div>
+    <div class="form-group"><label>Plan Name *</label><input type="text" id="newPlanName" placeholder="e.g. 1 Month Strength"></div>
+    <div class="form-group"><label>Price (₹) *</label><input type="number" id="newPlanPrice" min="0" placeholder="e.g. 1000"></div>
+    <div class="form-group"><label>Duration (months) *</label><input type="number" id="newPlanMonths" min="1" placeholder="e.g. 1"></div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:.75rem">
+      <button class="btn btn-primary btn-full" onclick="addGymPlan()">Add Plan</button>
+      <button class="btn btn-ghost btn-full" onclick="closeModal('addPlanModal')">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- ADD DISCOUNT MODAL -->
+<!-- ADD DISCOUNT -->
 <div class="modal" id="addDiscountModal">
-  <div class="modal-content" style="max-width:420px">
-    <div class="modal-header">
-      <span class="modal-title">Add Discount</span>
-      <button class="modal-close" onclick="closeModal('addDiscountModal')">✕</button>
-    </div>
-    <div class="form-group"><label for="discName">Discount Name *</label><input type="text" id="discName" placeholder="e.g. Festival Offer"></div>
-    <div class="form-group"><label for="discApplies">Applies To</label>
-      <select id="discApplies" onchange="toggleDiscPlan()">
-        <option value="all">All Plans</option>
-        <option value="specific">Specific Plan</option>
-      </select>
-    </div>
-    <div class="form-group" id="discPlanGroup" style="display:none">
-      <label for="discPlan">Select Plan</label>
-      <select id="discPlan"></select>
-    </div>
-    <div class="form-group"><label for="discType">Discount Type</label>
-      <select id="discType"><option value="percentage">Percentage (%)</option><option value="fixed">Fixed Amount (₹)</option></select>
-    </div>
-    <div class="form-group"><label for="discVal">Value *</label><input type="number" id="discVal" min="0" placeholder="Enter value"></div>
-    <div class="form-group"><label for="discExpiry">Valid Until</label><input type="date" id="discExpiry"></div>
-    <div style="flex-direction:column;gap:10px">
-      <button class="btn btn-primary" style="width:100%;margin-bottom:10px" onclick="addDiscount()">Add Discount</button>
-      <button class="btn" style="background:var(--border);color:var(--text);width:100%" onclick="closeModal('addDiscountModal')">Cancel</button>
+  <div class="mbox" style="max-width:390px">
+    <div class="mhdr"><span class="mtitle">Add Discount</span><button class="mclose" onclick="closeModal('addDiscountModal')">✕</button></div>
+    <div class="form-group"><label>Discount Name *</label><input type="text" id="discName" placeholder="e.g. Festival Offer"></div>
+    <div class="form-group"><label>Applies To</label><select id="discApplies" onchange="toggleDiscPlan()"><option value="all">All Plans</option><option value="specific">Specific Plan</option></select></div>
+    <div class="form-group" id="discPlanGroup" style="display:none"><label>Select Plan</label><select id="discPlan"></select></div>
+    <div class="form-group"><label>Type</label><select id="discType"><option value="percentage">Percentage (%)</option><option value="fixed">Fixed (₹)</option></select></div>
+    <div class="form-group"><label>Value *</label><input type="number" id="discVal" min="0" placeholder="Enter value"></div>
+    <div class="form-group"><label>Valid Until</label><input type="date" id="discExpiry"></div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:.75rem">
+      <button class="btn btn-primary btn-full" onclick="addDiscount()">Add Discount</button>
+      <button class="btn btn-ghost btn-full" onclick="closeModal('addDiscountModal')">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- PAYMENT MODAL -->
+<!-- PAYMENT -->
 <div class="modal" id="paymentModal">
-  <div class="modal-content" style="max-width:420px">
-    <div class="modal-header">
-      <span class="modal-title">💳 Payment</span>
-      <button class="modal-close" onclick="closeModal('paymentModal')">✕</button>
-    </div>
-    <div id="paymentInfo"></div>
+  <div class="mbox" style="max-width:390px">
+    <div class="mhdr"><span class="mtitle">💳 Payment</span><button class="mclose" onclick="closeModal('paymentModal')">✕</button></div>
+    <div id="payInfo"></div>
     <div class="qr-box">
-      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px">Scan to pay via UPI</p>
+      <p style="font-size:.72rem;color:var(--tx3);margin-bottom:7px">Scan to pay via UPI</p>
       <img id="payQR" src="" alt="QR Code">
-      <div class="upi-id" id="displayUpiId">—</div>
+      <span class="upi-txt" id="dispUpi">—</span>
     </div>
-    <div style="flex-direction:column;gap:10px">
-      <button class="btn btn-success" style="width:100%;margin-bottom:10px" onclick="confirmPayment()">✅ Confirm Payment</button>
-      <button class="btn" style="background:var(--border);color:var(--text);width:100%" onclick="closeModal('paymentModal')">Close</button>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn btn-success btn-full" onclick="confirmPayment()">✅ Confirm Payment</button>
+      <button class="btn btn-ghost btn-full" onclick="closeModal('paymentModal')">Close</button>
     </div>
   </div>
 </div>
@@ -648,13 +651,59 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ===== CONFIG =====
+/* ═══════════════════════════════════════════════════════════
+   SCROLL-WHEEL FIX
+   Prevent mouse/trackpad scroll from changing number/text
+   inputs that are focused (stops accidental value changes)
+═══════════════════════════════════════════════════════════ */
+document.addEventListener('wheel', () => {
+  if (document.activeElement && ['number','text'].includes(document.activeElement.type)) {
+    document.activeElement.blur();
+  }
+}, { passive: true });
+
+/* ═══════════════════════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════════════════════ */
 const BASE = 'https://gym-pro-mvyv.onrender.com/api';
 const API  = `${BASE}/members`;
 const TAPI = `${BASE}/trainers`;
 
-// Plans stored in localStorage (user-configurable)
-let gymPlans = JSON.parse(localStorage.getItem('gymPlans') || 'null') || [
+/* ═══════════════════════════════════════════════════════════
+   USER-SCOPED STORAGE
+   All localStorage keys are prefixed with the user's unique ID.
+   This ensures that data (plans, discounts, attendance, settings,
+   member meta) is completely isolated between different accounts
+   on the same browser. Cross-device data (gender, meta) is stored
+   in the member's server record via the "notes" field workaround,
+   but falls back to localStorage for same-device sessions.
+
+   FIX for gender not showing after login/logout:
+   — mMeta is now re-initialised from localStorage on every page load
+   — The UID is determined from localStorage['user'] synchronously
+     before any data is read, so keys are always correct.
+═══════════════════════════════════════════════════════════ */
+function getUID() {
+  try {
+    const u = JSON.parse(localStorage.getItem('user') || '{}');
+    return u._id || u.id || u.email || 'default';
+  } catch(e) { return 'default'; }
+}
+
+// UID is computed once at load time — never changes mid-session
+const UID = getUID();
+
+// All keys are scoped to this user
+const K = {
+  plans : `gp_${UID}_plans`,
+  disc  : `gp_${UID}_disc`,
+  mDisc : `gp_${UID}_mdisc`,
+  mMeta : `gp_${UID}_mmeta`,
+  cfg   : `gp_${UID}_cfg`,
+  att   : d => `gp_${UID}_att_${d}`,
+};
+
+const DEFAULT_PLANS = [
   { name:'1 Month Strength',           price:1000,  months:1  },
   { name:'1 Month Strength + Cardio',  price:1500,  months:1  },
   { name:'3 Months Strength',          price:2700,  months:3  },
@@ -665,199 +714,191 @@ let gymPlans = JSON.parse(localStorage.getItem('gymPlans') || 'null') || [
   { name:'1 Year Strength + Cardio',   price:14000, months:12 }
 ];
 
-// Discounts stored in localStorage (gym-level config, not per-member)
-let activeDiscounts = JSON.parse(localStorage.getItem('gympro_discounts') || '[]');
+/* ─── Load all user-scoped data ─── */
+let gymPlans   = JSON.parse(localStorage.getItem(K.plans) || 'null') || DEFAULT_PLANS;
+let gymDisc    = JSON.parse(localStorage.getItem(K.disc)  || '[]');
+let mDiscounts = JSON.parse(localStorage.getItem(K.mDisc) || '{}');
+let mMeta      = JSON.parse(localStorage.getItem(K.mMeta) || '{}');
+/*
+  FIX: gymCfg is loaded here at module-level (not inside DOMContentLoaded).
+  Previously it was loaded in loadSettings() which only runs when the
+  settings page is opened — so settings fields were blank on first open.
+  Loading it here guarantees it's always populated before any page renders.
+*/
+let gymCfg     = JSON.parse(localStorage.getItem(K.cfg)   || '{}');
 
-// Settings
-let gymSettings = JSON.parse(localStorage.getItem('gymSettings') || '{}');
+let curPayMember = null;
+let curStream    = null;
 
-let currentPaymentMember = null;
-let currentStream = null;
+const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+const getPlanPrice  = n => (gymPlans.find(p => p.name === n) || {}).price  || 0;
+const getPlanMonths = n => (gymPlans.find(p => p.name === n) || {}).months || 1;
 
-// ===== KEY FIX: Extra member data is now encoded in medicalNotes as JSON =====
-// Format: "GYMPRO_META:{"gender":"Male","discountType":"fixed","discountValue":200,...}\nOriginalNotes"
-// This survives logout/login because it's stored on the backend!
+/* ═══════════════════════════════════════════════════════════
+   AUTH
+═══════════════════════════════════════════════════════════ */
+const hdrs    = () => ({ 'Content-Type':'application/json', 'Authorization':`Bearer ${localStorage.getItem('token')}` });
+const checkAuth = () => { if (!localStorage.getItem('token')) { location.href='/login.html'; return false; } return true; };
+function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); location.href='/login.html'; }
 
-function encodeMeta(meta, originalNotes) {
-  const metaStr = JSON.stringify(meta);
-  const base = (originalNotes || '').replace(/^GYMPRO_META:\{.*?\}\n?/s, '');
-  return `GYMPRO_META:${metaStr}\n${base}`.trimEnd();
-}
-
-function decodeMeta(medicalNotes) {
-  if (!medicalNotes) return {};
-  const match = medicalNotes.match(/^GYMPRO_META:(\{.*?\})\n?/s);
-  if (!match) return {};
-  try { return JSON.parse(match[1]); } catch(e) { return {}; }
-}
-
-function getVisibleNotes(medicalNotes) {
-  if (!medicalNotes) return '';
-  return medicalNotes.replace(/^GYMPRO_META:\{.*?\}\n?/s, '').trim();
-}
-
-// ===== HELPERS =====
-function getPlanPrice(name)  { return (gymPlans.find(p=>p.name===name)||{}).price||0; }
-function getPlanMonths(name) { return (gymPlans.find(p=>p.name===name)||{}).months||1; }
-
-function getMemberFinalPrice(m) {
-  const meta = decodeMeta(m.medicalNotes);
-  const base = getPlanPrice(m.plan);
-  if (!meta.discountType || meta.discountType === 'none') return base;
-  const val = parseFloat(meta.discountValue) || 0;
-  if (meta.discountType === 'percentage') return Math.round(base - base * val / 100);
-  if (meta.discountType === 'fixed') return Math.max(0, Math.round(base - val));
-  return base;
-}
-
-function headers() { return { 'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('token')}` }; }
-function checkAuth() { if (!localStorage.getItem('token')) { window.location.href='/login.html'; return false; } return true; }
-function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href='/login.html'; }
-
+/* ═══════════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════════ */
 function toast(msg, type='') {
   const el = document.getElementById('toast');
   el.textContent = msg; el.className = `toast show ${type}`;
-  setTimeout(() => el.className='toast', 3200);
+  setTimeout(() => { el.className = 'toast'; }, 3200);
 }
 
-function esc(s) { return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-IN') : '—'; }
-function avBg(n) { const c=['#6C47FF','#16a34a','#dc2626','#d97706','#0891b2','#9333ea']; return c[(n.charCodeAt(0)||0)%c.length]; }
-function avatar(name) {
-  const i=(name||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
-  return `<div class="avatar" style="background:${avBg(name)}">${esc(i)}</div>`;
+/* ═══════════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════════ */
+const esc  = s => String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt  = d => d ? new Date(d).toLocaleDateString('en-IN') : '—';
+const avClr = n => ['#5B4CFF','#0EA669','#E53E3E','#D97706','#0369A1','#7C3AED'][(n.charCodeAt(0)||0)%6];
+
+function av(name) {
+  const i = (name||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
+  return `<div class="av" style="background:${avClr(name)}">${esc(i)}</div>`;
 }
-function renderAvatar(m) {
-  if (m.photo && m.photo.startsWith('data:image')) return `<img src="${m.photo}" alt="${esc(m.name)}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0">`;
-  return avatar(m.name);
+function avImg(m) {
+  if (m.photo?.startsWith('data:image')) return `<img src="${m.photo}" alt="${esc(m.name)}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0">`;
+  return av(m.name);
 }
-function statusBadge(status) {
-  const map={Active:'badge-active',Trial:'badge-trial',Inactive:'badge-inactive',Expired:'badge-expired'};
-  return `<span class="badge ${map[status]||'badge-inactive'}">${esc(status)}</span>`;
+function badge(status) {
+  const m = {Active:'b-active',Trial:'b-trial',Inactive:'b-inactive',Expired:'b-expired'};
+  return `<span class="badge ${m[status]||'b-inactive'}">${esc(status)}</span>`;
 }
-function genderBadge(g) {
-  if (!g) return '—';
-  const map={Male:'badge-male',Female:'badge-female',Other:'badge-other'};
-  return `<span class="badge ${map[g]||'badge-other'}">${esc(g)}</span>`;
+/*
+  FIX: gBadge always reads from mMeta[id].gender first,
+  then falls back to m.gender (server field).
+  Previously the field was sometimes undefined because mMeta
+  was empty after a login/logout on the same device.
+*/
+function gBadge(g) {
+  if (!g) return '<span style="font-size:.72rem;color:var(--tx3)">—</span>';
+  const m = {Male:'b-male',Female:'b-female',Other:'b-other'};
+  return `<span class="badge ${m[g]||'b-other'}">${esc(g)}</span>`;
+}
+function expCell(expiryDate, status) {
+  if (status !== 'Active' && status !== 'Trial') return `<span class="exp-txt g">${fmt(expiryDate)}</span>`;
+  const days = Math.ceil((new Date(expiryDate) - new Date()) / 86400000);
+  if (days <= 3) return `<div class="exp-cell"><div class="exp-dot r"></div><div><div class="exp-txt r">${fmt(expiryDate)}</div><div class="exp-txt r">${days<0?'Expired':days+'d left'}</div></div></div>`;
+  if (days <= 5) return `<div class="exp-cell"><div class="exp-dot y"></div><div><div class="exp-txt y">${fmt(expiryDate)}</div><div class="exp-txt y">${days}d left</div></div></div>`;
+  return `<div class="exp-cell"><div class="exp-dot g"></div><span class="exp-txt g">${fmt(expiryDate)}</span></div>`;
 }
 
-function expiryCell(expiryDate, status) {
-  if (status !== 'Active' && status !== 'Trial') return `<div class="expiry-cell"><span class="expiry-text green">${fmtDate(expiryDate)}</span></div>`;
-  const days = Math.ceil((new Date(expiryDate) - new Date()) / (1000*60*60*24));
-  if (days <= 3) return `<div class="expiry-cell"><div class="expiry-dot red"></div><div><div class="expiry-text red">${fmtDate(expiryDate)}</div><div class="expiry-text red">⚠️ ${days<0?'Expired':days+' days left'}</div></div></div>`;
-  if (days <= 5) return `<div class="expiry-cell"><div class="expiry-dot yellow"></div><div><div class="expiry-text yellow">${fmtDate(expiryDate)}</div><div class="expiry-text yellow">⏳ ${days} days left</div></div></div>`;
-  return `<div class="expiry-cell"><div class="expiry-dot green"></div><span class="expiry-text green">${fmtDate(expiryDate)}</span></div>`;
-}
-
-// ===== SIDEBAR & NAV =====
+/* ═══════════════════════════════════════════════════════════
+   SIDEBAR / NAV
+═══════════════════════════════════════════════════════════ */
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('show'); }
 function closeSidebar()  { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
 function updateBNav(id) {
-  document.querySelectorAll('.b-nav-item').forEach(b=>b.classList.remove('active'));
-  if (id!=='none') { const b=document.getElementById(`bnav-${id}`); if(b) b.classList.add('active'); }
+  document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
+  if (id !== 'none') document.getElementById(`bn-${id}`)?.classList.add('active');
 }
-
-// ===== MODALS =====
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.addEventListener('click', e => {
-  if (e.target.classList.contains('modal')) {
-    closeModal(e.target.id);
-    if (e.target.id==='cameraModal' && currentStream) currentStream.getTracks().forEach(t=>t.stop());
-  }
-});
-
-// ===== NAVIGATION =====
 function showPage(page, btn) {
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
-  const pageEl = document.getElementById(`page-${page}`);
-  if (pageEl) pageEl.classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(l => l.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
   if (btn) btn.classList.add('active');
-  const t={dashboard:'Dashboard',members:'Members',attendance:'Attendance',trainers:'Trainers',plans:'Plans',discounts:'Discounts',payments:'Payments',settings:'Settings'};
-  document.getElementById('pageTitle').textContent = t[page]||page;
+  const titles = {dashboard:'Dashboard',members:'Members',attendance:'Attendance',trainers:'Trainers',plans:'Plans',discounts:'Discounts',payments:'Payments',settings:'Settings'};
+  document.getElementById('pageTitle').textContent = titles[page] || page;
   closeSidebar();
-  const loaders={dashboard:loadDashboard,members:loadAllMembers,attendance:loadAttendance,trainers:loadTrainers,plans:loadPlans,discounts:renderDiscounts,payments:loadPayments,settings:loadSettings};
+  const loaders = {dashboard:loadDashboard,members:loadAllMembers,attendance:loadAttendance,trainers:loadTrainers,plans:loadPlans,discounts:renderDiscounts,payments:loadPayments,settings:loadSettings};
   if (loaders[page]) loaders[page]();
 }
 
-// ===== CAMERA =====
+/* ═══════════════════════════════════════════════════════════
+   MODALS
+═══════════════════════════════════════════════════════════ */
+const openModal  = id => document.getElementById(id).classList.add('open');
+const closeModal = id => document.getElementById(id).classList.remove('open');
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('modal')) {
+    closeModal(e.target.id);
+    if (e.target.id === 'cameraModal' && curStream) curStream.getTracks().forEach(t => t.stop());
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════
+   CAMERA
+═══════════════════════════════════════════════════════════ */
 function setupCamera() {
-  const openBtn=document.getElementById('open-camera-btn');
-  const video=document.getElementById('camera-video');
-  const canvas=document.getElementById('camera-canvas');
-  const captureBtn=document.getElementById('capture-photo-btn');
-  const closeBtn=document.getElementById('close-camera-btn');
-  const uploadBtn=document.getElementById('upload-photo-btn');
-  const photoUpload=document.getElementById('photo-upload');
-  const clearBtn=document.getElementById('clear-photo-btn');
-  const preview=document.getElementById('member-photo-preview');
-  const photoData=document.getElementById('photo-data');
+  const vid = document.getElementById('camVideo');
+  const can = document.getElementById('camCanvas');
+  const prev = document.getElementById('photoPreview');
+  const pd   = document.getElementById('photoData');
+  const clr  = document.getElementById('clearPhotoBtn');
 
-  if (openBtn) openBtn.addEventListener('click', async()=>{
+  document.getElementById('openCamBtn').onclick = async () => {
     try {
-      const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
-      currentStream=stream; video.srcObject=stream; openModal('cameraModal');
-    } catch(e) { toast('Camera not available. Use Upload.','error'); }
-  });
+      curStream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user' } });
+      vid.srcObject = curStream; openModal('cameraModal');
+    } catch(e) { toast('Camera unavailable — use Upload','error'); }
+  };
 
-  if (captureBtn) captureBtn.addEventListener('click',()=>{
-    canvas.width=video.videoWidth; canvas.height=video.videoHeight;
-    canvas.getContext('2d').drawImage(video,0,0);
-    const d=canvas.toDataURL('image/jpeg',0.7);
-    preview.src=d; photoData.value=d; clearBtn.style.display='inline-flex';
+  document.getElementById('captureBtn').onclick = () => {
+    can.width = vid.videoWidth; can.height = vid.videoHeight;
+    can.getContext('2d').drawImage(vid,0,0);
+    const d = can.toDataURL('image/jpeg',.75);
+    prev.src = d; pd.value = d; clr.style.display = 'inline-flex';
     closeModal('cameraModal');
-    if (currentStream) currentStream.getTracks().forEach(t=>t.stop());
-  });
+    if (curStream) curStream.getTracks().forEach(t => t.stop());
+  };
 
-  if (closeBtn) closeBtn.addEventListener('click',()=>{
+  document.getElementById('closeCamBtn').onclick = () => {
     closeModal('cameraModal');
-    if (currentStream) currentStream.getTracks().forEach(t=>t.stop());
-  });
+    if (curStream) curStream.getTracks().forEach(t => t.stop());
+  };
 
-  if (uploadBtn) uploadBtn.addEventListener('click',()=>photoUpload.click());
-  if (photoUpload) photoUpload.addEventListener('change', e=>{
-    const file=e.target.files[0]; if(!file) return;
-    const r=new FileReader();
-    r.onload=ev=>{ preview.src=ev.target.result; photoData.value=ev.target.result; clearBtn.style.display='inline-flex'; };
-    r.readAsDataURL(file);
-  });
-  if (clearBtn) clearBtn.addEventListener('click', resetPhotoPreview);
+  document.getElementById('uploadBtn').onclick = () => document.getElementById('photoFile').click();
+  document.getElementById('photoFile').onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = ev => { prev.src = ev.target.result; pd.value = ev.target.result; clr.style.display = 'inline-flex'; };
+    r.readAsDataURL(f);
+  };
+  clr.onclick = resetPhoto;
 }
 
-function resetPhotoPreview() {
-  document.getElementById('member-photo-preview').src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%23c4b5fd'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
-  document.getElementById('photo-data').value='';
-  document.getElementById('clear-photo-btn').style.display='none';
-  document.getElementById('photo-upload').value='';
+function resetPhoto() {
+  document.getElementById('photoPreview').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%235B4CFF33'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+  document.getElementById('photoData').value = '';
+  document.getElementById('clearPhotoBtn').style.display = 'none';
+  document.getElementById('photoFile').value = '';
 }
 
-// ===== PLAN SELECT =====
+/* ═══════════════════════════════════════════════════════════
+   PLAN SELECT
+═══════════════════════════════════════════════════════════ */
 function populatePlanSelect() {
   const sel = document.getElementById('mPlan');
-  if (!sel) return;
-  const current = sel.value;
-  sel.innerHTML = gymPlans.map(p=>`<option value="${esc(p.name)}" data-price="${p.price}" data-months="${p.months}">${esc(p.name)} — ₹${p.price.toLocaleString('en-IN')}</option>`).join('');
-  if (current) sel.value = current;
+  sel.innerHTML = gymPlans.map(p => `<option value="${esc(p.name)}" data-price="${p.price}" data-months="${p.months}">${esc(p.name)} — ₹${p.price.toLocaleString('en-IN')}</option>`).join('');
   const dp = document.getElementById('discPlan');
-  if (dp) dp.innerHTML = gymPlans.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
+  if (dp) dp.innerHTML = gymPlans.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
   recalcPrice();
 }
 
-function togglePT() {
-  document.getElementById('ptDetails').style.display = document.getElementById('mPtEnabled').checked ? 'block' : 'none';
-}
+function togglePT() { document.getElementById('ptDetails').style.display = document.getElementById('mPtEnabled').checked ? 'block' : 'none'; }
 
+/* ═══════════════════════════════════════════════════════════
+   PRICE RECALC
+   FIX: Discount input uses type="text" so browser never clamps
+   partial values. onchange fires only on blur (not every keystroke).
+   Raw string is trimmed and parsed only when fully entered.
+═══════════════════════════════════════════════════════════ */
 function recalcPrice() {
   const sel = document.getElementById('mPlan');
   if (!sel || !sel.options[sel.selectedIndex]) return;
-  const origPrice = parseInt(sel.options[sel.selectedIndex].getAttribute('data-price')) || 0;
+  const orig  = parseInt(sel.options[sel.selectedIndex].getAttribute('data-price')) || 0;
   const dType = document.querySelector('input[name="dType"]:checked')?.value || 'none';
-  const dVal = parseFloat(document.getElementById('dValue')?.value) || 0;
-  let final = origPrice;
-  if (dType === 'percentage' && dVal > 0) final = Math.round(origPrice - origPrice * dVal / 100);
-  else if (dType === 'fixed' && dVal > 0) final = Math.max(0, Math.round(origPrice - dVal));
-  document.getElementById('origPrice').textContent  = `₹${origPrice.toLocaleString('en-IN')}`;
+  const raw   = (document.getElementById('dValue')?.value || '').replace(/,/g,'').trim();
+  const dVal  = raw === '' ? 0 : (parseFloat(raw) || 0);
+  let final   = orig;
+  if (dType === 'percentage' && dVal > 0) final = Math.round(orig - orig * Math.min(dVal,100) / 100);
+  else if (dType === 'fixed' && dVal > 0)  final = Math.max(0, Math.round(orig - dVal));
+  document.getElementById('origPrice').textContent  = `₹${orig.toLocaleString('en-IN')}`;
   document.getElementById('finalPrice').textContent = `₹${final.toLocaleString('en-IN')}`;
 }
 
@@ -870,293 +911,310 @@ function onPlanChange() {
   recalcPrice();
 }
 
-// ===== CONDITION ROW =====
+/* ═══════════════════════════════════════════════════════════
+   HEALTH CONDITIONS
+═══════════════════════════════════════════════════════════ */
 function addCondition() {
-  const c=document.getElementById('condContainer');
-  const row=document.createElement('div'); row.className='condition-row';
-  row.style.cssText='display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center';
-  row.innerHTML=`
-    <select class="cType" style="flex:1;min-width:130px"><option value="">Select Condition</option><option>Diabetes</option><option>Asthma</option><option>High Blood Pressure</option><option>Heart Condition</option><option>Knee Injury</option><option>Other</option></select>
-    <select class="cSev" style="flex:1;min-width:100px"><option>Mild</option><option>Moderate</option><option>Severe</option></select>
-    <input type="text" class="cNote" placeholder="Notes" style="flex:2;min-width:120px">
-    <button type="button" class="btn btn-danger btn-sm" style="min-height:44px" onclick="this.parentElement.remove()">✕</button>`;
+  const c = document.getElementById('condContainer');
+  const row = document.createElement('div');
+  row.className = 'cond-row';
+  row.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;align-items:center';
+  row.innerHTML = `
+    <select class="cType" style="flex:1;min-width:120px;background:var(--card);border:1.5px solid var(--border2);border-radius:var(--r3);color:var(--tx);font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;padding:8px 10px;min-height:38px">
+      <option value="">Condition</option><option>Diabetes</option><option>Asthma</option><option>High Blood Pressure</option><option>Heart Condition</option><option>Knee Injury</option><option>Other</option>
+    </select>
+    <select class="cSev" style="flex:1;min-width:90px;background:var(--card);border:1.5px solid var(--border2);border-radius:var(--r3);color:var(--tx);font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;padding:8px 10px;min-height:38px">
+      <option>Mild</option><option>Moderate</option><option>Severe</option>
+    </select>
+    <input type="text" class="cNote" placeholder="Notes" style="flex:2;min-width:100px;background:var(--card);border:1.5px solid var(--border2);border-radius:var(--r3);color:var(--tx);font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;padding:8px 10px;min-height:38px">
+    <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>`;
   c.appendChild(row);
 }
 
-// ===== DASHBOARD =====
+/* ═══════════════════════════════════════════════════════════
+   DASHBOARD
+═══════════════════════════════════════════════════════════ */
 async function loadDashboard() {
   try {
-    const res=await fetch(API,{headers:headers()});
-    if (res.status===401) { logout(); return; }
-    const members=await res.json();
+    const res = await fetch(API, { headers:hdrs() });
+    if (res.status === 401) { logout(); return; }
+    const members = await res.json();
 
-    document.getElementById('totalMembers').textContent=members.length;
-    const active=members.filter(m=>m.status==='Active');
-    document.getElementById('activeMembers').textContent=active.length;
+    document.getElementById('statTotal').textContent  = members.length;
+    const active = members.filter(m => m.status === 'Active');
+    document.getElementById('statActive').textContent = active.length;
 
-    // Revenue — reads from meta stored in medicalNotes
-    let monthlyRev=0, admissionRev=0, ptRev=0;
-    members.forEach(m=>{
-      const meta = decodeMeta(m.medicalNotes);
-      monthlyRev += getMemberFinalPrice(m);
-      if (!meta.admissionWaived && meta.admissionFee > 0) admissionRev += parseFloat(meta.admissionFee)||0;
-      if (meta.ptEnabled && meta.ptFee > 0) ptRev += parseFloat(meta.ptFee)||0;
+    let monthly=0, admission=0, pt=0;
+    members.forEach(m => {
+      const meta = mMeta[m._id] || {};
+      monthly   += mDiscounts[m._id] || getPlanPrice(m.plan);
+      if (!meta.admissionWaived) admission += meta.admissionFee || 0;
+      if (meta.ptEnabled) pt += meta.ptFee || 0;
     });
-    const totalRev = monthlyRev + admissionRev + ptRev;
-    document.getElementById('totalRevenue').textContent   = `₹${Math.round(totalRev).toLocaleString('en-IN')}`;
-    document.getElementById('monthlyRevenue').textContent = `₹${Math.round(monthlyRev).toLocaleString('en-IN')}`;
-    document.getElementById('admissionRevenue').textContent = `₹${Math.round(admissionRev).toLocaleString('en-IN')}`;
-    document.getElementById('ptRevenue').textContent      = `₹${Math.round(ptRev).toLocaleString('en-IN')}`;
+    const total = monthly + admission + pt;
+    const fmt2  = v => v >= 1000 ? `₹${(v/1000).toFixed(1)}k` : `₹${v}`;
+    document.getElementById('statRev').textContent = fmt2(Math.round(total));
+    document.getElementById('revM').textContent    = `₹${Math.round(monthly).toLocaleString('en-IN')}`;
+    document.getElementById('revA').textContent    = `₹${Math.round(admission).toLocaleString('en-IN')}`;
+    document.getElementById('revPT').textContent   = `₹${Math.round(pt).toLocaleString('en-IN')}`;
 
-    // Reminder
-    const due=members.filter(m=>m.status==='Active'&&new Date(m.expiryDate)<=new Date(Date.now()+7*86400000));
-    const rc=document.getElementById('reminderCard');
+    const due = members.filter(m => m.status==='Active' && new Date(m.expiryDate) <= new Date(Date.now()+7*86400000));
+    const banner = document.getElementById('alertBanner');
     if (!due.length) {
-      rc.className='reminder green';
-      rc.innerHTML='<div class="reminder-text"><h3>✅ All Good!</h3><p>No pending payments</p></div>';
+      banner.className = 'banner green';
+      banner.innerHTML = '<div class="banner-text"><h3>✅ All Good!</h3><p>No payments due this week</p></div>';
     } else {
-      rc.className='reminder orange';
-      rc.innerHTML=`<div class="reminder-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due Soon</h3><p>Members expiring within 7 days</p></div>
-        <button class="btn btn-sm" style="background:white;color:var(--warning);font-weight:700" onclick="showPage('payments',document.querySelector('[data-page=payments]'));updateBNav('none')">View →</button>`;
+      banner.className = 'banner amber';
+      banner.innerHTML = `<div class="banner-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due</h3><p>Expiring within 7 days</p></div>
+        <button class="btn btn-ghost btn-sm" onclick="showPage('payments',document.querySelector('[data-page=payments]'));updateBNav('none')">View →</button>`;
     }
 
-    // Table
-    const tbody=document.getElementById('dashMembersBody');
-    if (!members.length) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="e-icon">👥</div><p>No members yet.</p></div></td></tr>'; return; }
-    tbody.innerHTML=members.slice(0,8).map(m=>{
-      const meta = decodeMeta(m.medicalNotes);
+    const tbody = document.getElementById('dashBody');
+    if (!members.length) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="ei">👥</div><p>No members yet — add your first!</p></div></td></tr>'; return; }
+    tbody.innerHTML = members.slice(0,8).map(m => {
+      // FIX: explicitly read gender from mMeta first, fallback to server field
+      const gender = (mMeta[m._id]||{}).gender || m.gender || '';
       return `<tr>
-        <td><div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.phone)}</small></div></div></td>
-        <td style="font-size:0.85rem">${esc(m.plan)}</td>
-        <td>${genderBadge(meta.gender || '')}</td>
-        <td>${expiryCell(m.expiryDate, m.status)}</td>
-        <td>${statusBadge(m.status)}</td>
+        <td><div style="display:flex;align-items:center;gap:8px">${avImg(m)}<div><div style="font-weight:700;font-size:.82rem">${esc(m.name)}</div><div style="font-size:.7rem;color:var(--tx3)">${esc(m.phone)}</div></div></div></td>
+        <td style="font-size:.75rem;color:var(--tx2);max-width:110px">${esc(m.plan)}</td>
+        <td>${gBadge(gender)}</td>
+        <td>${expCell(m.expiryDate, m.status)}</td>
+        <td>${badge(m.status)}</td>
       </tr>`;
     }).join('');
-  } catch(e) { console.error(e); toast('Error loading dashboard','error'); }
+  } catch(e) { toast('Error loading dashboard','error'); }
 }
 
-// ===== ALL MEMBERS =====
+/* ═══════════════════════════════════════════════════════════
+   ALL MEMBERS
+═══════════════════════════════════════════════════════════ */
 async function loadAllMembers() {
-  const tbody=document.getElementById('allMembersBody');
+  const tbody = document.getElementById('membersBody');
   try {
-    const res=await fetch(API,{headers:headers()});
-    if (res.status===401){logout();return;}
-    const members=await res.json();
-    if (!members.length) { tbody.innerHTML='<tr><td colspan="8"><div class="empty"><div class="e-icon">👥</div><p>No members yet.</p></div></td></tr>'; return; }
-    tbody.innerHTML=members.map(m=>{
-      const meta = decodeMeta(m.medicalNotes);
+    const res = await fetch(API, { headers:hdrs() });
+    if (res.status === 401) { logout(); return; }
+    const members = await res.json();
+    if (!members.length) { tbody.innerHTML='<tr><td colspan="8"><div class="empty"><div class="ei">👥</div><p>No members yet</p></div></td></tr>'; return; }
+    tbody.innerHTML = members.map(m => {
+      const meta   = mMeta[m._id] || {};
+      // FIX: read gender from mMeta, fallback to server m.gender
+      const gender = meta.gender || m.gender || '';
       return `<tr>
-        <td><div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.email||'')}</small></div></div></td>
-        <td>${esc(m.phone)}</td>
-        <td>${genderBadge(meta.gender||'')}</td>
-        <td style="font-size:0.85rem">${esc(m.plan)}</td>
-        <td>${fmtDate(m.expiryDate)}</td>
-        <td>${meta.ptEnabled?'<span class="badge badge-active">Yes</span>':'<span style="color:var(--muted);font-size:0.8rem">No</span>'}</td>
-        <td>${statusBadge(m.status)}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="deleteMember('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\'"))}')">Delete</button></td>
+        <td><div style="display:flex;align-items:center;gap:7px">${avImg(m)}<div><div style="font-weight:700;font-size:.82rem">${esc(m.name)}</div><div style="font-size:.68rem;color:var(--tx3)">${esc(m.email||'')}</div></div></div></td>
+        <td style="font-size:.8rem">${esc(m.phone)}</td>
+        <td>${gBadge(gender)}</td>
+        <td style="font-size:.75rem;color:var(--tx2)">${esc(m.plan)}</td>
+        <td style="font-size:.75rem">${fmt(m.expiryDate)}</td>
+        <td>${meta.ptEnabled?'<span class="badge b-active">Yes</span>':'<span style="font-size:.72rem;color:var(--tx3)">No</span>'}</td>
+        <td>${badge(m.status)}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="delMember('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\'"))}')">Del</button></td>
       </tr>`;
     }).join('');
-  } catch(e) { tbody.innerHTML='<tr><td colspan="8"><div class="empty"><p style="color:var(--danger)">Error loading members</p></div></td></tr>'; }
+  } catch(e) { tbody.innerHTML='<tr><td colspan="8"><div class="empty"><p style="color:var(--gr)">Error loading</p></div></td></tr>'; }
 }
 
-async function deleteMember(id,name) {
-  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+async function delMember(id, name) {
+  if (!confirm(`Delete "${name}"? Cannot undo.`)) return;
   try {
-    const res=await fetch(`${API}/${id}`,{method:'DELETE',headers:headers()});
+    const res = await fetch(`${API}/${id}`, { method:'DELETE', headers:hdrs() });
     if (res.ok) { toast(`${name} deleted`,'success'); loadAllMembers(); loadDashboard(); }
-    else toast('Error deleting member','error');
-  } catch(e){toast('Network error','error');}
+    else toast('Error deleting','error');
+  } catch(e) { toast('Network error','error'); }
 }
 
 async function confirmDeleteAll() {
-  const v = prompt('⚠️ Type DELETE ALL to confirm deleting every member:');
+  const v = prompt('Type DELETE ALL to confirm removing every member:');
   if (v !== 'DELETE ALL') return;
   try {
-    const res=await fetch(API,{headers:headers()});
-    const members=await res.json();
-    for (const m of members) await fetch(`${API}/${m._id}`,{method:'DELETE',headers:headers()});
+    const members = await fetch(API, { headers:hdrs() }).then(r => r.json());
+    for (const m of members) await fetch(`${API}/${m._id}`, { method:'DELETE', headers:hdrs() });
     toast('All members deleted'); loadAllMembers(); loadDashboard();
-  } catch(e){toast('Error','error');}
+  } catch(e) { toast('Error','error'); }
 }
 
-// ===== ATTENDANCE =====
+/* ═══════════════════════════════════════════════════════════
+   ATTENDANCE — fully user-scoped via K.att(date)
+═══════════════════════════════════════════════════════════ */
 async function loadAttendance() {
-  const dateEl=document.getElementById('attendanceDate');
-  const date=dateEl.value||new Date().toISOString().split('T')[0];
-  dateEl.value=date;
-  const tbody=document.getElementById('attendanceBody');
+  const dateEl = document.getElementById('attDate');
+  const date   = dateEl.value || new Date().toISOString().split('T')[0];
+  dateEl.value = date;
+  const tbody  = document.getElementById('attBody');
   try {
-    const res=await fetch(API,{headers:headers()});
-    if (res.status===401){logout();return;}
-    const members=await res.json();
-    const active=members.filter(m=>m.status==='Active'||m.status==='Trial');
-    const attKey=`gympro_att_${date}`;
-    let saved={};
-    try{saved=JSON.parse(localStorage.getItem(attKey)||'{}');}catch(e){}
-    const presentCount=Object.values(saved).filter(s=>s==='Present').length;
-    document.getElementById('statTotal').textContent=active.length;
-    document.getElementById('statPresent').textContent=presentCount;
-    document.getElementById('statPct').textContent=active.length?`${Math.min(100,Math.round(presentCount/active.length*100))}%`:'0%';
-    if (!active.length){tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p>No active members found</p></div></td></tr>';return;}
-    tbody.innerHTML=active.map(m=>{
-      const st=saved[m._id]||'Absent';
+    const res = await fetch(API, { headers:hdrs() });
+    if (res.status === 401) { logout(); return; }
+    const members = await res.json();
+    const active  = members.filter(m => m.status==='Active'||m.status==='Trial');
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(K.att(date))||'{}'); } catch(e){}
+
+    const pCount = Object.values(saved).filter(s=>s==='Present').length;
+    document.getElementById('attTotal').textContent   = active.length;
+    document.getElementById('attPresent').textContent = pCount;
+    document.getElementById('attPct').textContent     = active.length ? `${Math.min(100,Math.round(pCount/active.length*100))}%` : '0%';
+
+    if (!active.length) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p>No active members</p></div></td></tr>'; return; }
+    tbody.innerHTML = active.map(m => {
+      const st = saved[m._id] || 'Absent';
       return `<tr>
-        <td><div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<strong>${esc(m.name)}</strong></div></td>
-        <td style="font-size:0.85rem">${esc(m.plan)}</td><td>${esc(m.phone)}</td>
-        <td><span id="attbadge-${m._id}" class="badge ${st==='Present'?'badge-present':'badge-absent'}">${st}</span></td>
+        <td><div style="display:flex;align-items:center;gap:7px">${avImg(m)}<span style="font-weight:700;font-size:.82rem">${esc(m.name)}</span></div></td>
+        <td style="font-size:.75rem;color:var(--tx2)">${esc(m.plan)}</td>
+        <td style="font-size:.78rem">${esc(m.phone)}</td>
+        <td><span id="ab-${m._id}" class="badge ${st==='Present'?'b-present':'b-absent'}">${st}</span></td>
         <td style="white-space:nowrap">
-          <button class="att-btn att-btn-present" onclick="markAtt('${m._id}','${date}','Present')">Present</button>
-          <button class="att-btn att-btn-absent"  onclick="markAtt('${m._id}','${date}','Absent')">Absent</button>
-        </td></tr>`;
+          <button class="att-btn-p" onclick="markAtt('${m._id}','${date}','Present')">✓ P</button>
+          <button class="att-btn-a" onclick="markAtt('${m._id}','${date}','Absent')">✗ A</button>
+        </td>
+      </tr>`;
     }).join('');
-  } catch(e){tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading attendance</p></div></td></tr>';}
+  } catch(e) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--gr)">Error</p></div></td></tr>'; }
 }
 
-function markAtt(memberId,date,status) {
-  const attKey=`gympro_att_${date}`;
-  let saved={};try{saved=JSON.parse(localStorage.getItem(attKey)||'{}');}catch(e){}
-  saved[memberId]=status; localStorage.setItem(attKey,JSON.stringify(saved));
-  const b=document.getElementById(`attbadge-${memberId}`);
-  if(b){b.textContent=status;b.className=`badge ${status==='Present'?'badge-present':'badge-absent'}`;}
-  const total=parseInt(document.getElementById('statTotal').textContent)||0;
-  const present=Object.values(saved).filter(s=>s==='Present').length;
-  document.getElementById('statPresent').textContent=present;
-  document.getElementById('statPct').textContent=total?`${Math.min(100,Math.round(present/total*100))}%`:'0%';
+function markAtt(memberId, date, status) {
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(K.att(date))||'{}'); } catch(e){}
+  saved[memberId] = status;
+  localStorage.setItem(K.att(date), JSON.stringify(saved));
+  const b = document.getElementById(`ab-${memberId}`);
+  if (b) { b.textContent = status; b.className = `badge ${status==='Present'?'b-present':'b-absent'}`; }
+  const total   = parseInt(document.getElementById('attTotal').textContent)||0;
+  const present = Object.values(saved).filter(s=>s==='Present').length;
+  document.getElementById('attPresent').textContent = present;
+  document.getElementById('attPct').textContent = total ? `${Math.min(100,Math.round(present/total*100))}%` : '0%';
 }
 
 async function markAllPresent() {
-  const date=document.getElementById('attendanceDate').value||new Date().toISOString().split('T')[0];
-  if(!confirm(`Mark all active members Present for ${new Date(date).toLocaleDateString('en-IN')}?`))return;
-  try{
-    const res=await fetch(API,{headers:headers()});
-    const members=await res.json();
-    const active=members.filter(m=>m.status==='Active'||m.status==='Trial');
-    const attKey=`gympro_att_${date}`;
-    let saved={};try{saved=JSON.parse(localStorage.getItem(attKey)||'{}');}catch(e){}
-    active.forEach(m=>{saved[m._id]='Present';});
-    localStorage.setItem(attKey,JSON.stringify(saved));
+  const date = document.getElementById('attDate').value || new Date().toISOString().split('T')[0];
+  if (!confirm(`Mark ALL active members Present for ${new Date(date).toLocaleDateString('en-IN')}?`)) return;
+  try {
+    const members = await fetch(API, { headers:hdrs() }).then(r=>r.json());
+    const active  = members.filter(m => m.status==='Active'||m.status==='Trial');
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(K.att(date))||'{}'); } catch(e){}
+    active.forEach(m => { saved[m._id]='Present'; });
+    localStorage.setItem(K.att(date), JSON.stringify(saved));
     toast(`${active.length} members marked Present`,'success'); loadAttendance();
-  }catch(e){toast('Error','error');}
+  } catch(e) { toast('Error','error'); }
 }
 
-// ===== TRAINERS =====
+/* ═══════════════════════════════════════════════════════════
+   TRAINERS
+═══════════════════════════════════════════════════════════ */
 async function loadTrainers() {
-  const tbody=document.getElementById('trainersBody');
-  try{
-    const res=await fetch(TAPI,{headers:headers()});
-    if(res.status===401){logout();return;}
-    const trainers=await res.json();
-    if(!trainers.length){tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="e-icon">🏋️</div><p>No trainers yet.</p></div></td></tr>';return;}
-    tbody.innerHTML=trainers.map(t=>`
+  const tbody = document.getElementById('trainersBody');
+  try {
+    const res = await fetch(TAPI, { headers:hdrs() });
+    if (res.status===401) { logout(); return; }
+    const trainers = await res.json();
+    if (!trainers.length) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="ei">💪</div><p>No trainers yet</p></div></td></tr>'; return; }
+    tbody.innerHTML = trainers.map(t=>`
       <tr>
-        <td><div style="display:flex;align-items:center;gap:10px">${avatar(t.name)}<strong>${esc(t.name)}</strong></div></td>
-        <td>${esc(t.specialty)}</td><td>${esc(t.phone)}</td><td>${statusBadge(t.status)}</td>
+        <td><div style="display:flex;align-items:center;gap:7px">${av(t.name)}<span style="font-weight:700;font-size:.82rem">${esc(t.name)}</span></div></td>
+        <td style="font-size:.78rem;color:var(--tx2)">${esc(t.specialty)}</td>
+        <td style="font-size:.78rem">${esc(t.phone)}</td>
+        <td>${badge(t.status)}</td>
         <td>
-          <button class="btn btn-sm btn-outline" onclick="editTrainer('${esc(t._id)}')">Edit</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteTrainer('${esc(t._id)}','${esc(t.name.replace(/'/g,"\\'"))}')">Delete</button>
+          <button class="btn btn-ghost btn-sm" onclick="editTrainer('${esc(t._id)}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="delTrainer('${esc(t._id)}','${esc(t.name.replace(/'/g,"\\'"))}')">Del</button>
         </td>
       </tr>`).join('');
-    const ptSel=document.getElementById('mPtTrainer');
-    ptSel.innerHTML='<option value="">Select Trainer</option>'+trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
-  }catch(e){tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading trainers</p></div></td></tr>';}
+    const ptSel = document.getElementById('mPtTrainer');
+    ptSel.innerHTML = '<option value="">Select Trainer</option>' +
+      trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
+  } catch(e) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--gr)">Error loading</p></div></td></tr>'; }
 }
 
 async function editTrainer(id) {
-  try{
-    const res=await fetch(`${TAPI}/${id}`,{headers:headers()});const t=await res.json();
-    const n=prompt('Name:',t.name);if(!n)return;
-    const p=prompt('Phone:',t.phone);if(!p)return;
-    const s=prompt('Specialty:',t.specialty);if(!s)return;
+  try {
+    const t = await fetch(`${TAPI}/${id}`,{headers:hdrs()}).then(r=>r.json());
+    const n=prompt('Name:',t.name); if(!n) return;
+    const p=prompt('Phone:',t.phone); if(!p) return;
+    const s=prompt('Specialty:',t.specialty); if(!s) return;
     const st=prompt('Status (Active/Inactive):',t.status);
     if(!['Active','Inactive'].includes(st)){toast('Invalid status','error');return;}
-    const up=await fetch(`${TAPI}/${id}`,{method:'PUT',headers:headers(),body:JSON.stringify({name:n.trim(),phone:p.trim(),specialty:s.trim(),status:st})});
-    if(up.ok){toast('Trainer updated','success');loadTrainers();}else toast('Update failed','error');
+    const res=await fetch(`${TAPI}/${id}`,{method:'PUT',headers:hdrs(),body:JSON.stringify({name:n.trim(),phone:p.trim(),specialty:s.trim(),status:st})});
+    if(res.ok){toast('Trainer updated','success');loadTrainers();}else toast('Update failed','error');
   }catch(e){toast('Error','error');}
 }
 
-async function deleteTrainer(id,name) {
-  if(!confirm(`Delete trainer "${name}"?`))return;
-  try{const res=await fetch(`${TAPI}/${id}`,{method:'DELETE',headers:headers()});if(res.ok){toast('Trainer deleted','success');loadTrainers();}else toast('Error','error');}
-  catch(e){toast('Error','error');}
+async function delTrainer(id, name) {
+  if (!confirm(`Delete trainer "${name}"?`)) return;
+  try {
+    const res=await fetch(`${TAPI}/${id}`,{method:'DELETE',headers:hdrs()});
+    if(res.ok){toast('Deleted','success');loadTrainers();}else toast('Error','error');
+  }catch(e){toast('Error','error');}
 }
 
-// ===== PLANS =====
+/* ═══════════════════════════════════════════════════════════
+   PLANS
+═══════════════════════════════════════════════════════════ */
 function loadPlans() {
-  const grid=document.getElementById('plansGrid');
-  if (!gymPlans.length) { grid.innerHTML='<div class="empty"><div class="e-icon">💎</div><p>No plans yet. Add one!</p></div>'; return; }
-  const plans=gymPlans.map(p=>{
-    let discounted=p.price,discInfo=null;
-    for(const d of activeDiscounts){
-      if(!d.validUntil||new Date(d.validUntil)>=new Date()){
-        if(d.appliesTo==='all'||d.planName===p.name){
-          if(d.type==='percentage'){discounted=p.price-p.price*d.value/100;discInfo=`${d.value}% OFF`;}
-          else{discounted=Math.max(0,p.price-d.value);discInfo=`₹${d.value} OFF`;}
+  const grid = document.getElementById('plansGrid');
+  if (!gymPlans.length) { grid.innerHTML='<div class="empty"><div class="ei">💎</div><p>No plans yet</p></div>'; return; }
+  const plans = gymPlans.map(p => {
+    let disc=p.price, discInfo=null;
+    for (const d of gymDisc) {
+      if (!d.validUntil || new Date(d.validUntil)>=new Date()) {
+        if (d.appliesTo==='all'||d.planName===p.name) {
+          if(d.type==='percentage'){disc=p.price-p.price*d.value/100;discInfo=`${d.value}% OFF`;}
+          else{disc=Math.max(0,p.price-d.value);discInfo=`₹${d.value} OFF`;}
           break;
         }
       }
     }
-    return{...p,discounted:Math.round(discounted),discInfo};
+    return{...p,disc:Math.round(disc),discInfo};
   });
-  grid.innerHTML=plans.map(p=>`
+  grid.innerHTML = plans.map(p=>`
     <div class="plan-card">
-      ${p.discInfo?`<div class="plan-discount-badge">${p.discInfo}</div>`:''}
+      ${p.discInfo?`<div class="plan-disc">${p.discInfo}</div>`:''}
       <h3>${esc(p.name)}</h3>
-      <div style="font-size:0.8rem;color:var(--muted)">${p.months} month${p.months>1?'s':''}</div>
-      ${p.discInfo?`<div class="plan-original">₹${p.price.toLocaleString('en-IN')}</div>`:''}
-      <div class="plan-price">₹${p.discounted.toLocaleString('en-IN')}</div>
-      <div style="display:flex;gap:6px;margin-top:0.75rem">
-        <button class="btn btn-primary" style="flex:1" onclick="selectPlan('${esc(p.name)}')">Select</button>
+      <div class="plan-dur">${p.months} month${p.months>1?'s':''}</div>
+      ${p.discInfo?`<div class="plan-orig">₹${p.price.toLocaleString('en-IN')}</div>`:''}
+      <div class="plan-price">₹${p.disc.toLocaleString('en-IN')}</div>
+      <div style="display:flex;gap:5px;margin-top:.6rem">
+        <button class="btn btn-primary btn-sm" style="flex:1" onclick="selectPlan('${esc(p.name)}')">Select</button>
         <button class="btn btn-danger btn-sm" onclick="removePlan('${esc(p.name)}')">🗑</button>
       </div>
     </div>`).join('');
 }
 
-function selectPlan(name) {
-  populatePlanSelect();
-  document.getElementById('mPlan').value=name;
-  onPlanChange();
-  openModal('addMemberModal');
-}
+function selectPlan(name) { document.getElementById('mPlan').value=name; recalcPrice(); openModal('addMemberModal'); }
 
 function addGymPlan() {
   const name=document.getElementById('newPlanName').value.trim();
   const price=parseFloat(document.getElementById('newPlanPrice').value);
   const months=parseInt(document.getElementById('newPlanMonths').value);
-  if(!name||!price||!months){toast('Please fill all fields','error');return;}
+  if(!name||!price||!months){toast('Fill all fields','error');return;}
   if(gymPlans.find(p=>p.name===name)){toast('Plan already exists','error');return;}
   gymPlans.push({name,price,months});
-  localStorage.setItem('gymPlans',JSON.stringify(gymPlans));
+  save(K.plans,gymPlans);
   closeModal('addPlanModal');
-  populatePlanSelect();
-  loadPlans();
-  toast('Plan added!','success');
-  document.getElementById('newPlanName').value='';
-  document.getElementById('newPlanPrice').value='';
-  document.getElementById('newPlanMonths').value='';
+  populatePlanSelect(); loadPlans(); toast('Plan added!','success');
+  ['newPlanName','newPlanPrice','newPlanMonths'].forEach(id=>document.getElementById(id).value='');
 }
 
 function removePlan(name) {
   if(!confirm(`Remove plan "${name}"?`))return;
   gymPlans=gymPlans.filter(p=>p.name!==name);
-  localStorage.setItem('gymPlans',JSON.stringify(gymPlans));
-  populatePlanSelect(); loadPlans(); toast('Plan removed');
+  save(K.plans,gymPlans); populatePlanSelect(); loadPlans(); toast('Plan removed');
 }
 
-// ===== DISCOUNTS =====
+/* ═══════════════════════════════════════════════════════════
+   DISCOUNTS
+═══════════════════════════════════════════════════════════ */
 function renderDiscounts() {
-  const c=document.getElementById('discountsTable');
-  if(!activeDiscounts.length){c.innerHTML='<div class="empty"><div class="e-icon">🏷️</div><p>No active discounts. Add one above.</p></div>';return;}
-  c.innerHTML=`<div class="table-wrap"><table class="discount-table">
-    <thead><tr><th>Name</th><th>Applies To</th><th>Type</th><th>Value</th><th>Valid Until</th><th>Action</th></tr></thead>
-    <tbody>${activeDiscounts.map((d,i)=>`
+  const c=document.getElementById('discTable');
+  if(!gymDisc.length){c.innerHTML='<div class="empty"><div class="ei">🏷️</div><p>No discounts yet</p></div>';return;}
+  c.innerHTML=`<div class="tbl-wrap"><table class="disc-tbl">
+    <thead><tr><th>Name</th><th>Applies</th><th>Type</th><th>Value</th><th>Until</th><th></th></tr></thead>
+    <tbody>${gymDisc.map((d,i)=>`
       <tr>
-        <td><strong>${esc(d.name)}</strong></td>
-        <td>${d.appliesTo==='all'?'All Plans':esc(d.planName||'')}</td>
-        <td>${d.type==='percentage'?'Percentage':'Fixed'}</td>
-        <td>${d.type==='percentage'?`${d.value}%`:`₹${(d.value||0).toLocaleString('en-IN')}`}</td>
-        <td>${d.validUntil?fmtDate(d.validUntil):'No expiry'}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="removeDiscount(${i})">Remove</button></td>
+        <td><strong style="font-size:.82rem">${esc(d.name)}</strong></td>
+        <td style="font-size:.78rem">${d.appliesTo==='all'?'All':esc(d.planName)}</td>
+        <td style="font-size:.78rem">${d.type==='percentage'?'%':'₹'}</td>
+        <td style="font-size:.82rem;font-weight:700">${d.type==='percentage'?`${d.value}%`:`₹${d.value.toLocaleString('en-IN')}`}</td>
+        <td style="font-size:.75rem">${d.validUntil?fmt(d.validUntil):'—'}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="removeDiscount(${i})">Del</button></td>
       </tr>`).join('')}
     </tbody></table></div>`;
 }
@@ -1168,191 +1226,166 @@ function toggleDiscPlan() {
 function addDiscount() {
   const name=document.getElementById('discName').value.trim();
   const val=parseFloat(document.getElementById('discVal').value);
-  if(!name||!val||val<=0){toast('Please fill all required fields','error');return;}
+  if(!name||!val||val<=0){toast('Fill all required fields','error');return;}
   const type=document.getElementById('discType').value;
   if(type==='percentage'&&val>100){toast('Percentage cannot exceed 100%','error');return;}
   const appliesTo=document.getElementById('discApplies').value;
-  activeDiscounts.push({
-    name,type,value:val,appliesTo,
-    planName:appliesTo==='specific'?document.getElementById('discPlan').value:null,
-    validUntil:document.getElementById('discExpiry').value||null
-  });
-  localStorage.setItem('gympro_discounts',JSON.stringify(activeDiscounts));
-  closeModal('addDiscountModal');
-  // Reset form
-  document.getElementById('discName').value='';
-  document.getElementById('discVal').value='';
-  document.getElementById('discExpiry').value='';
-  document.getElementById('discApplies').value='all';
-  document.getElementById('discPlanGroup').style.display='none';
-  renderDiscounts();
-  toast('Discount added','success');
+  gymDisc.push({name,type,value:val,appliesTo,planName:appliesTo==='specific'?document.getElementById('discPlan').value:null,validUntil:document.getElementById('discExpiry').value||null});
+  save(K.disc,gymDisc);
+  closeModal('addDiscountModal'); renderDiscounts(); toast('Discount added','success');
 }
 
 function removeDiscount(i) {
   if(!confirm('Remove this discount?'))return;
-  activeDiscounts.splice(i,1);
-  localStorage.setItem('gympro_discounts',JSON.stringify(activeDiscounts));
-  renderDiscounts(); toast('Discount removed');
+  gymDisc.splice(i,1); save(K.disc,gymDisc); renderDiscounts(); toast('Discount removed');
 }
 
-// ===== PAYMENTS =====
+/* ═══════════════════════════════════════════════════════════
+   PAYMENTS
+═══════════════════════════════════════════════════════════ */
 async function loadPayments() {
-  const container=document.getElementById('paymentsList');
-  try{
-    const res=await fetch(API,{headers:headers()});
+  const container=document.getElementById('payList');
+  try {
+    const res=await fetch(API,{headers:hdrs()});
     if(res.status===401){logout();return;}
     const members=await res.json();
     const today=new Date();
     const due=members.filter(m=>m.status==='Active'&&new Date(m.expiryDate)<=new Date(today.getTime()+14*86400000));
-    if(!due.length){container.innerHTML='<div class="empty"><div class="e-icon">✅</div><p>No payments due in the next 14 days!</p></div>';return;}
+    if(!due.length){container.innerHTML='<div class="empty"><div class="ei">✅</div><p>No payments due in 14 days!</p></div>';return;}
     container.innerHTML=due.map(m=>{
       const exp=new Date(m.expiryDate);
-      const daysLeft=Math.ceil((exp-today)/(1000*60*60*24));
-      const meta = decodeMeta(m.medicalNotes);
-      const planAmt = getMemberFinalPrice(m);
-      const admAmt = (!meta.admissionWaived && meta.admissionFee) ? parseFloat(meta.admissionFee)||0 : 0;
-      const ptAmt = meta.ptEnabled ? parseFloat(meta.ptFee)||0 : 0;
-      return `<div class="payment-row">
-        <div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.plan)}</small><br><small style="color:var(--muted)">Expires: ${fmtDate(m.expiryDate)}</small></div></div>
-        <span class="badge ${daysLeft<0?'badge-inactive':'badge-trial'}">${daysLeft<0?'Overdue':daysLeft+'d left'}</span>
-        <button class="btn btn-success btn-sm" onclick="openPaymentFor('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\'"))}','${esc(m.plan)}',${admAmt},${ptAmt})">Pay Now</button>
+      const d=Math.ceil((exp-today)/86400000);
+      return `<div class="pay-row">
+        <div style="display:flex;align-items:center;gap:8px">${avImg(m)}<div><div style="font-weight:700;font-size:.85rem">${esc(m.name)}</div><div style="font-size:.72rem;color:var(--tx3)">${esc(m.plan)}</div><div style="font-size:.7rem;color:var(--tx3)">Exp: ${fmt(m.expiryDate)}</div></div></div>
+        <span class="badge ${d<0?'b-inactive':'b-trial'}">${d<0?'Overdue':d+'d'}</span>
+        <button class="btn btn-success btn-sm" onclick="openPaymentFor('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\'"))}','${esc(m.plan)}')">Pay</button>
       </div>`;
     }).join('');
-  }catch(e){container.innerHTML='<div class="empty"><p style="color:var(--danger)">Error loading payments</p></div>';}
+  }catch(e){container.innerHTML='<div class="empty"><p style="color:var(--gr)">Error</p></div>';}
 }
 
-function openPaymentFor(id, name, plan, admissionFee, ptFee) {
-  admissionFee = admissionFee || 0;
-  ptFee = ptFee || 0;
-  // Look up discounted price
-  const planAmt = (() => {
-    // find member from DOM data isn't reliable, use base plan price
-    const base = getPlanPrice(plan);
-    return base;
-  })();
-  const totalAmt = Math.round(planAmt + admissionFee + ptFee);
-  currentPaymentMember = { id, name, plan };
+function openPaymentFor(id, name, plan, admFee, ptFee) {
+  admFee=admFee||0; ptFee=ptFee||0;
+  const planAmt=mDiscounts[id]||getPlanPrice(plan)||1000;
+  const total=Math.round(planAmt+admFee+ptFee);
+  curPayMember={id,name,plan};
 
-  const upiId   = gymSettings.upiId   || 'your-upi@bank';
-  const upiName = gymSettings.upiName || 'GymPro';
+  let rows=`
+    <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:var(--tx2);font-size:.82rem">Member</span><strong style="font-size:.82rem">${esc(name)}</strong></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:var(--tx2);font-size:.82rem">Plan</span><span style="font-size:.78rem;color:var(--tx2)">${esc(plan)}</span></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">Plan Fee</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(planAmt).toLocaleString('en-IN')}</span></div>`;
+  if(admFee>0) rows+=`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">🎟️ Admission</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(admFee).toLocaleString('en-IN')}</span></div>`;
+  if(ptFee>0)  rows+=`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">💪 PT Fee</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(ptFee).toLocaleString('en-IN')}</span></div>`;
+  rows+=`<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1.5px solid var(--border);margin-top:6px"><span style="font-weight:800;font-size:.88rem">Total</span><strong style="color:var(--g);font-size:1.05rem">₹${total.toLocaleString('en-IN')}</strong></div>`;
 
-  let rows = `
-    <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--muted)">Member</span><strong>${esc(name)}</strong></div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--muted)">Plan</span><strong style="font-size:0.85rem">${esc(plan)}</strong></div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--muted)">Plan Fee</span><span>₹${Math.round(planAmt).toLocaleString('en-IN')}</span></div>`;
-  if (admissionFee > 0) rows += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--muted)">🎟️ Admission Fee</span><span>₹${Math.round(admissionFee).toLocaleString('en-IN')}</span></div>`;
-  if (ptFee > 0) rows += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--muted)">💪 PT Fee</span><span>₹${Math.round(ptFee).toLocaleString('en-IN')}</span></div>`;
-  rows += `<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:2px solid var(--border);margin-top:6px"><span style="font-weight:700">Total</span><strong style="color:var(--success);font-size:1.15rem">₹${totalAmt.toLocaleString('en-IN')}</strong></div>`;
+  document.getElementById('payInfo').innerHTML=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r3);padding:12px;margin-bottom:.6rem">${rows}</div>`;
 
-  document.getElementById('paymentInfo').innerHTML = `<div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:1rem">${rows}</div>`;
-  document.getElementById('displayUpiId').textContent = upiId;
-  const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${totalAmt}&cu=INR`;
-  document.getElementById('payQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
+  const upiId=gymCfg.upiId||'your-upi@bank';
+  const upiName=gymCfg.upiName||'GymPro';
+  document.getElementById('dispUpi').textContent=upiId;
+  const upiUrl=`upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${total}&cu=INR`;
+  document.getElementById('payQR').src=`https://api.qrserver.com/v1/create-qr-code/?size=158x158&data=${encodeURIComponent(upiUrl)}`;
   openModal('paymentModal');
 }
 
 async function confirmPayment() {
-  if (!currentPaymentMember) return;
-  const months = getPlanMonths(currentPaymentMember.plan);
-  const expiry = new Date(); expiry.setMonth(expiry.getMonth() + months);
-  try {
-    await fetch(`${API}/${currentPaymentMember.id}`, {
-      method: 'PUT', headers: headers(),
-      body: JSON.stringify({ expiryDate: expiry.toISOString().split('T')[0], status: 'Active' })
-    });
-  } catch(e) {}
-  toast(`✅ Payment confirmed! Extended to ${expiry.toLocaleDateString('en-IN')}`, 'success');
+  if(!curPayMember)return;
+  const isAdm=curPayMember.plan==='Admission Fee';
+  if(!isAdm){
+    const months=getPlanMonths(curPayMember.plan);
+    const expiry=new Date(); expiry.setMonth(expiry.getMonth()+months);
+    try{
+      await fetch(`${API}/${curPayMember.id}`,{method:'PUT',headers:hdrs(),body:JSON.stringify({expiryDate:expiry.toISOString().split('T')[0],status:'Active'})}).catch(()=>{});
+    }catch(e){}
+    toast(`✅ Extended to ${expiry.toLocaleDateString('en-IN')}`,'success');
+  } else {
+    toast('✅ Admission fee collected!','success');
+  }
   closeModal('paymentModal');
-  currentPaymentMember = null;
+  curPayMember=null;
   loadDashboard(); loadPayments();
 }
 
-// ===== SETTINGS =====
+/* ═══════════════════════════════════════════════════════════
+   SETTINGS
+   FIX: loadSettings() now reads from gymCfg which is already
+   populated at module-level. Previously the fields were blank
+   because gymCfg was only loaded inside DOMContentLoaded.
+═══════════════════════════════════════════════════════════ */
 function loadSettings() {
-  document.getElementById('settingsUpiId').value=gymSettings.upiId||'';
-  document.getElementById('settingsUpiName').value=gymSettings.upiName||'';
-  document.getElementById('settingsAdmissionFee').value=gymSettings.admissionFee||'';
-  document.getElementById('settingsPtFee').value=gymSettings.ptFee||'';
+  document.getElementById('sUpiId').value   = gymCfg.upiId    || '';
+  document.getElementById('sUpiName').value = gymCfg.upiName  || '';
+  document.getElementById('sAdmFee').value  = gymCfg.admissionFee != null ? gymCfg.admissionFee : '';
+  document.getElementById('sPtFee').value   = gymCfg.ptFee    != null ? gymCfg.ptFee    : '';
 }
 
 function saveSettings() {
-  gymSettings.upiId=document.getElementById('settingsUpiId').value.trim();
-  gymSettings.upiName=document.getElementById('settingsUpiName').value.trim();
-  gymSettings.admissionFee=parseFloat(document.getElementById('settingsAdmissionFee').value)||0;
-  gymSettings.ptFee=parseFloat(document.getElementById('settingsPtFee').value)||0;
-  localStorage.setItem('gymSettings',JSON.stringify(gymSettings));
-  // Pre-fill admission fee in modal
-  if (gymSettings.admissionFee) {
-    const el = document.getElementById('mAdmissionFee');
-    if (el && !el.value) el.value = gymSettings.admissionFee;
-  }
+  gymCfg.upiId        = document.getElementById('sUpiId').value.trim();
+  gymCfg.upiName      = document.getElementById('sUpiName').value.trim();
+  gymCfg.admissionFee = parseFloat(document.getElementById('sAdmFee').value) || 0;
+  gymCfg.ptFee        = parseFloat(document.getElementById('sPtFee').value)   || 0;
+  save(K.cfg, gymCfg);
   toast('Settings saved!','success');
 }
 
-// ===== ADD MEMBER SUBMIT =====
-document.getElementById('addMemberForm').addEventListener('submit', async e=>{
+/* ═══════════════════════════════════════════════════════════
+   ADD MEMBER
+   FIX SUMMARY:
+   1. Age uses type="text" — browser never auto-clamps the value
+   2. Discount uses type="text" + onchange — fires only on blur
+   3. All numeric fee fields use type="text" for same reason
+   4. Gender and meta are saved to mMeta immediately on add
+   5. mMeta is reloaded from localStorage on every page load
+═══════════════════════════════════════════════════════════ */
+document.getElementById('addMemberForm').addEventListener('submit', async e => {
   e.preventDefault();
   const phone=document.getElementById('mPhone').value.trim();
-  if(!/^\d{10}$/.test(phone)){toast('Please enter a valid 10-digit phone number','error');return;}
+  if(!/^\d{10}$/.test(phone)){toast('Enter a valid 10-digit phone','error');return;}
   const gender=document.getElementById('mGender').value;
-  if(!gender){toast('Please select gender','error');return;}
+  if(!gender){toast('Select gender','error');return;}
 
+  // Read plan & discount at submit-time
   const sel=document.getElementById('mPlan');
   const origPrice=parseInt(sel.options[sel.selectedIndex].getAttribute('data-price'))||0;
   const dType=document.querySelector('input[name="dType"]:checked')?.value||'none';
-  const dVal=parseFloat(document.getElementById('dValue').value)||0;
+  const rawDVal=(document.getElementById('dValue').value||'').replace(/,/g,'').trim();
+  const dVal=rawDVal===''?0:(parseFloat(rawDVal)||0);
   let finalPrice=origPrice;
-  if(dType==='percentage'&&dVal>0) finalPrice=origPrice-origPrice*dVal/100;
-  else if(dType==='fixed'&&dVal>0) finalPrice=Math.max(0,origPrice-dVal);
-  finalPrice=Math.round(finalPrice);
+  if(dType==='percentage'&&dVal>0) finalPrice=Math.round(origPrice-origPrice*Math.min(dVal,100)/100);
+  else if(dType==='fixed'&&dVal>0) finalPrice=Math.max(0,Math.round(origPrice-dVal));
 
-  const admissionFee=parseFloat(document.getElementById('mAdmissionFee').value)||gymSettings.admissionFee||0;
-  const admissionWaived=document.getElementById('mWaiveAdmission').value==='yes';
+  // Age — safe int parse
+  const ageRaw=document.getElementById('mAge').value.trim();
+  const age=ageRaw!==''?parseInt(ageRaw,10):null;
+  if(age!==null&&(isNaN(age)||age<5||age>120)){toast('Enter a valid age (5–120)','error');return;}
+
+  // Fees
+  const rawAdm=(document.getElementById('mAdmFee').value||'').replace(/,/g,'').trim();
+  const admFee=rawAdm!==''?(parseFloat(rawAdm)||0):(gymCfg.admissionFee||0);
+  const admWaived=document.getElementById('mWaive').value==='yes';
   const ptEnabled=document.getElementById('mPtEnabled').checked;
-  const ptFee=parseFloat(document.getElementById('mPtFee').value)||gymSettings.ptFee||0;
+  const rawPt=(document.getElementById('mPtFee').value||'').replace(/,/g,'').trim();
+  const ptFee=rawPt!==''?(parseFloat(rawPt)||0):(gymCfg.ptFee||0);
   const ptTrainer=document.getElementById('mPtTrainer').value;
   const ptNotes=document.getElementById('mPtNotes').value.trim();
 
   const conditions=[];
-  document.querySelectorAll('#condContainer .condition-row').forEach(row=>{
+  document.querySelectorAll('#condContainer .cond-row').forEach(row=>{
     const cond=row.querySelector('.cType')?.value;
     if(cond) conditions.push({condition:cond,severity:row.querySelector('.cSev')?.value||'Mild',notes:row.querySelector('.cNote')?.value||''});
   });
 
-  // ===== KEY FIX: Encode all extra data INTO medicalNotes so it persists on backend =====
-  const metaPayload = {
-    gender,
-    discountType: dType,
-    discountValue: dVal,
-    discountReason: document.getElementById('dReason').value.trim(),
-    finalPrice,
-    admissionFee,
-    admissionWaived,
-    ptEnabled,
-    ptFee,
-    ptTrainer,
-    ptNotes
-  };
-  const visibleNotes = document.getElementById('mNotes').value.trim();
-  const encodedNotes = encodeMeta(metaPayload, visibleNotes);
-
   const data={
     name:document.getElementById('mName').value.trim(),
-    phone,
-    email:document.getElementById('mEmail').value.trim(),
-    age:parseInt(document.getElementById('mAge').value)||null,
-    photo:document.getElementById('photo-data').value||'',
+    phone,email:document.getElementById('mEmail').value.trim(),
+    age,
+    photo:document.getElementById('photoData').value||'',
     plan:sel.value,
     expiryDate:document.getElementById('mExpiry').value,
     status:document.getElementById('mStatus').value,
-    emergencyContact:{
-      name:document.getElementById('mEcName').value.trim(),
-      phone:document.getElementById('mEcPhone').value.trim(),
-      relationship:document.getElementById('mEcRel').value.trim()
-    },
+    emergencyContact:{name:document.getElementById('mEcName').value.trim(),phone:document.getElementById('mEcPhone').value.trim(),relationship:document.getElementById('mEcRel').value.trim()},
     healthConditions:conditions,
-    medicalNotes:encodedNotes   // gender + all extras stored here
+    medicalNotes:document.getElementById('mNotes').value.trim()
   };
 
   if(!data.name){toast('Name is required','error');return;}
@@ -1360,83 +1393,80 @@ document.getElementById('addMemberForm').addEventListener('submit', async e=>{
 
   const btn=e.submitter; btn.disabled=true; btn.textContent='Adding…';
 
-  try{
-    const res=await fetch(API,{method:'POST',headers:headers(),body:JSON.stringify(data)});
+  try {
+    const res=await fetch(API,{method:'POST',headers:hdrs(),body:JSON.stringify(data)});
     if(res.ok){
       const added=await res.json();
+
+      // Save discount
+      if(finalPrice!==origPrice){ mDiscounts[added._id]=finalPrice; save(K.mDisc,mDiscounts); }
+
+      // Save meta — gender is stored here so it persists after login/logout
+      mMeta[added._id]={gender,admissionFee:admFee,admissionWaived:admWaived,ptEnabled,ptFee,ptTrainer,ptNotes};
+      save(K.mMeta,mMeta);
+
       closeModal('addMemberModal');
       e.target.reset();
       document.getElementById('condContainer').innerHTML='';
       document.getElementById('mPtEnabled').checked=false;
       document.getElementById('ptDetails').style.display='none';
-      resetPhotoPreview();
-      // Reset discount radio
-      document.querySelector('input[name="dType"][value="none"]').checked=true;
-      document.getElementById('dValue').value='';
-      document.getElementById('dReason').value='';
-      // Reset admission fee to default
-      if (gymSettings.admissionFee) document.getElementById('mAdmissionFee').value=gymSettings.admissionFee;
-      recalcPrice();
+      resetPhoto(); recalcPrice();
       toast(`${added.name} added!`,'success');
       loadDashboard();
-
-      // Open payment modal with correct fees
-      const effectiveAdmission = admissionWaived ? 0 : admissionFee;
-      const effectivePt = ptEnabled ? ptFee : 0;
-      openPaymentFor(added._id, added.name, added.plan, effectiveAdmission, effectivePt);
+      openPaymentFor(added._id,added.name,added.plan,admWaived?0:admFee,ptEnabled?ptFee:0);
     } else {
-      const err=await res.json();
-      toast(err.error||'Could not add member','error');
+      const err=await res.json(); toast(err.error||'Could not add member','error');
     }
-  } catch(err){ toast('Network error. Please try again.','error'); }
+  } catch(err){ toast('Network error','error'); }
   btn.disabled=false; btn.textContent='Add Member';
 });
 
-// ===== ADD TRAINER SUBMIT =====
-document.getElementById('addTrainerForm').addEventListener('submit', async e=>{
+/* ═══════════════════════════════════════════════════════════
+   ADD TRAINER
+═══════════════════════════════════════════════════════════ */
+document.getElementById('addTrainerForm').addEventListener('submit', async e => {
   e.preventDefault();
   const phone=document.getElementById('tPhone').value.trim();
-  if(!/^\d{10}$/.test(phone)){toast('Please enter a valid 10-digit phone number','error');return;}
-  const data={
-    name:document.getElementById('tName').value.trim(),
-    phone,
-    specialty:document.getElementById('tSpecialty').value.trim(),
-    status:document.getElementById('tStatus').value
-  };
+  if(!/^\d{10}$/.test(phone)){toast('Enter a valid 10-digit phone','error');return;}
+  const data={name:document.getElementById('tName').value.trim(),phone,specialty:document.getElementById('tSpecialty').value.trim(),status:document.getElementById('tStatus').value};
   const btn=e.submitter; btn.disabled=true; btn.textContent='Adding…';
   try{
-    const res=await fetch(TAPI,{method:'POST',headers:headers(),body:JSON.stringify(data)});
+    const res=await fetch(TAPI,{method:'POST',headers:hdrs(),body:JSON.stringify(data)});
     if(res.ok){closeModal('addTrainerModal');e.target.reset();toast('Trainer added!','success');loadTrainers();}
     else{const err=await res.json();toast(err.error||'Could not add trainer','error');}
-  }catch(err){toast('Network error','error');}
+  }catch(e){toast('Network error','error');}
   btn.disabled=false; btn.textContent='Add Trainer';
 });
 
-// ===== INIT =====
-window.addEventListener('DOMContentLoaded', ()=>{
+/* ═══════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
   if (!checkAuth()) return;
+
   setupCamera();
-  document.getElementById('topbarDate').textContent=new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
-  document.getElementById('attendanceDate').value=new Date().toISOString().split('T')[0];
 
-  // Set default admission fee from settings
-  if (gymSettings.admissionFee) document.getElementById('mAdmissionFee').value=gymSettings.admissionFee;
-  if (gymSettings.ptFee) document.getElementById('mPtFee').value=gymSettings.ptFee;
+  document.getElementById('topDate').textContent =
+    new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+  document.getElementById('attDate').value = new Date().toISOString().split('T')[0];
 
-  try{
-    const user=JSON.parse(localStorage.getItem('user')||'{}');
-    if(user.name) document.getElementById('userInfo').innerHTML=`<div class="u-name">👤 ${esc(user.name)}</div><div class="u-role">${user.role==='admin'?'Administrator':'Staff Member'}</div>`;
-  }catch(e){}
+  // Pre-fill admission fee from settings if available
+  if (gymCfg.admissionFee) document.getElementById('mAdmFee').value = gymCfg.admissionFee;
+
+  // Show user info in sidebar
+  try {
+    const u = JSON.parse(localStorage.getItem('user')||'{}');
+    if (u.name) document.getElementById('sbUser').innerHTML =
+      `<div class="u-name">👤 ${esc(u.name)}</div><div class="u-role">${u.role==='admin'?'Administrator':'Staff Member'}</div>`;
+  } catch(e){}
 
   populatePlanSelect();
   recalcPrice();
   loadDashboard();
 
-  // Pre-load trainers for PT dropdown
-  fetch(TAPI,{headers:headers()}).then(r=>r.json()).then(trainers=>{
-    const ptSel=document.getElementById('mPtTrainer');
-    if (!ptSel) return;
-    ptSel.innerHTML='<option value="">Select Trainer</option>'+
+  // Preload trainers for PT dropdown
+  fetch(TAPI,{headers:hdrs()}).then(r=>r.json()).then(trainers=>{
+    document.getElementById('mPtTrainer').innerHTML = '<option value="">Select Trainer</option>' +
       trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
   }).catch(()=>{});
 });
