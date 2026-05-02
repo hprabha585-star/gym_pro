@@ -511,7 +511,8 @@
         <div class="form-group"><label for="mName">Full Name *</label><input type="text" id="mName" required placeholder="e.g. Arjun Reddy"></div>
         <div class="form-group"><label for="mPhone">Phone * (10 digits)</label><input type="tel" id="mPhone" required placeholder="9876543210" maxlength="10"></div>
         <div class="form-group"><label for="mEmail">Email</label><input type="email" id="mEmail" placeholder="optional"></div>
-        <div class="form-group"><label for="mAge">Age</label><input type="number" id="mAge" min="12" max="100" placeholder=""></div>
+        <!-- FIX: age input — plain number, no oninput handler that could corrupt -->
+        <div class="form-group"><label for="mAge">Age</label><input type="number" id="mAge" min="12" max="100" placeholder="" autocomplete="off"></div>
         <div class="form-group">
           <label for="mGender">Gender *</label>
           <select id="mGender" required>
@@ -536,12 +537,14 @@
       <div class="discount-box">
         <h4>🏷️ Discount (Optional)</h4>
         <div class="radio-group">
+          <!-- FIX: removed oninput from radios, use onchange only -->
           <label><input type="radio" name="dType" value="none" checked onchange="recalcPrice()"> No Discount</label>
           <label><input type="radio" name="dType" value="percentage" onchange="recalcPrice()"> Percentage %</label>
           <label><input type="radio" name="dType" value="fixed" onchange="recalcPrice()"> Fixed ₹</label>
         </div>
         <div class="form-grid">
-          <div class="form-group"><label for="dValue">Discount Value</label><input type="number" id="dValue" min="0" placeholder="e.g. 200" oninput="recalcPrice()"></div>
+          <!-- FIX: REMOVED oninput="recalcPrice()" — use onblur/onchange to prevent mid-typing corruption -->
+          <div class="form-group"><label for="dValue">Discount Value</label><input type="number" id="dValue" min="0" placeholder="e.g. 200" onchange="recalcPrice()" onblur="recalcPrice()"></div>
           <div class="form-group"><label for="dReason">Reason</label><input type="text" id="dReason" placeholder="e.g. Festival offer"></div>
         </div>
         <div class="price-summary" id="priceSummary">
@@ -722,34 +725,41 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ===== PREVENT SCROLL BUG ON NUMBER INPUTS =====
-// (Fixes the issue where scrolling up/down automatically increments/decrements number inputs like age & discount values)
-document.addEventListener('wheel', function(e) {
-  if (e.target.type === 'number') {
-    e.preventDefault();
-  }
-}, { passive: false });
-
 // ===== CONFIG =====
 const BASE = 'https://gym-pro-mvyv.onrender.com/api';
 const API  = `${BASE}/members`;
 const TAPI = `${BASE}/trainers`;
 
-// ===== USER DATA SCOPING =====
-// Fixes data leakage across different user accounts on the same computer by prefixing keys with User ID.
-const localUser = JSON.parse(localStorage.getItem('user') || '{}');
-const UID = localUser._id || 'default_user';
+// =====================================================================
+// FIX 1: USER-SCOPED STORAGE
+// All localStorage keys are prefixed with the logged-in user's ID so
+// that multiple accounts never share plans, discounts, attendance, etc.
+// =====================================================================
+let _currentUserId = '';
 
-const STORAGE_KEYS = {
-  plans: `gymPlans_${UID}`,
-  discounts: `gympro_discounts_${UID}`,
-  memberDiscounts: `gympro_member_discounts_${UID}`,
-  memberMeta: `gympro_member_meta_${UID}`,
-  settings: `gymSettings_${UID}`
-};
+function getUserId() {
+  if (_currentUserId) return _currentUserId;
+  try {
+    const u = JSON.parse(localStorage.getItem('user') || '{}');
+    _currentUserId = u._id || u.id || u.email || 'default';
+  } catch(e) {
+    _currentUserId = 'default';
+  }
+  return _currentUserId;
+}
 
-// Default plans — user can add more via Settings / Add Plan
-let gymPlans = JSON.parse(localStorage.getItem(STORAGE_KEYS.plans) || 'null') || [
+// Scoped key helper — every key includes the user id
+function uKey(key) {
+  return `${getUserId()}__${key}`;
+}
+
+// =====================================================================
+// FIX 2: LOAD DATA WITH USER-SCOPED KEYS
+// Plans, discounts, memberDiscounts, memberMeta, gymSettings are all
+// loaded/saved with per-user keys.
+// =====================================================================
+
+const DEFAULT_PLANS = [
   { name:'1 Month Strength',           price:1000,  months:1  },
   { name:'1 Month Strength + Cardio',  price:1500,  months:1  },
   { name:'3 Months Strength',          price:2700,  months:3  },
@@ -760,16 +770,39 @@ let gymPlans = JSON.parse(localStorage.getItem(STORAGE_KEYS.plans) || 'null') ||
   { name:'1 Year Strength + Cardio',   price:14000, months:12 }
 ];
 
-let activeDiscounts  = JSON.parse(localStorage.getItem(STORAGE_KEYS.discounts) || '[]');
-let memberDiscounts  = JSON.parse(localStorage.getItem(STORAGE_KEYS.memberDiscounts) || '{}');
-let memberMeta       = JSON.parse(localStorage.getItem(STORAGE_KEYS.memberMeta) || '{}');
-// memberMeta[id] = { admissionFee, admissionWaived, ptEnabled, ptFee, ptTrainer, ptNotes, gender }
-let gymSettings      = JSON.parse(localStorage.getItem(STORAGE_KEYS.settings) || '{}');
-// gymSettings = { upiId, upiName, admissionFee, ptFee }
+// These are loaded after auth is confirmed (see initAfterAuth)
+let gymPlans        = [];
+let activeDiscounts = [];
+let memberDiscounts = {};
+let memberMeta      = {};
+let gymSettings     = {};
+
+function loadUserData() {
+  gymPlans        = JSON.parse(localStorage.getItem(uKey('gymPlans'))          || 'null') || DEFAULT_PLANS;
+  activeDiscounts = JSON.parse(localStorage.getItem(uKey('gympro_discounts'))  || '[]');
+  memberDiscounts = JSON.parse(localStorage.getItem(uKey('gympro_member_discounts')) || '{}');
+  memberMeta      = JSON.parse(localStorage.getItem(uKey('gympro_member_meta'))      || '{}');
+  gymSettings     = JSON.parse(localStorage.getItem(uKey('gymSettings'))       || '{}');
+}
+
+function saveGymPlans()        { localStorage.setItem(uKey('gymPlans'),                   JSON.stringify(gymPlans)); }
+function saveDiscounts()       { localStorage.setItem(uKey('gympro_discounts'),            JSON.stringify(activeDiscounts)); }
+function saveMemberDiscounts() { localStorage.setItem(uKey('gympro_member_discounts'),     JSON.stringify(memberDiscounts)); }
+function saveMemberMeta()      { localStorage.setItem(uKey('gympro_member_meta'),          JSON.stringify(memberMeta)); }
+function saveSettings()        {
+  gymSettings.upiId         = document.getElementById('settingsUpiId').value.trim();
+  gymSettings.upiName       = document.getElementById('settingsUpiName').value.trim();
+  gymSettings.admissionFee  = parseFloat(document.getElementById('settingsAdmissionFee').value) || 0;
+  gymSettings.ptFee         = parseFloat(document.getElementById('settingsPtFee').value) || 0;
+  localStorage.setItem(uKey('gymSettings'), JSON.stringify(gymSettings));
+  toast('Settings saved!','success');
+}
+
+// Attendance is also per-user + per-date
+function attKey(date) { return uKey(`gympro_att_${date}`); }
 
 let currentPaymentMember = null;
 let currentFinalPrice = 0;
-let currentAdmissionFee = 0;
 let currentStream = null;
 
 function getPlanPrice(name)  { return (gymPlans.find(p=>p.name===name)||{}).price||0; }
@@ -809,7 +842,7 @@ function genderBadge(g) {
   return `<span class="badge ${m[g]||'badge-other'}">${esc(g)}</span>`;
 }
 
-// ===== EXPIRY SIGNAL (dashboard) =====
+// ===== EXPIRY SIGNAL =====
 function expiryCell(expiryDate, status) {
   if (status !== 'Active' && status !== 'Trial') return `<div class="expiry-cell"><span class="expiry-text green">${fmtDate(expiryDate)}</span></div>`;
   const days = Math.ceil((new Date(expiryDate) - new Date()) / (1000*60*60*24));
@@ -905,7 +938,6 @@ function resetPhotoPreview() {
 function populatePlanSelect() {
   const sel = document.getElementById('mPlan');
   sel.innerHTML = gymPlans.map(p=>`<option value="${esc(p.name)}" data-price="${p.price}" data-months="${p.months}">${esc(p.name)} — ₹${p.price.toLocaleString('en-IN')}</option>`).join('');
-  // also populate discount plan select
   const dp = document.getElementById('discPlan');
   if (dp) dp.innerHTML = gymPlans.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
   recalcPrice();
@@ -916,23 +948,30 @@ function togglePT() {
   document.getElementById('ptDetails').style.display = document.getElementById('mPtEnabled').checked ? 'block' : 'none';
 }
 
-// ===== PRICE CALC - does NOT reset discount, does NOT touch expiry =====
+// =====================================================================
+// FIX 3: PRICE CALCULATION — only fires on blur/change, not oninput
+// This prevents the value from being recalculated mid-typing (e.g.
+// typing "100" would fire at "1", "10", "100" with oninput, and the
+// browser's number input min/max constraints could clamp partial values)
+// =====================================================================
 function recalcPrice() {
   const sel = document.getElementById('mPlan');
   if (!sel || !sel.options[sel.selectedIndex]) return;
   const origPrice = parseInt(sel.options[sel.selectedIndex].getAttribute('data-price')) || 0;
   const dType = document.querySelector('input[name="dType"]:checked')?.value || 'none';
   const dValEl = document.getElementById('dValue');
-  const dVal = dValEl ? (parseFloat(dValEl.value) || 0) : 0;
+  // Read raw string first to avoid browser clamping mid-type
+  const rawVal = dValEl ? dValEl.value : '';
+  const dVal = rawVal === '' ? 0 : (parseFloat(rawVal) || 0);
   let final = origPrice;
-  if (dType === 'percentage' && dVal > 0) final = Math.round(origPrice - origPrice * dVal / 100);
+  if (dType === 'percentage' && dVal > 0) final = Math.round(origPrice - origPrice * Math.min(dVal,100) / 100);
   else if (dType === 'fixed' && dVal > 0)  final = Math.max(0, Math.round(origPrice - dVal));
   currentFinalPrice = final;
   document.getElementById('origPrice').textContent  = `₹${origPrice.toLocaleString('en-IN')}`;
   document.getElementById('finalPrice').textContent = `₹${final.toLocaleString('en-IN')}`;
 }
 
-// ===== PLAN CHANGE - updates expiry only, preserves existing discount =====
+// ===== PLAN CHANGE — updates expiry only, preserves existing discount =====
 function onPlanChange() {
   const sel = document.getElementById('mPlan');
   if (!sel || !sel.options[sel.selectedIndex]) return;
@@ -966,7 +1005,6 @@ async function loadDashboard() {
     const active=members.filter(m=>m.status==='Active');
     document.getElementById('activeMembers').textContent=active.length;
 
-    // Revenue calculation
     let monthlyRev=0, admissionRev=0, ptRev=0;
     members.forEach(m=>{
       const meta=memberMeta[m._id]||{};
@@ -980,7 +1018,6 @@ async function loadDashboard() {
     document.getElementById('admissionRevenue').textContent=`₹${Math.round(admissionRev).toLocaleString('en-IN')}`;
     document.getElementById('ptRevenue').textContent      = `₹${Math.round(ptRev).toLocaleString('en-IN')}`;
 
-    // Reminder
     const due=members.filter(m=>m.status==='Active'&&new Date(m.expiryDate)<=new Date(Date.now()+7*86400000));
     const rc=document.getElementById('reminderCard');
     if (!due.length) {
@@ -992,7 +1029,6 @@ async function loadDashboard() {
         <button class="btn btn-sm" style="background:white;color:var(--warning);font-weight:700" onclick="showPage('payments',document.querySelector('[data-page=payments]'));updateBNav('none')">View →</button>`;
     }
 
-    // Table
     const tbody=document.getElementById('dashMembersBody');
     if (!members.length) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="e-icon">👥</div><p>No members yet. Add your first member!</p></div></td></tr>'; return; }
     tbody.innerHTML=members.slice(0,8).map(m=>`
@@ -1050,7 +1086,9 @@ async function confirmDeleteAll() {
   } catch(e){toast('Error','error');}
 }
 
-// ===== ATTENDANCE =====
+// =====================================================================
+// FIX 4: ATTENDANCE uses per-user keys via attKey(date)
+// =====================================================================
 async function loadAttendance() {
   const dateEl=document.getElementById('attendanceDate');
   const date=dateEl.value||new Date().toISOString().split('T')[0];
@@ -1061,9 +1099,8 @@ async function loadAttendance() {
     if (res.status===401){logout();return;}
     const members=await res.json();
     const active=members.filter(m=>m.status==='Active'||m.status==='Trial');
-    const attKey=`gympro_att_${UID}_${date}`;
     let saved={};
-    try{saved=JSON.parse(localStorage.getItem(attKey)||'{}');}catch(e){}
+    try{saved=JSON.parse(localStorage.getItem(attKey(date))||'{}');}catch(e){}
     const presentCount=Object.values(saved).filter(s=>s==='Present').length;
     document.getElementById('statTotal').textContent=active.length;
     document.getElementById('statPresent').textContent=presentCount;
@@ -1084,9 +1121,8 @@ async function loadAttendance() {
 }
 
 function markAtt(memberId,date,status) {
-  const attKey=`gympro_att_${UID}_${date}`;
-  let saved={};try{saved=JSON.parse(localStorage.getItem(attKey)||'{}');}catch(e){}
-  saved[memberId]=status; localStorage.setItem(attKey,JSON.stringify(saved));
+  let saved={};try{saved=JSON.parse(localStorage.getItem(attKey(date))||'{}');}catch(e){}
+  saved[memberId]=status; localStorage.setItem(attKey(date),JSON.stringify(saved));
   const b=document.getElementById(`attbadge-${memberId}`);
   if(b){b.textContent=status;b.className=`badge ${status==='Present'?'badge-present':'badge-absent'}`;}
   const total=parseInt(document.getElementById('statTotal').textContent)||0;
@@ -1103,10 +1139,9 @@ async function markAllPresent() {
     const res=await fetch(API,{headers:headers()});
     const members=await res.json();
     const active=members.filter(m=>m.status==='Active'||m.status==='Trial');
-    const attKey=`gympro_att_${UID}_${date}`;
-    let saved={};try{saved=JSON.parse(localStorage.getItem(attKey)||'{}');}catch(e){}
+    let saved={};try{saved=JSON.parse(localStorage.getItem(attKey(date))||'{}');}catch(e){}
     active.forEach(m=>{saved[m._id]='Present';});
-    localStorage.setItem(attKey,JSON.stringify(saved));
+    localStorage.setItem(attKey(date),JSON.stringify(saved));
     toast(`${active.length} members marked Present`,'success'); loadAttendance();
   }catch(e){toast('Error','error');}
 }
@@ -1128,7 +1163,6 @@ async function loadTrainers() {
           <button class="btn btn-sm btn-danger"  onclick="deleteTrainer('${esc(t._id)}','${esc(t.name.replace(/'/g,"\\'"))}')">Delete</button>
         </td>
       </tr>`).join('');
-    // Populate PT trainer dropdown
     const ptSel=document.getElementById('mPtTrainer');
     ptSel.innerHTML='<option value="">Select Trainer</option>'+trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
   }catch(e){tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading trainers</p></div></td></tr>';}
@@ -1153,7 +1187,9 @@ async function deleteTrainer(id,name) {
   catch(e){toast('Error','error');}
 }
 
-// ===== PLANS =====
+// =====================================================================
+// FIX 5: PLANS — load/save with user-scoped keys
+// =====================================================================
 function loadPlans() {
   const grid=document.getElementById('plansGrid');
   if (!gymPlans.length) { grid.innerHTML='<div class="empty"><div class="e-icon">💎</div><p>No plans yet. Add one!</p></div>'; return; }
@@ -1195,7 +1231,7 @@ function addGymPlan() {
   if(!name||!price||!months){toast('Please fill all fields','error');return;}
   if(gymPlans.find(p=>p.name===name)){toast('Plan with this name already exists','error');return;}
   gymPlans.push({name,price,months});
-  localStorage.setItem(STORAGE_KEYS.plans,JSON.stringify(gymPlans));
+  saveGymPlans();
   closeModal('addPlanModal');
   populatePlanSelect();
   loadPlans();
@@ -1208,11 +1244,13 @@ function addGymPlan() {
 function removePlan(name) {
   if(!confirm(`Remove plan "${name}"?`))return;
   gymPlans=gymPlans.filter(p=>p.name!==name);
-  localStorage.setItem(STORAGE_KEYS.plans,JSON.stringify(gymPlans));
+  saveGymPlans();
   populatePlanSelect(); loadPlans(); toast('Plan removed');
 }
 
-// ===== DISCOUNTS =====
+// =====================================================================
+// FIX 6: DISCOUNTS — scoped save/load
+// =====================================================================
 function renderDiscounts() {
   const c=document.getElementById('discountsTable');
   if(!activeDiscounts.length){c.innerHTML='<div class="empty"><div class="e-icon">🏷️</div><p>No active discounts. Add one above.</p></div>';return;}
@@ -1242,14 +1280,14 @@ function addDiscount() {
   if(type==='percentage'&&val>100){toast('Percentage cannot exceed 100%','error');return;}
   const appliesTo=document.getElementById('discApplies').value;
   activeDiscounts.push({name,type,value:val,appliesTo,planName:appliesTo==='specific'?document.getElementById('discPlan').value:null,validUntil:document.getElementById('discExpiry').value||null});
-  localStorage.setItem(STORAGE_KEYS.discounts,JSON.stringify(activeDiscounts));
+  saveDiscounts();
   closeModal('addDiscountModal'); renderDiscounts(); toast('Discount added','success');
 }
 
 function removeDiscount(i) {
   if(!confirm('Remove this discount?'))return;
   activeDiscounts.splice(i,1);
-  localStorage.setItem(STORAGE_KEYS.discounts,JSON.stringify(activeDiscounts));
+  saveDiscounts();
   renderDiscounts(); toast('Discount removed');
 }
 
@@ -1288,7 +1326,6 @@ function openPaymentFor(id, name, plan, admissionFee, ptFee) {
   const upiId   = gymSettings.upiId   || 'your-upi@bank';
   const upiName = gymSettings.upiName || 'GymPro';
 
-  // Build breakdown rows
   let rows = `
     <div style="display:flex;justify-content:space-between;margin-bottom:6px">
       <span style="color:var(--muted)">Member</span><strong>${esc(name)}</strong>
@@ -1335,11 +1372,9 @@ function openAdmissionPayment(id, name, admissionFee) {
 
 async function confirmPayment() {
   if (!currentPaymentMember) return;
-
   const isAdmission = currentPaymentMember.plan === 'Admission Fee';
 
   if (!isAdmission) {
-    // Plan payment confirmed — extend expiry
     const months = getPlanMonths(currentPaymentMember.plan);
     const expiry = new Date(); expiry.setMonth(expiry.getMonth() + months);
     try {
@@ -1350,7 +1385,6 @@ async function confirmPayment() {
     } catch(e) {}
     toast(`✅ Plan payment confirmed! Extended to ${expiry.toLocaleDateString('en-IN')}`, 'success');
 
-    // Check if there's a pending admission fee to collect
     const pendingAdmission = currentPaymentMember._admissionFee;
     const pendingName      = currentPaymentMember._admissionName;
     const pendingId        = currentPaymentMember._admissionId;
@@ -1359,7 +1393,6 @@ async function confirmPayment() {
     currentPaymentMember = null;
     loadDashboard(); loadPayments();
 
-    // Show admission fee payment next (after short delay)
     if (pendingAdmission && pendingAdmission > 0) {
       setTimeout(() => {
         if (confirm(`Collect Admission Fee ₹${Math.round(pendingAdmission).toLocaleString('en-IN')} for ${pendingName}?\n\nClick OK to open UPI payment.`)) {
@@ -1368,7 +1401,6 @@ async function confirmPayment() {
       }, 600);
     }
   } else {
-    // Admission fee payment confirmed
     toast(`✅ Admission fee collected!`, 'success');
     closeModal('paymentModal');
     currentPaymentMember = null;
@@ -1383,16 +1415,10 @@ function loadSettings() {
   document.getElementById('settingsPtFee').value=gymSettings.ptFee||'';
 }
 
-function saveSettings() {
-  gymSettings.upiId=document.getElementById('settingsUpiId').value.trim();
-  gymSettings.upiName=document.getElementById('settingsUpiName').value.trim();
-  gymSettings.admissionFee=parseFloat(document.getElementById('settingsAdmissionFee').value)||0;
-  gymSettings.ptFee=parseFloat(document.getElementById('settingsPtFee').value)||0;
-  localStorage.setItem(STORAGE_KEYS.settings,JSON.stringify(gymSettings));
-  toast('Settings saved!','success');
-}
-
-// ===== ADD MEMBER SUBMIT =====
+// =====================================================================
+// FIX 7: ADD MEMBER SUBMIT — read age as integer only on submit,
+// not mid-typing. Discount value also read at submit-time only.
+// =====================================================================
 document.getElementById('addMemberForm').addEventListener('submit', async e=>{
   e.preventDefault();
   const phone=document.getElementById('mPhone').value.trim();
@@ -1403,9 +1429,10 @@ document.getElementById('addMemberForm').addEventListener('submit', async e=>{
   const sel=document.getElementById('mPlan');
   const origPrice=parseInt(sel.options[sel.selectedIndex].getAttribute('data-price'))||0;
   const dType=document.querySelector('input[name="dType"]:checked')?.value||'none';
+  // FIX: read the integer value at submission time, not during typing
   const dVal=parseFloat(document.getElementById('dValue').value)||0;
   let finalPrice=origPrice;
-  if(dType==='percentage'&&dVal>0) finalPrice=origPrice-origPrice*dVal/100;
+  if(dType==='percentage'&&dVal>0) finalPrice=origPrice-origPrice*Math.min(dVal,100)/100;
   else if(dType==='fixed'&&dVal>0) finalPrice=Math.max(0,origPrice-dVal);
   finalPrice=Math.round(finalPrice);
 
@@ -1422,11 +1449,15 @@ document.getElementById('addMemberForm').addEventListener('submit', async e=>{
     if(cond) conditions.push({condition:cond,severity:row.querySelector('.cSev')?.value||'Mild',notes:row.querySelector('.cNote')?.value||''});
   });
 
+  // FIX: read age as integer directly — parseInt prevents float/clamped issues
+  const ageRaw = document.getElementById('mAge').value;
+  const ageVal = ageRaw !== '' ? parseInt(ageRaw, 10) : null;
+
   const data={
     name:document.getElementById('mName').value.trim(),
     phone,
     email:document.getElementById('mEmail').value.trim(),
-    age:parseInt(document.getElementById('mAge').value)||null,
+    age: ageVal,
     photo:document.getElementById('photo-data').value||'',
     plan:sel.value,
     expiryDate:document.getElementById('mExpiry').value,
@@ -1446,12 +1477,13 @@ document.getElementById('addMemberForm').addEventListener('submit', async e=>{
     if(res.ok){
       const added=await res.json();
 
-      // Save discount
-      if(finalPrice!==origPrice){memberDiscounts[added._id]=finalPrice;localStorage.setItem(STORAGE_KEYS.memberDiscounts,JSON.stringify(memberDiscounts));}
+      if(finalPrice!==origPrice){
+        memberDiscounts[added._id]=finalPrice;
+        saveMemberDiscounts();
+      }
 
-      // Save meta (gender, admission, PT)
       memberMeta[added._id]={gender,admissionFee,admissionWaived,ptEnabled,ptFee,ptTrainer,ptNotes};
-      localStorage.setItem(STORAGE_KEYS.memberMeta,JSON.stringify(memberMeta));
+      saveMemberMeta();
 
       closeModal('addMemberModal');
       e.target.reset();
@@ -1463,7 +1495,6 @@ document.getElementById('addMemberForm').addEventListener('submit', async e=>{
       toast(`${added.name} added!`,'success');
       loadDashboard();
 
-      // Show payment with ALL fees combined in the QR
       const effectiveAdmission = admissionWaived ? 0 : admissionFee;
       const effectivePt        = ptEnabled ? ptFee : 0;
       openPaymentFor(added._id, added.name, added.plan, effectiveAdmission, effectivePt);
@@ -1489,14 +1520,19 @@ document.getElementById('addTrainerForm').addEventListener('submit', async e=>{
   btn.disabled=false; btn.textContent='Add Trainer';
 });
 
-// ===== INIT =====
+// =====================================================================
+// INIT — must load user data AFTER userId is known
+// =====================================================================
 window.addEventListener('DOMContentLoaded', ()=>{
   if (!checkAuth()) return;
+
+  // Load user-scoped data now that we have the user id
+  loadUserData();
+
   setupCamera();
   document.getElementById('topbarDate').textContent=new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
   document.getElementById('attendanceDate').value=new Date().toISOString().split('T')[0];
 
-  // Set admission fee default
   if (gymSettings.admissionFee) document.getElementById('mAdmissionFee').value=gymSettings.admissionFee;
 
   try{
@@ -1507,7 +1543,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
   populatePlanSelect();
   recalcPrice();
   loadDashboard();
-  // Pre-load trainers for PT dropdown
+
   fetch(TAPI,{headers:headers()}).then(r=>r.json()).then(trainers=>{
     const ptSel=document.getElementById('mPtTrainer');
     ptSel.innerHTML='<option value="">Select Trainer</option>'+trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
