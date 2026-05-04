@@ -429,9 +429,7 @@
 
 </main>
 
-<!-- ══════════════════════════════════════════
-  ADD MEMBER MODAL
-══════════════════════════════════════════ -->
+<!-- ADD MEMBER MODAL -->
 <div class="modal" id="addMemberModal">
   <div class="modal-content">
     <div class="modal-header">
@@ -645,19 +643,13 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-  PAYMENT MODAL
-  KEY FIX: closing this modal does NOT delete the member.
-  Member is already saved. Payment is a separate step.
-══════════════════════════════════════════ -->
+<!-- PAYMENT MODAL - FIXED: Closing does not delete member -->
 <div class="modal" id="paymentModal">
   <div class="modal-content" style="max-width:420px">
     <div class="modal-header">
       <span class="modal-title">💳 Collect Payment</span>
-      <!-- X button just closes — member is already added -->
-      <button class="modal-close" onclick="closeModal('paymentModal')">✕</button>
+      <button class="modal-close" onclick="closePaymentModal()">✕</button>
     </div>
-    <!-- Notice so user understands member is already saved -->
     <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px 14px;margin-bottom:1rem;font-size:0.85rem;color:#15803d;font-weight:600;">
       ✅ Member added successfully! Collect payment below or close to pay later.
     </div>
@@ -669,8 +661,7 @@
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
       <button class="btn btn-success" style="width:100%" onclick="confirmPayment()">✅ Mark Payment Received</button>
-      <!-- FIX: Cancel/Close just closes modal — member already saved -->
-      <button class="btn" style="background:var(--border);color:var(--text);width:100%" onclick="closeModal('paymentModal')">⏭ Skip / Pay Later</button>
+      <button class="btn" style="background:var(--border);color:var(--text);width:100%" onclick="closePaymentModal()">⏭ Skip / Pay Later</button>
     </div>
   </div>
 </div>
@@ -684,8 +675,7 @@ const API  = `${BASE}/members`;
 const TAPI = `${BASE}/trainers`;
 
 // =====================================================================
-// SETTINGS — stored in localStorage per-user (UPI ID, fee defaults)
-// Everything else (revenue, gender, PT, admission) is stored in MongoDB
+// SETTINGS — stored in localStorage per-user
 // =====================================================================
 let gymSettings = {};
 
@@ -790,6 +780,13 @@ function updateBNav(id) {
 // ===== MODALS =====
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// Close payment modal without deleting member
+function closePaymentModal() {
+  closeModal('paymentModal');
+  currentPaymentMember = null;
+  loadAllMembers();
+}
 
 // Close modal when clicking backdrop — but NOT camera modal (would stop stream)
 document.addEventListener('click', e => {
@@ -941,8 +938,6 @@ function addCondition() {
 
 // =====================================================================
 // DASHBOARD
-// Revenue is now calculated from DB fields: planPrice, admissionFee,
-// admissionWaived, ptEnabled, ptFee — all stored in MongoDB
 // =====================================================================
 async function loadDashboard() {
   try {
@@ -956,7 +951,6 @@ async function loadDashboard() {
 
     let monthlyRev = 0, admissionRev = 0, ptRev = 0;
     members.forEach(m => {
-      // planPrice is what they actually paid (after discount) — stored in DB
       monthlyRev   += (m.planPrice > 0 ? m.planPrice : getPlanPrice(m.plan));
       if (!m.admissionWaived) admissionRev += (m.admissionFee || 0);
       if (m.ptEnabled)        ptRev        += (m.ptFee || 0);
@@ -980,7 +974,7 @@ async function loadDashboard() {
     }
 
     const tbody = document.getElementById('dashMembersBody');
-    if (!members.length) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="e-icon">👥</div><p>No members yet. Add your first!</p></div></td></tr>'; return; }
+    if (!members.length) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="e-icon">👥</div><p>No members yet. Add your first!</p></div></td><tr>'; return; }
     tbody.innerHTML = members.slice(0,8).map(m=>`
       <tr>
         <td><div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.phone)}</small></div></div></td>
@@ -999,7 +993,7 @@ async function loadAllMembers() {
     const res = await fetch(API, {headers: headers()});
     if (res.status === 401) { logout(); return; }
     const members = await res.json();
-    if (!members.length) { tbody.innerHTML='<tr><td colspan="8"><div class="empty"><div class="e-icon">👥</div><p>No members yet.</p></div></td></tr>'; return; }
+    if (!members.length) { tbody.innerHTML='<tr><td colspan="8"><div class="empty"><div class="e-icon">👥</div><p>No members yet.</p></div></td><tr>'; return; }
     tbody.innerHTML = members.map(m => `
       <tr>
         <td><div style="display:flex;align-items:center;gap:10px">${renderAvatar(m)}<div><strong>${esc(m.name)}</strong><br><small style="color:var(--muted)">${esc(m.email||'')}</small></div></div></td>
@@ -1054,7 +1048,7 @@ async function loadAttendance() {
     document.getElementById('statTotal').textContent   = active.length;
     document.getElementById('statPresent').textContent = presentCount;
     document.getElementById('statPct').textContent     = active.length ? `${Math.min(100,Math.round(presentCount/active.length*100))}%` : '0%';
-    if (!active.length) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p>No active members found</p></div></td></tr>'; return; }
+    if (!active.length) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p>No active members found</p></div></td></table>'; return; }
     tbody.innerHTML = active.map(m => {
       const st = saved[m._id] || 'Absent';
       return `<tr>
@@ -1065,7 +1059,8 @@ async function loadAttendance() {
         <td style="white-space:nowrap">
           <button class="att-btn att-btn-present" onclick="markAtt('${m._id}','${date}','Present')">Present</button>
           <button class="att-btn att-btn-absent"  onclick="markAtt('${m._id}','${date}','Absent')">Absent</button>
-        </td></tr>`;
+        </td>
+     </tr>`;
     }).join('');
   } catch(e) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading attendance</p></div></td></tr>'; }
 }
@@ -1119,7 +1114,7 @@ async function loadTrainers() {
     const ptSel = document.getElementById('mPtTrainer');
     ptSel.innerHTML = '<option value="">Select Trainer</option>' +
       trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
-  } catch(e) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading trainers</p></div></td></tr>'; }
+  } catch(e) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--danger)">Error loading trainers</p></div>NonNullListCellRender</tbody>'; }
 }
 
 async function editTrainer(id) {
@@ -1271,13 +1266,9 @@ async function loadPayments() {
 }
 
 // =====================================================================
-// PAYMENT MODAL
-// openPaymentForMember — opens payment for an EXISTING member.
-// The member is already in the DB; this is just collecting money.
-// Closing the modal does NOT delete or undo anything.
+// PAYMENT MODAL FUNCTIONS
 // =====================================================================
 function openPaymentForMember(m) {
-  // m can be a member object (from members list) or a plain object
   const planAmt = (m.planPrice > 0 ? m.planPrice : getPlanPrice(m.plan)) || 1000;
   const admAmt  = m.admissionWaived ? 0 : (m.admissionFee || 0);
   const ptAmt   = m.ptEnabled ? (m.ptFee || 0) : 0;
@@ -1304,21 +1295,28 @@ function openPaymentForMember(m) {
 }
 
 async function confirmPayment() {
-  if (!currentPaymentMember) return;
+  if (!currentPaymentMember) {
+    closePaymentModal();
+    return;
+  }
   const m = currentPaymentMember;
-  // Extend expiry by plan duration
   const months = getPlanMonths(m.plan);
-  const expiry  = new Date(); expiry.setMonth(expiry.getMonth() + months);
+  const expiry = new Date(); 
+  expiry.setMonth(expiry.getMonth() + months);
   try {
     await fetch(`${API}/${m.id}`, {
-      method:'PUT', headers:headers(),
-      body: JSON.stringify({expiryDate: expiry.toISOString().split('T')[0], status:'Active'})
-    }).catch(()=>{});
-  } catch(e) {}
+      method: 'PUT', 
+      headers: headers(),
+      body: JSON.stringify({expiryDate: expiry.toISOString().split('T')[0], status: 'Active'})
+    }).catch(() => {});
+  } catch(e) {
+    console.error('Error updating expiry:', e);
+  }
   toast(`✅ Payment confirmed for ${m.name}!`, 'success');
-  closeModal('paymentModal');
+  closePaymentModal();
   currentPaymentMember = null;
-  loadDashboard(); loadPayments();
+  loadDashboard(); 
+  loadPayments();
 }
 
 // ===== SETTINGS PAGE =====
@@ -1331,12 +1329,6 @@ function loadSettingsPage() {
 
 // =====================================================================
 // ADD MEMBER SUBMIT
-// KEY CHANGES:
-// 1. All financial/meta fields (gender, planPrice, discountType,
-//    discountValue, admissionFee, admissionWaived, ptEnabled, ptFee,
-//    ptTrainer, ptNotes) are sent to the backend and stored in MongoDB
-// 2. Payment modal opens AFTER member is saved — closing the modal
-//    does NOT remove the member
 // =====================================================================
 document.getElementById('addMemberForm').addEventListener('submit', async e => {
   e.preventDefault();
@@ -1372,22 +1364,21 @@ document.getElementById('addMemberForm').addEventListener('submit', async e => {
   const ageRaw = document.getElementById('mAge').value;
   const ageVal = ageRaw !== '' ? parseInt(ageRaw, 10) : null;
 
-  // ── All fields sent to backend ──────────────────────────────────────
   const data = {
     name:     document.getElementById('mName').value.trim(),
     phone,
     email:    document.getElementById('mEmail').value.trim(),
     age:      ageVal,
-    gender,                      // ← stored in DB (fixes cross-device gender)
+    gender,
     photo:    document.getElementById('photo-data').value || '',
     plan:     sel.value,
-    planPrice:       finalPrice,  // ← actual price charged (after discount)
+    planPrice:       finalPrice,
     discountType:    dType,
     discountValue:   dVal,
     discountReason:  dReason,
-    admissionFee,                // ← stored in DB
-    admissionWaived,             // ← stored in DB
-    ptEnabled,                   // ← stored in DB
+    admissionFee,
+    admissionWaived,
+    ptEnabled,
     ptFee:     ptEnabled ? ptFee : 0,
     ptTrainer: ptEnabled ? ptTrainer : '',
     ptNotes:   ptEnabled ? ptNotes : '',
@@ -1413,7 +1404,6 @@ document.getElementById('addMemberForm').addEventListener('submit', async e => {
     if (res.ok) {
       const added = await res.json();
 
-      // Close add member modal
       closeModal('addMemberModal');
       e.target.reset();
       document.getElementById('condContainer').innerHTML = '';
@@ -1425,9 +1415,6 @@ document.getElementById('addMemberForm').addEventListener('submit', async e => {
       toast(`${added.name} added successfully!`, 'success');
       loadDashboard();
 
-      // ── Open payment modal ────────────────────────────────────────
-      // Member is already saved to DB at this point.
-      // Closing the payment modal does NOT undo the member addition.
       openPaymentForMember(added);
 
     } else {
@@ -1476,7 +1463,6 @@ window.addEventListener('DOMContentLoaded', () => {
   recalcPrice();
   loadDashboard();
 
-  // pre-load trainers for the PT select
   fetch(TAPI, {headers:headers()})
     .then(r=>r.json())
     .then(trainers => {
