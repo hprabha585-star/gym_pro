@@ -159,4 +159,25 @@ router.get('/users', verifyToken, async (req, res) => {
   }
 });
 
+// Update Profile (Sync plans, settings, discounts)
+router.patch('/profile', verifyToken, async (req, res) => {
+  try {
+    const { gymData } = req.body;
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    if (gymData !== undefined) {
+      user.gymData = gymData;
+    }
+    
+    await user.save();
+    res.json({ message: 'Profile updated successfully', user: { id: user._id, name: user.name, gymData: user.gymData } });
+  } catch (err) {
+    console.error('Profile update error:', err);
+    res.status(500).json({ error: 'Server error updating profile' });
+  }
+});
+
 module.exports = { router, verifyToken };
