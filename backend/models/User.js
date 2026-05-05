@@ -31,6 +31,10 @@ const userSchema = new mongoose.Schema({
   },
   lastLogin: {
     type: Date
+  },
+  gymData: {
+    type: String,
+    default: '{}'
   }
 }, {
   timestamps: true
