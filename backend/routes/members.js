@@ -78,6 +78,40 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Edit / Update an existing member
+router.put('/:id', async (req, res) => {
+  try {
+    const memberData = req.body;
+    
+    // Ensure phone number isn't being updated to one that belongs to another member
+    if (memberData.phone) {
+      const existingMember = await Member.findOne({ 
+        userId: req.user.userId, 
+        phone: memberData.phone,
+        _id: { $ne: req.params.id }
+      });
+      if (existingMember) {
+        return res.status(400).json({ error: 'Another member with this phone number already exists' });
+      }
+    }
+
+    const updatedMember = await Member.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user.userId },
+      { $set: memberData },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedMember) {
+      return res.status(404).json({ error: 'Member not found' });
+    }
+
+    res.json(updatedMember);
+  } catch (err) {
+    console.error('Update member error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Delete member
 router.delete('/:id', async (req, res) => {
   try {
