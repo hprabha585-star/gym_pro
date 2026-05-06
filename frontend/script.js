@@ -142,7 +142,18 @@ function showPage(page, btn) {
 }
 
 /* ── MODALS ── */
-const openModal  = id => document.getElementById(id).classList.add('open');
+/* ── MODALS ── */
+const openModal = id => {
+  document.getElementById(id).classList.add('open');
+  // Force Start Date to today and calculate Expiry instantly!
+  if (id === 'addMemberModal') {
+    const startInput = document.getElementById('mStart');
+    if (startInput) {
+      startInput.value = new Date().toISOString().split('T')[0];
+      onPlanChange(); // Run the math immediately
+    }
+  }
+};
 const closeModal = id => document.getElementById(id).classList.remove('open');
 document.addEventListener('click', e => {
   if (e.target.classList.contains('modal')) {
