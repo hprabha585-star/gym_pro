@@ -261,7 +261,6 @@
 </head>
 <body>
 
-<!-- SIDEBAR -->
 <nav class="sidebar" id="sidebar">
   <div class="sb-top">
     <div class="sb-brand"><div class="sb-logo">🏋️</div><span class="sb-name">GymPro</span></div>
@@ -284,14 +283,16 @@
 </nav>
 <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
-<!-- TOPBAR -->
 <div class="topbar">
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
   <span class="topbar-title" id="pageTitle">Dashboard</span>
   <span class="topbar-date" id="topDate"></span>
 </div>
 
-<!-- BOTTOM NAV -->
+<div id="offline-banner" style="display: none; background: #dc3545; color: white; text-align: center; padding: 8px; font-size: 0.8rem; font-weight: bold; position: fixed; top: 56px; left: 0; right: 0; z-index: 1000;">
+  ⚠️ You are currently offline. Viewing saved data.
+</div>
+
 <nav class="bottom-nav">
   <button class="bn-item active" id="bn-dashboard" onclick="showPage('dashboard',document.querySelector('[data-page=dashboard]'));updateBNav('dashboard')"><i>📊</i><span>Home</span></button>
   <button class="bn-item" id="bn-members" onclick="showPage('members',document.querySelector('[data-page=members]'));updateBNav('members')"><i>👥</i><span>Members</span></button>
@@ -299,10 +300,8 @@
   <button class="bn-item" id="bn-menu" onclick="toggleSidebar()"><i>☰</i><span>More</span></button>
 </nav>
 
-<!-- MAIN -->
 <main class="main">
 
-  <!-- DASHBOARD -->
   <div id="page-dashboard" class="page active">
     <div id="alertBanner" class="banner green"><div class="banner-text"><h3>✅ All Good!</h3><p>No payments due this week</p></div></div>
     <div class="stats-row">
@@ -317,8 +316,14 @@
     </div>
     <div class="card">
       <div class="card-head">
-        <span class="card-title">Recent Members</span>
-        <button class="btn btn-primary btn-sm" onclick="openModal('addMemberModal')">+ Add</button>
+        <span class="card-title">Expiring Soon</span>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+          <button class="btn btn-ghost btn-sm" onclick="filterDash(3)">3 Days</button>
+          <button class="btn btn-ghost btn-sm" onclick="filterDash(5)">5 Days</button>
+          <button class="btn btn-ghost btn-sm" onclick="filterDash(7)">7 Days</button>
+          <button class="btn btn-ghost btn-sm" onclick="filterDash('all')">All</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('addMemberModal')">+ Add</button>
+        </div>
       </div>
       <div class="tbl-wrap">
         <table>
@@ -329,7 +334,6 @@
     </div>
   </div>
 
-  <!-- MEMBERS -->
   <div id="page-members" class="page">
     <div class="card">
       <div class="card-head">
@@ -348,7 +352,6 @@
     </div>
   </div>
 
-  <!-- ATTENDANCE -->
   <div id="page-attendance" class="page">
     <div class="card">
       <div class="card-head"><span class="card-title">Attendance</span></div>
@@ -371,7 +374,6 @@
     </div>
   </div>
 
-  <!-- TRAINERS -->
   <div id="page-trainers" class="page">
     <div class="card">
       <div class="card-head">
@@ -387,7 +389,6 @@
     </div>
   </div>
 
-  <!-- PLANS -->
   <div id="page-plans" class="page">
     <div class="card">
       <div class="card-head">
@@ -399,7 +400,6 @@
     </div>
   </div>
 
-  <!-- DISCOUNTS -->
   <div id="page-discounts" class="page">
     <div class="card">
       <div class="card-head">
@@ -410,7 +410,6 @@
     </div>
   </div>
 
-  <!-- PAYMENTS -->
   <div id="page-payments" class="page">
     <div class="card">
       <div class="card-head"><span class="card-title">Due Payments</span></div>
@@ -418,7 +417,6 @@
     </div>
   </div>
 
-  <!-- SETTINGS — synced to server via User profile endpoint -->
   <div id="page-settings" class="page">
     <div class="settings-card">
       <h3>💳 UPI Payment Settings</h3>
@@ -437,7 +435,6 @@
 
 </main>
 
-<!-- ═══════ ADD MEMBER MODAL ═══════ -->
 <div class="modal" id="addMemberModal">
   <div class="mbox">
     <div class="mhdr"><span class="mtitle">Add New Member</span><button class="mclose" onclick="closeModal('addMemberModal')">✕</button></div>
@@ -450,7 +447,7 @@
           <button type="button" class="btn btn-ghost btn-sm" id="uploadBtn">📁 Upload</button>
           <button type="button" class="btn btn-danger btn-sm" id="clearPhotoBtn" style="display:none">🗑</button>
         </div>
-        <input type="file" id="photoFile" accept="image/*" style="display:none">
+        <input type="file" id="photoFile" accept="image/*" capture="environment" style="display:none">
         <input type="hidden" id="photoData">
       </div>
       <div class="form-sep">👤 Basic Info</div>
@@ -511,10 +508,11 @@
         </div>
       </div>
       <div class="form-grid">
-        <div class="form-group"><label>Expiry Date *</label><input type="date" id="mExpiry" required></div>
-        <div class="form-group"><label>Status</label>
-          <select id="mStatus"><option value="Active">Active</option><option value="Trial">Trial</option><option value="Inactive">Inactive</option></select>
-        </div>
+        <div class="form-group"><label>Start Date *</label><input type="date" id="mStart" required onchange="onPlanChange()"></div>
+        <div class="form-group"><label>Expiry Date *</label><input type="date" id="mExpiry" required readonly style="background: var(--bg);"></div>
+      </div>
+      <div class="form-group"><label>Status</label>
+        <select id="mStatus"><option value="Active">Active</option><option value="Trial">Trial</option><option value="Inactive">Inactive</option></select>
       </div>
       <div class="form-sep">🆘 Emergency Contact</div>
       <div class="form-grid">
@@ -534,7 +532,6 @@
   </div>
 </div>
 
-<!-- ═══════ EDIT MEMBER MODAL ═══════ -->
 <div class="modal" id="editMemberModal">
   <div class="mbox">
     <div class="mhdr"><span class="mtitle">✏️ Edit Member</span><button class="mclose" onclick="closeModal('editMemberModal')">✕</button></div>
@@ -624,7 +621,6 @@
   </div>
 </div>
 
-<!-- ═══════ EDIT PLAN MODAL ═══════ -->
 <div class="modal" id="editPlanModal">
   <div class="mbox" style="max-width:360px">
     <div class="mhdr"><span class="mtitle">✏️ Edit Plan</span><button class="mclose" onclick="closeModal('editPlanModal')">✕</button></div>
@@ -639,7 +635,6 @@
   </div>
 </div>
 
-<!-- CAMERA -->
 <div class="modal" id="cameraModal">
   <div class="mbox" style="max-width:380px;text-align:center">
     <div class="mhdr"><span class="mtitle">Take Photo</span><button type="button" class="mclose" id="closeCamBtn">✕</button></div>
@@ -649,7 +644,6 @@
   </div>
 </div>
 
-<!-- ADD TRAINER -->
 <div class="modal" id="addTrainerModal">
   <div class="mbox" style="max-width:380px">
     <div class="mhdr"><span class="mtitle">Add Trainer</span><button class="mclose" onclick="closeModal('addTrainerModal')">✕</button></div>
@@ -666,7 +660,6 @@
   </div>
 </div>
 
-<!-- ADD PLAN -->
 <div class="modal" id="addPlanModal">
   <div class="mbox" style="max-width:360px">
     <div class="mhdr"><span class="mtitle">Add Plan</span><button class="mclose" onclick="closeModal('addPlanModal')">✕</button></div>
@@ -680,7 +673,6 @@
   </div>
 </div>
 
-<!-- ADD DISCOUNT -->
 <div class="modal" id="addDiscountModal">
   <div class="mbox" style="max-width:390px">
     <div class="mhdr"><span class="mtitle">Add Discount</span><button class="mclose" onclick="closeModal('addDiscountModal')">✕</button></div>
@@ -697,7 +689,6 @@
   </div>
 </div>
 
-<!-- PAYMENT -->
 <div class="modal" id="paymentModal">
   <div class="mbox" style="max-width:390px">
     <div class="mhdr"><span class="mtitle">💳 Payment</span><button class="mclose" onclick="closeModal('paymentModal')">✕</button></div>
@@ -716,964 +707,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script>
-/* ── Scroll-wheel fix ── */
-document.addEventListener('wheel', () => {
-  if (document.activeElement && ['number','text'].includes(document.activeElement.type))
-    document.activeElement.blur();
-}, { passive: true });
-
-/* ── CONFIG ── */
-const BASE = 'https://gym-pro-mvyv.onrender.com/api';
-const API  = `${BASE}/members`;
-const TAPI = `${BASE}/trainers`;
-// Settings & Plans are saved to a dedicated endpoint on the backend
-// We use /api/auth/me to GET and /api/auth/profile to PATCH user profile
-// which includes a 'gymData' field that stores settings + plans as JSON
-const PROFILE_API = `${BASE}/auth/profile`;
-
-const DEFAULT_PLANS = [
-  {name:'1 Month Strength',price:1000,months:1},
-  {name:'1 Month Strength + Cardio',price:1500,months:1},
-  {name:'3 Months Strength',price:2700,months:3},
-  {name:'3 Months Strength + Cardio',price:4000,months:3},
-  {name:'6 Months Strength',price:5000,months:6},
-  {name:'6 Months Strength + Cardio',price:7500,months:6},
-  {name:'1 Year Strength',price:9000,months:12},
-  {name:'1 Year Strength + Cardio',price:14000,months:12}
-];
-
-/* ── In-memory state (loaded from server on login) ── */
-let gymPlans   = [...DEFAULT_PLANS];
-let gymDisc    = [];
-let gymCfg     = {}; // { upiId, upiName, admissionFee, ptFee }
-let trainerMap = {}; // id -> name
-
-let curPayMember = null;
-let curStream    = null;
-
-/* ── AUTH HELPERS ── */
-const hdrs = () => ({ 'Content-Type':'application/json', 'Authorization':`Bearer ${localStorage.getItem('token')}` });
-const checkAuth = () => { if (!localStorage.getItem('token')) { location.href='/login.html'; return false; } return true; };
-function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); location.href='/login.html'; }
-
-/* ── PLAN/SETTINGS PERSISTENCE ── 
-   We store gymPlans, gymCfg, gymDisc inside the User document on the server
-   via a PATCH to /api/auth/profile so they sync across all devices.
-   Falls back to localStorage if the endpoint doesn't exist yet.
-── */
-async function loadServerProfile() {
-  try {
-    const res = await fetch(`${BASE}/auth/me`, { headers: hdrs() });
-    if (!res.ok) return;
-    const user = await res.json();
-    if (user.gymData) {
-      const d = typeof user.gymData === 'string' ? JSON.parse(user.gymData) : user.gymData;
-      if (d.plans && d.plans.length) gymPlans = d.plans;
-      if (d.cfg)  gymCfg  = d.cfg;
-      if (d.disc) gymDisc = d.disc;
-    }
-    // also cache locally for offline fallback
-    localStorage.setItem('gymProfile_cache', JSON.stringify({ plans: gymPlans, cfg: gymCfg, disc: gymDisc }));
-  } catch(e) {
-    // fallback to local cache
-    const cached = localStorage.getItem('gymProfile_cache');
-    if (cached) {
-      try {
-        const d = JSON.parse(cached);
-        if (d.plans && d.plans.length) gymPlans = d.plans;
-        if (d.cfg)  gymCfg  = d.cfg;
-        if (d.disc) gymDisc = d.disc;
-      } catch(_) {}
-    }
-  }
-}
-
-async function saveServerProfile() {
-  const body = { gymData: JSON.stringify({ plans: gymPlans, cfg: gymCfg, disc: gymDisc }) };
-  try {
-    const res = await fetch(PROFILE_API, { method:'PATCH', headers: hdrs(), body: JSON.stringify(body) });
-    if (!res.ok) throw new Error('save failed');
-    // update local cache
-    localStorage.setItem('gymProfile_cache', JSON.stringify({ plans: gymPlans, cfg: gymCfg, disc: gymDisc }));
-  } catch(e) {
-    // silently save to localStorage as backup
-    localStorage.setItem('gymProfile_cache', JSON.stringify({ plans: gymPlans, cfg: gymCfg, disc: gymDisc }));
-    console.warn('Profile save fell back to localStorage:', e.message);
-  }
-}
-
-/* ── PLAN HELPERS ── */
-const getPlanPrice  = n => (gymPlans.find(p=>p.name===n)||{}).price  || 0;
-const getPlanMonths = n => (gymPlans.find(p=>p.name===n)||{}).months || 1;
-
-/* ── TOAST ── */
-function toast(msg, type='') {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.className = `toast show ${type}`;
-  setTimeout(() => { el.className = 'toast'; }, 3200);
-}
-
-/* ── HELPERS ── */
-const esc  = s => String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmt  = d => d ? new Date(d).toLocaleDateString('en-IN') : '—';
-const avClr = n => ['#5B4CFF','#0EA669','#E53E3E','#D97706','#0369A1','#7C3AED'][(n.charCodeAt(0)||0)%6];
-
-function av(name) {
-  const i = (name||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
-  return `<div class="av" style="background:${avClr(name)}">${esc(i)}</div>`;
-}
-function avImg(m) {
-  if (m.photo?.startsWith('data:image')) return `<img src="${m.photo}" alt="${esc(m.name)}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0">`;
-  return av(m.name);
-}
-function badge(status) {
-  const m = {Active:'b-active',Trial:'b-trial',Inactive:'b-inactive',Expired:'b-expired'};
-  return `<span class="badge ${m[status]||'b-inactive'}">${esc(status)}</span>`;
-}
-function gBadge(g) {
-  if (!g) return '<span style="font-size:.72rem;color:var(--tx3)">—</span>';
-  const m = {Male:'b-male',Female:'b-female',Other:'b-other'};
-  return `<span class="badge ${m[g]||'b-other'}">${esc(g)}</span>`;
-}
-function expCell(expiryDate, status) {
-  if (status !== 'Active' && status !== 'Trial') return `<span class="exp-txt g">${fmt(expiryDate)}</span>`;
-  const days = Math.ceil((new Date(expiryDate) - new Date()) / 86400000);
-  if (days <= 3) return `<div class="exp-cell"><div class="exp-dot r"></div><div><div class="exp-txt r">${fmt(expiryDate)}</div><div class="exp-txt r">${days<0?'Expired':days+'d left'}</div></div></div>`;
-  if (days <= 5) return `<div class="exp-cell"><div class="exp-dot y"></div><div><div class="exp-txt y">${fmt(expiryDate)}</div><div class="exp-txt y">${days}d left</div></div></div>`;
-  return `<div class="exp-cell"><div class="exp-dot g"></div><span class="exp-txt g">${fmt(expiryDate)}</span></div>`;
-}
-
-/* Sort members: Active/Trial soonest expiry first, then others */
-function sortByExpiry(members) {
-  return [...members].sort((a,b) => {
-    const aA = a.status==='Active'||a.status==='Trial';
-    const bA = b.status==='Active'||b.status==='Trial';
-    if (aA && !bA) return -1;
-    if (!aA && bA) return 1;
-    return new Date(a.expiryDate) - new Date(b.expiryDate);
-  });
-}
-
-/* ── SIDEBAR / NAV ── */
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('show'); }
-function closeSidebar()  { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
-function updateBNav(id) {
-  document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
-  if (id !== 'none') document.getElementById(`bn-${id}`)?.classList.add('active');
-}
-function showPage(page, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(l => l.classList.remove('active'));
-  document.getElementById(`page-${page}`).classList.add('active');
-  if (btn) btn.classList.add('active');
-  const titles = {dashboard:'Dashboard',members:'Members',attendance:'Attendance',trainers:'Trainers',plans:'Plans',discounts:'Discounts',payments:'Payments',settings:'Settings'};
-  document.getElementById('pageTitle').textContent = titles[page] || page;
-  closeSidebar();
-  const loaders = {dashboard:loadDashboard,members:loadAllMembers,attendance:loadAttendance,trainers:loadTrainers,plans:loadPlans,discounts:renderDiscounts,payments:loadPayments,settings:loadSettings};
-  if (loaders[page]) loaders[page]();
-}
-
-/* ── MODALS ── */
-const openModal  = id => document.getElementById(id).classList.add('open');
-const closeModal = id => document.getElementById(id).classList.remove('open');
-document.addEventListener('click', e => {
-  if (e.target.classList.contains('modal')) {
-    closeModal(e.target.id);
-    if (e.target.id === 'cameraModal' && curStream) curStream.getTracks().forEach(t => t.stop());
-  }
-});
-
-/* ── CAMERA ── */
-function setupCamera() {
-  const vid  = document.getElementById('camVideo'),
-        can  = document.getElementById('camCanvas'),
-        prev = document.getElementById('photoPreview'),
-        pd   = document.getElementById('photoData'),
-        clr  = document.getElementById('clearPhotoBtn');
-
-  document.getElementById('openCamBtn').onclick = async () => {
-    try { curStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}}); vid.srcObject = curStream; openModal('cameraModal'); }
-    catch(e) { toast('Camera unavailable — use Upload','error'); }
-  };
-  document.getElementById('captureBtn').onclick = () => {
-    can.width = vid.videoWidth; can.height = vid.videoHeight;
-    can.getContext('2d').drawImage(vid,0,0);
-    const d = can.toDataURL('image/jpeg',.75);
-    prev.src = d; pd.value = d; clr.style.display = 'inline-flex';
-    closeModal('cameraModal');
-    if (curStream) curStream.getTracks().forEach(t => t.stop());
-  };
-  document.getElementById('closeCamBtn').onclick = () => {
-    closeModal('cameraModal');
-    if (curStream) curStream.getTracks().forEach(t => t.stop());
-  };
-  document.getElementById('uploadBtn').onclick = () => document.getElementById('photoFile').click();
-  document.getElementById('photoFile').onchange = e => {
-    const f = e.target.files[0]; if (!f) return;
-    const r = new FileReader();
-    r.onload = ev => { prev.src = ev.target.result; pd.value = ev.target.result; clr.style.display = 'inline-flex'; };
-    r.readAsDataURL(f);
-  };
-  clr.onclick = resetPhoto;
-}
-
-function resetPhoto() {
-  document.getElementById('photoPreview').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%235B4CFF33'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
-  document.getElementById('photoData').value = '';
-  document.getElementById('clearPhotoBtn').style.display = 'none';
-  document.getElementById('photoFile').value = '';
-}
-
-/* ── PLAN SELECT POPULATE ── */
-function populatePlanSelect(selId='mPlan') {
-  const sel = document.getElementById(selId);
-  if (!sel) return;
-  const cur = sel.value;
-  sel.innerHTML = gymPlans.map(p => `<option value="${esc(p.name)}" data-price="${p.price}" data-months="${p.months}">${esc(p.name)} — ₹${p.price.toLocaleString('en-IN')}</option>`).join('');
-  if (cur) sel.value = cur;
-  const dp = document.getElementById('discPlan');
-  if (dp) dp.innerHTML = gymPlans.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
-  if (selId==='mPlan') recalcPrice();
-  if (selId==='ePlan') recalcEditPrice();
-}
-
-function togglePT(detailId) {
-  const chk = detailId === 'mPtDetails' ? document.getElementById('mPtEnabled') : document.getElementById('ePtEnabled');
-  document.getElementById(detailId).style.display = chk.checked ? 'block' : 'none';
-}
-
-/* ── PRICE RECALC (Add form) ── */
-function recalcPrice() {
-  const sel = document.getElementById('mPlan');
-  if (!sel || !sel.options[sel.selectedIndex]) return;
-  const orig  = parseInt(sel.options[sel.selectedIndex].getAttribute('data-price')) || 0;
-  const dType = document.querySelector('input[name="dType"]:checked')?.value || 'none';
-  const raw   = (document.getElementById('dValue')?.value || '').replace(/,/g,'').trim();
-  const dVal  = raw==='' ? 0 : (parseFloat(raw)||0);
-  let final = orig;
-  if (dType==='percentage' && dVal>0) final = Math.round(orig - orig*Math.min(dVal,100)/100);
-  else if (dType==='fixed' && dVal>0)  final = Math.max(0, Math.round(orig-dVal));
-  document.getElementById('origPrice').textContent  = `₹${orig.toLocaleString('en-IN')}`;
-  document.getElementById('finalPrice').textContent = `₹${final.toLocaleString('en-IN')}`;
-}
-
-/* ── PRICE RECALC (Edit form) ── */
-function recalcEditPrice() {
-  const sel = document.getElementById('ePlan');
-  if (!sel || !sel.options[sel.selectedIndex]) return;
-  const orig  = parseInt(sel.options[sel.selectedIndex].getAttribute('data-price')) || 0;
-  const dType = document.querySelector('input[name="edType"]:checked')?.value || 'none';
-  const raw   = (document.getElementById('edValue')?.value || '').replace(/,/g,'').trim();
-  const dVal  = raw==='' ? 0 : (parseFloat(raw)||0);
-  let final = orig;
-  if (dType==='percentage' && dVal>0) final = Math.round(orig - orig*Math.min(dVal,100)/100);
-  else if (dType==='fixed' && dVal>0)  final = Math.max(0, Math.round(orig-dVal));
-  document.getElementById('eOrigPrice').textContent  = `₹${orig.toLocaleString('en-IN')}`;
-  document.getElementById('eFinalPrice').textContent = `₹${final.toLocaleString('en-IN')}`;
-}
-
-function onPlanChange() {
-  const sel = document.getElementById('mPlan');
-  if (!sel || !sel.options[sel.selectedIndex]) return;
-  const months = parseInt(sel.options[sel.selectedIndex].getAttribute('data-months'))||1;
-  const exp = new Date(); exp.setMonth(exp.getMonth()+months);
-  document.getElementById('mExpiry').value = exp.toISOString().split('T')[0];
-  recalcPrice();
-}
-
-/* ── HEALTH CONDITIONS ── */
-function addCondition(containerId) {
-  const c = document.getElementById(containerId);
-  const row = document.createElement('div');
-  row.className = 'cond-row';
-  row.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;align-items:center';
-  row.innerHTML = `
-    <select class="cType" style="flex:1;min-width:120px;background:var(--card);border:1.5px solid var(--border2);border-radius:var(--r3);color:var(--tx);font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;padding:8px 10px;min-height:38px">
-      <option value="">Condition</option><option>Diabetes</option><option>Asthma</option><option>High Blood Pressure</option><option>Heart Condition</option><option>Knee Injury</option><option>Other</option>
-    </select>
-    <select class="cSev" style="flex:1;min-width:90px;background:var(--card);border:1.5px solid var(--border2);border-radius:var(--r3);color:var(--tx);font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;padding:8px 10px;min-height:38px">
-      <option>Mild</option><option>Moderate</option><option>Severe</option>
-    </select>
-    <input type="text" class="cNote" placeholder="Notes" style="flex:2;min-width:100px;background:var(--card);border:1.5px solid var(--border2);border-radius:var(--r3);color:var(--tx);font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;padding:8px 10px;min-height:38px">
-    <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>`;
-  c.appendChild(row);
-}
-
-/* ── DASHBOARD ── */
-async function loadDashboard() {
-  try {
-    const res = await fetch(API, {headers:hdrs()});
-    if (res.status===401) { logout(); return; }
-    const members = await res.json();
-    const sorted  = sortByExpiry(members);
-
-    document.getElementById('statTotal').textContent  = members.length;
-    document.getElementById('statActive').textContent = members.filter(m=>m.status==='Active').length;
-
-    let monthly=0, admission=0, pt=0;
-    members.forEach(m => {
-      monthly   += (m.planPrice > 0 ? m.planPrice : getPlanPrice(m.plan));
-      if (!m.admissionWaived) admission += (m.admissionFee||0);
-      if (m.ptEnabled)        pt        += (m.ptFee||0);
-    });
-    const total = monthly + admission + pt;
-    const fmtR  = v => v>=1000 ? `₹${(v/1000).toFixed(1)}k` : `₹${v}`;
-    document.getElementById('statRev').textContent = fmtR(Math.round(total));
-    document.getElementById('revM').textContent   = `₹${Math.round(monthly).toLocaleString('en-IN')}`;
-    document.getElementById('revA').textContent   = `₹${Math.round(admission).toLocaleString('en-IN')}`;
-    document.getElementById('revPT').textContent  = `₹${Math.round(pt).toLocaleString('en-IN')}`;
-
-    const due = members.filter(m => m.status==='Active' && new Date(m.expiryDate)<=new Date(Date.now()+7*86400000));
-    const banner = document.getElementById('alertBanner');
-    if (!due.length) {
-      banner.className = 'banner green';
-      banner.innerHTML = '<div class="banner-text"><h3>✅ All Good!</h3><p>No payments due this week</p></div>';
-    } else {
-      banner.className = 'banner amber';
-      banner.innerHTML = `<div class="banner-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due</h3><p>Expiring within 7 days</p></div>
-        <button class="btn btn-ghost btn-sm" onclick="showPage('payments',document.querySelector('[data-page=payments]'));updateBNav('none')">View →</button>`;
-    }
-
-    const tbody = document.getElementById('dashBody');
-    if (!members.length) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="ei">👥</div><p>No members yet — add your first!</p></div></td></tr>'; return; }
-    tbody.innerHTML = sorted.slice(0,8).map(m => `<tr>
-      <td><div style="display:flex;align-items:center;gap:8px">${avImg(m)}<div><div style="font-weight:700;font-size:.82rem">${esc(m.name)}</div><div style="font-size:.7rem;color:var(--tx3)">${esc(m.phone)}</div></div></div></td>
-      <td style="font-size:.75rem;color:var(--tx2)">${esc(m.plan)}</td>
-      <td>${gBadge(m.gender)}</td>
-      <td>${expCell(m.expiryDate,m.status)}</td>
-      <td>${badge(m.status)}</td>
-    </tr>`).join('');
-  } catch(e) { toast('Error loading dashboard','error'); }
-}
-
-/* ── ALL MEMBERS ── */
-async function loadAllMembers() {
-  const tbody = document.getElementById('membersBody');
-  try {
-    const res = await fetch(API, {headers:hdrs()});
-    if (res.status===401) { logout(); return; }
-    const members = await res.json();
-    if (!members.length) { tbody.innerHTML='<tr><td colspan="8"><div class="empty"><div class="ei">👥</div><p>No members yet</p></div></td></tr>'; return; }
-    const sorted = sortByExpiry(members);
-    tbody.innerHTML = sorted.map(m => {
-      const tName = m.ptEnabled && m.ptTrainer ? (trainerMap[m.ptTrainer] || '—') : '—';
-      return `<tr>
-        <td><div style="display:flex;align-items:center;gap:7px">${avImg(m)}<div><div style="font-weight:700;font-size:.82rem">${esc(m.name)}</div><div style="font-size:.68rem;color:var(--tx3)">${esc(m.email||'')}</div></div></div></td>
-        <td style="font-size:.8rem">${esc(m.phone)}</td>
-        <td>${gBadge(m.gender)}</td>
-        <td style="font-size:.75rem;color:var(--tx2)">${esc(m.plan)}</td>
-        <td>${expCell(m.expiryDate,m.status)}</td>
-        <td style="font-size:.75rem">${m.ptEnabled?`<span class="badge b-active">PT</span><br><span style="font-size:.68rem;color:var(--tx2)">${esc(tName)}</span>`:'<span style="color:var(--tx3)">—</span>'}</td>
-        <td>${badge(m.status)}</td>
-        <td><div style="display:flex;gap:4px;flex-wrap:wrap">
-          <button class="btn btn-edit btn-sm" onclick="openEditMember('${esc(m._id)}')">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="delMember('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\'"))}')">🗑</button>
-        </div></td>
-      </tr>`;
-    }).join('');
-  } catch(e) { tbody.innerHTML='<tr><td colspan="8"><div class="empty"><p style="color:var(--gr)">Error loading</p></div></td></tr>'; }
-}
-
-async function delMember(id, name) {
-  if (!confirm(`Delete "${name}"? Cannot undo.`)) return;
-  try {
-    const res = await fetch(`${API}/${id}`, {method:'DELETE',headers:hdrs()});
-    if (res.ok) { toast(`${name} deleted`,'success'); loadAllMembers(); loadDashboard(); }
-    else toast('Error deleting','error');
-  } catch(e) { toast('Network error','error'); }
-}
-
-async function confirmDeleteAll() {
-  const v = prompt('Type DELETE ALL to confirm removing every member:');
-  if (v !== 'DELETE ALL') return;
-  try {
-    const members = await fetch(API,{headers:hdrs()}).then(r=>r.json());
-    for (const m of members) await fetch(`${API}/${m._id}`,{method:'DELETE',headers:hdrs()});
-    toast('All members deleted'); loadAllMembers(); loadDashboard();
-  } catch(e) { toast('Error','error'); }
-}
-
-/* ── OPEN EDIT MEMBER ── */
-async function openEditMember(id) {
-  try {
-    // Fetch the single member — try individual GET first, fallback to list
-    let member;
-    try {
-      const r = await fetch(`${API}/${id}`, {headers:hdrs()});
-      if (r.ok) member = await r.json();
-    } catch(_) {}
-    if (!member) {
-      const all = await fetch(API,{headers:hdrs()}).then(r=>r.json());
-      member = all.find(m=>m._id===id);
-    }
-    if (!member) { toast('Member not found','error'); return; }
-
-    // Basic info
-    document.getElementById('editMemberId').value = id;
-    document.getElementById('eName').value   = member.name   || '';
-    document.getElementById('ePhone').value  = member.phone  || '';
-    document.getElementById('eEmail').value  = member.email  || '';
-    document.getElementById('eAge').value    = member.age    || '';
-    document.getElementById('eGender').value = member.gender || '';
-    document.getElementById('eStatus').value = member.status || 'Active';
-
-    // Plan
-    populatePlanSelect('ePlan');
-    document.getElementById('ePlan').value   = member.plan || '';
-    recalcEditPrice();
-
-    // Discount
-    const dType = member.discountType || 'none';
-    document.querySelectorAll('input[name="edType"]').forEach(r => r.checked = r.value===dType);
-    document.getElementById('edValue').value  = member.discountValue  || '';
-    document.getElementById('edReason').value = member.discountReason || '';
-    recalcEditPrice();
-
-    // Expiry
-    document.getElementById('eExpiry').value = member.expiryDate ? member.expiryDate.split('T')[0] : '';
-
-    // Admission
-    document.getElementById('eAdmFee').value  = member.admissionFee || '';
-    document.getElementById('eWaive').value   = member.admissionWaived ? 'yes' : 'no';
-
-    // PT
-    const ptEn = !!member.ptEnabled;
-    document.getElementById('ePtEnabled').checked      = ptEn;
-    document.getElementById('ePtDetails').style.display = ptEn ? 'block' : 'none';
-    document.getElementById('ePtFee').value  = member.ptFee   || '';
-    document.getElementById('ePtNotes').value= member.ptNotes || '';
-
-    // Populate trainer dropdown
-    const ePtSel = document.getElementById('ePtTrainer');
-    ePtSel.innerHTML = '<option value="">Select Trainer</option>' +
-      Object.entries(trainerMap).map(([tid,tname]) => `<option value="${esc(tid)}">${esc(tname)}</option>`).join('');
-    ePtSel.value = member.ptTrainer || '';
-
-    // Emergency contact
-    document.getElementById('eEcName').value = member.emergencyContact?.name         || '';
-    document.getElementById('eEcPhone').value= member.emergencyContact?.phone        || '';
-    document.getElementById('eEcRel').value  = member.emergencyContact?.relationship || '';
-
-    // Medical notes
-    document.getElementById('eNotes').value = member.medicalNotes || '';
-
-    openModal('editMemberModal');
-  } catch(e) { toast('Error loading member','error'); console.error(e); }
-}
-
-/* ── EDIT MEMBER SUBMIT ── */
-document.getElementById('editMemberForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const id    = document.getElementById('editMemberId').value;
-  const phone = document.getElementById('ePhone').value.trim();
-  if (!/^\d{10}$/.test(phone)) { toast('Enter valid 10-digit phone','error'); return; }
-  const gender = document.getElementById('eGender').value;
-  if (!gender) { toast('Select gender','error'); return; }
-
-  const sel       = document.getElementById('ePlan');
-  const origPrice = parseInt(sel.options[sel.selectedIndex]?.getAttribute('data-price')) || getPlanPrice(sel.value);
-  const dType     = document.querySelector('input[name="edType"]:checked')?.value || 'none';
-  const rawDVal   = (document.getElementById('edValue').value||'').replace(/,/g,'').trim();
-  const dVal      = rawDVal==='' ? 0 : (parseFloat(rawDVal)||0);
-  let finalPrice  = origPrice;
-  if (dType==='percentage' && dVal>0) finalPrice = Math.round(origPrice - origPrice*Math.min(dVal,100)/100);
-  else if (dType==='fixed' && dVal>0)  finalPrice = Math.max(0, Math.round(origPrice-dVal));
-
-  const rawAdm  = (document.getElementById('eAdmFee').value||'').replace(/,/g,'').trim();
-  const admFee  = rawAdm!=='' ? (parseFloat(rawAdm)||0) : 0;
-  const admWaived = document.getElementById('eWaive').value==='yes';
-  const ptEnabled = document.getElementById('ePtEnabled').checked;
-  const rawPt   = (document.getElementById('ePtFee').value||'').replace(/,/g,'').trim();
-  const ptFee   = rawPt!=='' ? (parseFloat(rawPt)||0) : 0;
-
-  const data = {
-    name:    document.getElementById('eName').value.trim(),
-    phone,
-    email:   document.getElementById('eEmail').value.trim(),
-    age:     document.getElementById('eAge').value !== '' ? parseInt(document.getElementById('eAge').value,10) : null,
-    gender,
-    plan:    sel.value,
-    planPrice:       finalPrice,
-    discountType:    dType,
-    discountValue:   dVal,
-    discountReason:  document.getElementById('edReason').value.trim(),
-    admissionFee:    admFee,
-    admissionWaived: admWaived,
-    ptEnabled,
-    ptFee:     ptEnabled ? ptFee : 0,
-    ptTrainer: ptEnabled ? document.getElementById('ePtTrainer').value : '',
-    ptNotes:   ptEnabled ? document.getElementById('ePtNotes').value.trim() : '',
-    expiryDate: document.getElementById('eExpiry').value,
-    status:    document.getElementById('eStatus').value,
-    emergencyContact: {
-      name:         document.getElementById('eEcName').value.trim(),
-      phone:        document.getElementById('eEcPhone').value.trim(),
-      relationship: document.getElementById('eEcRel').value.trim()
-    },
-    medicalNotes: document.getElementById('eNotes').value.trim()
-  };
-
-  if (!data.name)       { toast('Name is required','error'); return; }
-  if (!data.expiryDate) { toast('Expiry date is required','error'); return; }
-
-  const btn = e.submitter; btn.disabled=true; btn.textContent='Saving…';
-  try {
-    const res = await fetch(`${API}/${id}`, {method:'PUT', headers:hdrs(), body:JSON.stringify(data)});
-    if (res.ok) {
-      closeModal('editMemberModal');
-      toast(`${data.name} updated!`,'success');
-      loadAllMembers(); loadDashboard();
-    } else {
-      const err = await res.json(); toast(err.error||'Could not update','error');
-    }
-  } catch(err) { toast('Network error','error'); }
-  btn.disabled=false; btn.textContent='Save Changes';
-});
-
-/* ── ATTENDANCE ── */
-function attKey(date) {
-  try { const u=JSON.parse(localStorage.getItem('user')||'{}'); return `att_${u._id||u.email||'x'}_${date}`; }
-  catch(e) { return `att_${date}`; }
-}
-
-async function loadAttendance() {
-  const dateEl = document.getElementById('attDate');
-  const date   = dateEl.value || new Date().toISOString().split('T')[0];
-  dateEl.value = date;
-  const tbody  = document.getElementById('attBody');
-  try {
-    const res = await fetch(API, {headers:hdrs()});
-    if (res.status===401) { logout(); return; }
-    const members = await res.json();
-    const active  = members.filter(m => m.status==='Active'||m.status==='Trial');
-    let saved = {};
-    try { saved = JSON.parse(localStorage.getItem(attKey(date))||'{}'); } catch(e) {}
-    const pCount = Object.values(saved).filter(s=>s==='Present').length;
-    document.getElementById('attTotal').textContent   = active.length;
-    document.getElementById('attPresent').textContent = pCount;
-    document.getElementById('attPct').textContent     = active.length ? `${Math.min(100,Math.round(pCount/active.length*100))}%` : '0%';
-    if (!active.length) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p>No active members</p></div></td></tr>'; return; }
-    tbody.innerHTML = active.map(m => {
-      const st = saved[m._id] || 'Absent';
-      return `<tr>
-        <td><div style="display:flex;align-items:center;gap:7px">${avImg(m)}<span style="font-weight:700;font-size:.82rem">${esc(m.name)}</span></div></td>
-        <td style="font-size:.75rem;color:var(--tx2)">${esc(m.plan)}</td>
-        <td style="font-size:.78rem">${esc(m.phone)}</td>
-        <td><span id="ab-${m._id}" class="badge ${st==='Present'?'b-present':'b-absent'}">${st}</span></td>
-        <td style="white-space:nowrap">
-          <button class="att-btn-p" onclick="markAtt('${m._id}','${date}','Present')">✓ P</button>
-          <button class="att-btn-a" onclick="markAtt('${m._id}','${date}','Absent')">✗ A</button>
-        </td>
-      </tr>`;
-    }).join('');
-  } catch(e) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--gr)">Error</p></div></td></tr>'; }
-}
-
-function markAtt(memberId, date, status) {
-  let saved = {};
-  try { saved = JSON.parse(localStorage.getItem(attKey(date))||'{}'); } catch(e) {}
-  saved[memberId] = status;
-  localStorage.setItem(attKey(date), JSON.stringify(saved));
-  const b = document.getElementById(`ab-${memberId}`);
-  if (b) { b.textContent=status; b.className=`badge ${status==='Present'?'b-present':'b-absent'}`; }
-  const total   = parseInt(document.getElementById('attTotal').textContent)||0;
-  const present = Object.values(saved).filter(s=>s==='Present').length;
-  document.getElementById('attPresent').textContent = present;
-  document.getElementById('attPct').textContent = total ? `${Math.min(100,Math.round(present/total*100))}%` : '0%';
-}
-
-async function markAllPresent() {
-  const date = document.getElementById('attDate').value || new Date().toISOString().split('T')[0];
-  if (!confirm(`Mark ALL active members Present for ${new Date(date).toLocaleDateString('en-IN')}?`)) return;
-  try {
-    const members = await fetch(API,{headers:hdrs()}).then(r=>r.json());
-    const active  = members.filter(m=>m.status==='Active'||m.status==='Trial');
-    let saved = {};
-    try { saved=JSON.parse(localStorage.getItem(attKey(date))||'{}'); } catch(e){}
-    active.forEach(m=>{saved[m._id]='Present';});
-    localStorage.setItem(attKey(date),JSON.stringify(saved));
-    toast(`${active.length} members marked Present`,'success'); loadAttendance();
-  } catch(e) { toast('Error','error'); }
-}
-
-/* ── TRAINERS ── */
-async function loadTrainers() {
-  const tbody = document.getElementById('trainersBody');
-  try {
-    const res = await fetch(TAPI,{headers:hdrs()});
-    if (res.status===401){logout();return;}
-    const trainers = await res.json();
-    trainerMap = {};
-    trainers.forEach(t => { trainerMap[t._id] = t.name; });
-    if (!trainers.length) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="ei">💪</div><p>No trainers yet</p></div></td></tr>'; return; }
-    tbody.innerHTML = trainers.map(t=>`<tr>
-      <td><div style="display:flex;align-items:center;gap:7px">${av(t.name)}<span style="font-weight:700;font-size:.82rem">${esc(t.name)}</span></div></td>
-      <td style="font-size:.78rem;color:var(--tx2)">${esc(t.specialty)}</td>
-      <td style="font-size:.78rem">${esc(t.phone)}</td>
-      <td>${badge(t.status)}</td>
-      <td>
-        <button class="btn btn-ghost btn-sm" onclick="editTrainer('${esc(t._id)}')">Edit</button>
-        <button class="btn btn-danger btn-sm" onclick="delTrainer('${esc(t._id)}','${esc(t.name.replace(/'/g,"\\'"))}')">Del</button>
-      </td>
-    </tr>`).join('');
-    const opts = '<option value="">Select Trainer</option>'+
-      trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
-    document.getElementById('mPtTrainer').innerHTML = opts;
-    document.getElementById('ePtTrainer').innerHTML = opts;
-  } catch(e) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--gr)">Error loading</p></div></td></tr>'; }
-}
-
-async function editTrainer(id) {
-  try {
-    const t  = await fetch(`${TAPI}/${id}`,{headers:hdrs()}).then(r=>r.json());
-    const n  = prompt('Name:',t.name);     if(!n) return;
-    const p  = prompt('Phone:',t.phone);   if(!p) return;
-    const s  = prompt('Specialty:',t.specialty); if(!s) return;
-    const st = prompt('Status (Active/Inactive):',t.status);
-    if(!['Active','Inactive'].includes(st)){toast('Invalid status','error');return;}
-    const res=await fetch(`${TAPI}/${id}`,{method:'PUT',headers:hdrs(),body:JSON.stringify({name:n.trim(),phone:p.trim(),specialty:s.trim(),status:st})});
-    if(res.ok){toast('Trainer updated','success');loadTrainers();}else toast('Update failed','error');
-  }catch(e){toast('Error','error');}
-}
-
-async function delTrainer(id,name) {
-  if(!confirm(`Delete trainer "${name}"?`))return;
-  try{
-    const res=await fetch(`${TAPI}/${id}`,{method:'DELETE',headers:hdrs()});
-    if(res.ok){toast('Deleted','success');loadTrainers();}else toast('Error','error');
-  }catch(e){toast('Error','error');}
-}
-
-/* ── PLANS ── */
-function loadPlans() {
-  const grid = document.getElementById('plansGrid');
-  if (!gymPlans.length) { grid.innerHTML='<div class="empty"><div class="ei">💎</div><p>No plans yet</p></div>'; return; }
-  const plans = gymPlans.map(p => {
-    let disc=p.price,discInfo=null;
-    for(const d of gymDisc){
-      if(!d.validUntil||new Date(d.validUntil)>=new Date()){
-        if(d.appliesTo==='all'||d.planName===p.name){
-          if(d.type==='percentage'){disc=p.price-p.price*d.value/100;discInfo=`${d.value}% OFF`;}
-          else{disc=Math.max(0,p.price-d.value);discInfo=`₹${d.value} OFF`;}
-          break;
-        }
-      }
-    }
-    return{...p,disc:Math.round(disc),discInfo};
-  });
-  grid.innerHTML = plans.map(p=>`
-    <div class="plan-card">
-      ${p.discInfo?`<div class="plan-disc">${p.discInfo}</div>`:''}
-      <h3>${esc(p.name)}</h3>
-      <div class="plan-dur">${p.months} month${p.months>1?'s':''}</div>
-      ${p.discInfo?`<div class="plan-orig">₹${p.price.toLocaleString('en-IN')}</div>`:''}
-      <div class="plan-price">₹${p.disc.toLocaleString('en-IN')}</div>
-      <div style="display:flex;gap:5px;margin-top:.6rem">
-        <button class="btn btn-primary btn-sm" style="flex:1" onclick="selectPlan('${esc(p.name)}')">Select</button>
-        <button class="btn btn-edit btn-sm" onclick="openEditPlan('${esc(p.name)}')">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="removePlan('${esc(p.name)}')">🗑</button>
-      </div>
-    </div>`).join('');
-}
-
-function selectPlan(name) {
-  populatePlanSelect('mPlan');
-  document.getElementById('mPlan').value = name;
-  recalcPrice(); onPlanChange();
-  openModal('addMemberModal');
-}
-
-function addGymPlan() {
-  const name   = document.getElementById('newPlanName').value.trim();
-  const price  = parseFloat(document.getElementById('newPlanPrice').value);
-  const months = parseInt(document.getElementById('newPlanMonths').value);
-  if(!name||!price||!months){toast('Fill all fields','error');return;}
-  if(gymPlans.find(p=>p.name===name)){toast('Plan already exists','error');return;}
-  gymPlans.push({name,price,months});
-  saveServerProfile();
-  closeModal('addPlanModal');
-  ['newPlanName','newPlanPrice','newPlanMonths'].forEach(id=>document.getElementById(id).value='');
-  populatePlanSelect(); loadPlans(); toast('Plan added!','success');
-}
-
-function openEditPlan(name) {
-  const plan = gymPlans.find(p=>p.name===name);
-  if (!plan) return;
-  document.getElementById('editPlanOrigName').value = name;
-  document.getElementById('editPlanName').value     = plan.name;
-  document.getElementById('editPlanPrice').value    = plan.price;
-  document.getElementById('editPlanMonths').value   = plan.months;
-  openModal('editPlanModal');
-}
-
-function saveEditPlan() {
-  const origName = document.getElementById('editPlanOrigName').value;
-  const newName  = document.getElementById('editPlanName').value.trim();
-  const price    = parseFloat(document.getElementById('editPlanPrice').value);
-  const months   = parseInt(document.getElementById('editPlanMonths').value);
-  if (!newName||!price||!months) { toast('Fill all fields','error'); return; }
-  const idx = gymPlans.findIndex(p=>p.name===origName);
-  if (idx === -1) { toast('Plan not found','error'); return; }
-  // Check name conflict (only if name changed)
-  if (newName!==origName && gymPlans.find(p=>p.name===newName)) { toast('Another plan with this name exists','error'); return; }
-  gymPlans[idx] = {name:newName, price, months};
-  saveServerProfile();
-  closeModal('editPlanModal');
-  populatePlanSelect(); loadPlans(); toast('Plan updated!','success');
-}
-
-function removePlan(name) {
-  if(!confirm(`Remove plan "${name}"?`))return;
-  gymPlans = gymPlans.filter(p=>p.name!==name);
-  saveServerProfile(); populatePlanSelect(); loadPlans(); toast('Plan removed');
-}
-
-/* ── DISCOUNTS ── */
-function renderDiscounts() {
-  const c = document.getElementById('discTable');
-  if (!gymDisc.length) { c.innerHTML='<div class="empty"><div class="ei">🏷️</div><p>No discounts yet</p></div>'; return; }
-  c.innerHTML=`<div class="tbl-wrap"><table class="disc-tbl">
-    <thead><tr><th>Name</th><th>Applies</th><th>Type</th><th>Value</th><th>Until</th><th></th></tr></thead>
-    <tbody>${gymDisc.map((d,i)=>`<tr>
-      <td><strong style="font-size:.82rem">${esc(d.name)}</strong></td>
-      <td style="font-size:.78rem">${d.appliesTo==='all'?'All':esc(d.planName)}</td>
-      <td style="font-size:.78rem">${d.type==='percentage'?'%':'₹'}</td>
-      <td style="font-size:.82rem;font-weight:700">${d.type==='percentage'?`${d.value}%`:`₹${d.value.toLocaleString('en-IN')}`}</td>
-      <td style="font-size:.75rem">${d.validUntil?fmt(d.validUntil):'—'}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="removeDiscount(${i})">Del</button></td>
-    </tr>`).join('')}</tbody></table></div>`;
-}
-
-function toggleDiscPlan() {
-  document.getElementById('discPlanGroup').style.display=document.getElementById('discApplies').value==='specific'?'block':'none';
-}
-
-function addDiscount() {
-  const name=document.getElementById('discName').value.trim();
-  const val=parseFloat(document.getElementById('discVal').value);
-  if(!name||!val||val<=0){toast('Fill all required fields','error');return;}
-  const type=document.getElementById('discType').value;
-  if(type==='percentage'&&val>100){toast('Percentage cannot exceed 100%','error');return;}
-  const appliesTo=document.getElementById('discApplies').value;
-  gymDisc.push({name,type,value:val,appliesTo,planName:appliesTo==='specific'?document.getElementById('discPlan').value:null,validUntil:document.getElementById('discExpiry').value||null});
-  saveServerProfile();
-  closeModal('addDiscountModal'); renderDiscounts(); toast('Discount added','success');
-}
-
-function removeDiscount(i) {
-  if(!confirm('Remove this discount?'))return;
-  gymDisc.splice(i,1); saveServerProfile(); renderDiscounts(); toast('Discount removed');
-}
-
-/* ── PAYMENTS ── */
-async function loadPayments() {
-  const container = document.getElementById('payList');
-  try {
-    const res = await fetch(API,{headers:hdrs()});
-    if(res.status===401){logout();return;}
-    const members = await res.json();
-    const today   = new Date();
-    const due     = members.filter(m=>m.status==='Active'&&new Date(m.expiryDate)<=new Date(today.getTime()+14*86400000));
-    due.sort((a,b)=>new Date(a.expiryDate)-new Date(b.expiryDate));
-    if(!due.length){container.innerHTML='<div class="empty"><div class="ei">✅</div><p>No payments due in 14 days!</p></div>';return;}
-    container.innerHTML=due.map(m=>{
-      const d=Math.ceil((new Date(m.expiryDate)-today)/86400000);
-      return `<div class="pay-row">
-        <div style="display:flex;align-items:center;gap:8px">${avImg(m)}<div><div style="font-weight:700;font-size:.85rem">${esc(m.name)}</div><div style="font-size:.72rem;color:var(--tx3)">${esc(m.plan)}</div><div style="font-size:.7rem;color:var(--tx3)">Exp: ${fmt(m.expiryDate)}</div></div></div>
-        <span class="badge ${d<0?'b-inactive':'b-trial'}">${d<0?'Overdue':d+'d'}</span>
-        <button class="btn btn-success btn-sm" onclick='openPaymentFor(${JSON.stringify(m).replace(/'/g,"&#39;")})'>Pay</button>
-      </div>`;
-    }).join('');
-  }catch(e){container.innerHTML='<div class="empty"><p style="color:var(--gr)">Error</p></div>';}
-}
-
-function openPaymentFor(m) {
-  const planAmt = (m.planPrice>0?m.planPrice:getPlanPrice(m.plan))||1000;
-  const admAmt  = m.admissionWaived ? 0 : (m.admissionFee||0);
-  const ptAmt   = m.ptEnabled ? (m.ptFee||0) : 0;
-  const total   = Math.round(planAmt+admAmt+ptAmt);
-  curPayMember  = {id:m._id, name:m.name, plan:m.plan};
-
-  let rows=`
-    <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:var(--tx2);font-size:.82rem">Member</span><strong style="font-size:.82rem">${esc(m.name)}</strong></div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:var(--tx2);font-size:.82rem">Plan</span><span style="font-size:.78rem;color:var(--tx2)">${esc(m.plan)}</span></div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">Plan Fee</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(planAmt).toLocaleString('en-IN')}</span></div>`;
-  if(admAmt>0) rows+=`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">🎟️ Admission</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(admAmt).toLocaleString('en-IN')}</span></div>`;
-  if(ptAmt>0)  rows+=`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">💪 PT Fee</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(ptAmt).toLocaleString('en-IN')}</span></div>`;
-  rows+=`<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1.5px solid var(--border);margin-top:6px"><span style="font-weight:800;font-size:.88rem">Total</span><strong style="color:var(--g);font-size:1.05rem">₹${total.toLocaleString('en-IN')}</strong></div>`;
-
-  document.getElementById('payInfo').innerHTML=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r3);padding:12px;margin-bottom:.6rem">${rows}</div>`;
-  const upiId=gymCfg.upiId||'your-upi@bank';
-  const upiName=gymCfg.upiName||'GymPro';
-  document.getElementById('dispUpi').textContent=upiId;
-  const upiUrl=`upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${total}&cu=INR`;
-  document.getElementById('payQR').src=`https://api.qrserver.com/v1/create-qr-code/?size=158x158&data=${encodeURIComponent(upiUrl)}`;
-  openModal('paymentModal');
-}
-
-async function confirmPayment() {
-  if(!curPayMember)return;
-  const months=getPlanMonths(curPayMember.plan);
-  const expiry=new Date(); expiry.setMonth(expiry.getMonth()+months);
-  try {
-    await fetch(`${API}/${curPayMember.id}`,{method:'PUT',headers:hdrs(),body:JSON.stringify({expiryDate:expiry.toISOString().split('T')[0],status:'Active'})}).catch(()=>{});
-  }catch(e){}
-  toast(`✅ Extended to ${expiry.toLocaleDateString('en-IN')}`,'success');
-  closeModal('paymentModal'); curPayMember=null;
-  loadDashboard(); loadPayments();
-}
-
-/* ── SETTINGS (synced to server) ── */
-function loadSettings() {
-  document.getElementById('sUpiId').value   = gymCfg.upiId    || '';
-  document.getElementById('sUpiName').value = gymCfg.upiName  || '';
-  document.getElementById('sAdmFee').value  = gymCfg.admissionFee != null ? gymCfg.admissionFee : '';
-  document.getElementById('sPtFee').value   = gymCfg.ptFee    != null ? gymCfg.ptFee    : '';
-}
-
-async function saveSettings() {
-  gymCfg.upiId        = document.getElementById('sUpiId').value.trim();
-  gymCfg.upiName      = document.getElementById('sUpiName').value.trim();
-  gymCfg.admissionFee = parseFloat(document.getElementById('sAdmFee').value)||0;
-  gymCfg.ptFee        = parseFloat(document.getElementById('sPtFee').value)||0;
-  await saveServerProfile();
-  toast('Settings saved & synced!','success');
-}
-
-/* ── ADD MEMBER SUBMIT ── */
-document.getElementById('addMemberForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const phone=document.getElementById('mPhone').value.trim();
-  if(!/^\d{10}$/.test(phone)){toast('Enter valid 10-digit phone','error');return;}
-  const gender=document.getElementById('mGender').value;
-  if(!gender){toast('Select gender','error');return;}
-
-  const sel       = document.getElementById('mPlan');
-  const origPrice = parseInt(sel.options[sel.selectedIndex].getAttribute('data-price'))||0;
-  const dType     = document.querySelector('input[name="dType"]:checked')?.value||'none';
-  const raw       = (document.getElementById('dValue').value||'').replace(/,/g,'').trim();
-  const dVal      = raw==='' ? 0 : (parseFloat(raw)||0);
-  let finalPrice  = origPrice;
-  if(dType==='percentage'&&dVal>0) finalPrice=Math.round(origPrice-origPrice*Math.min(dVal,100)/100);
-  else if(dType==='fixed'&&dVal>0) finalPrice=Math.max(0,Math.round(origPrice-dVal));
-
-  const ageRaw = document.getElementById('mAge').value.trim();
-  const age    = ageRaw!=='' ? parseInt(ageRaw,10) : null;
-  if(age!==null&&(isNaN(age)||age<5||age>120)){toast('Enter valid age (5–120)','error');return;}
-
-  const rawAdm    = (document.getElementById('mAdmFee').value||'').replace(/,/g,'').trim();
-  const admFee    = rawAdm!=='' ? (parseFloat(rawAdm)||0) : (gymCfg.admissionFee||0);
-  const admWaived = document.getElementById('mWaive').value==='yes';
-  const ptEnabled = document.getElementById('mPtEnabled').checked;
-  const rawPt     = (document.getElementById('mPtFee').value||'').replace(/,/g,'').trim();
-  const ptFee     = rawPt!=='' ? (parseFloat(rawPt)||0) : (gymCfg.ptFee||0);
-  const ptTrainer = document.getElementById('mPtTrainer').value;
-  const ptNotes   = document.getElementById('mPtNotes').value.trim();
-
-  const conditions=[];
-  document.querySelectorAll('#condContainer .cond-row').forEach(row=>{
-    const cond=row.querySelector('.cType')?.value;
-    if(cond) conditions.push({condition:cond,severity:row.querySelector('.cSev')?.value||'Mild',notes:row.querySelector('.cNote')?.value||''});
-  });
-
-  const data={
-    name:    document.getElementById('mName').value.trim(),
-    phone, email: document.getElementById('mEmail').value.trim(),
-    age, gender,
-    photo:   document.getElementById('photoData').value||'',
-    plan:    sel.value,
-    planPrice:       finalPrice,
-    discountType:    dType,
-    discountValue:   dVal,
-    discountReason:  document.getElementById('dReason').value.trim(),
-    admissionFee:    admFee,
-    admissionWaived: admWaived,
-    ptEnabled,
-    ptFee:     ptEnabled?ptFee:0,
-    ptTrainer: ptEnabled?ptTrainer:'',
-    ptNotes:   ptEnabled?ptNotes:'',
-    expiryDate: document.getElementById('mExpiry').value,
-    status:    document.getElementById('mStatus').value,
-    emergencyContact:{name:document.getElementById('mEcName').value.trim(),phone:document.getElementById('mEcPhone').value.trim(),relationship:document.getElementById('mEcRel').value.trim()},
-    healthConditions:conditions,
-    medicalNotes: document.getElementById('mNotes').value.trim()
-  };
-
-  if(!data.name){toast('Name is required','error');return;}
-  if(!data.expiryDate){toast('Expiry date is required','error');return;}
-
-  const btn=e.submitter; btn.disabled=true; btn.textContent='Adding…';
-  try{
-    const res=await fetch(API,{method:'POST',headers:hdrs(),body:JSON.stringify(data)});
-    if(res.ok){
-      const added=await res.json();
-      closeModal('addMemberModal');
-      e.target.reset();
-      document.getElementById('condContainer').innerHTML='';
-      document.getElementById('mPtEnabled').checked=false;
-      document.getElementById('mPtDetails').style.display='none';
-      resetPhoto(); recalcPrice();
-      toast(`${added.name} added!`,'success');
-      loadDashboard();
-      openPaymentFor(added);
-    }else{
-      const err=await res.json(); toast(err.error||'Could not add member','error');
-    }
-  }catch(err){toast('Network error','error');}
-  btn.disabled=false; btn.textContent='Add Member';
-});
-
-/* ── ADD TRAINER SUBMIT ── */
-document.getElementById('addTrainerForm').addEventListener('submit', async e=>{
-  e.preventDefault();
-  const phone=document.getElementById('tPhone').value.trim();
-  if(!/^\d{10}$/.test(phone)){toast('Enter valid 10-digit phone','error');return;}
-  const data={name:document.getElementById('tName').value.trim(),phone,specialty:document.getElementById('tSpecialty').value.trim(),status:document.getElementById('tStatus').value};
-  const btn=e.submitter; btn.disabled=true; btn.textContent='Adding…';
-  try{
-    const res=await fetch(TAPI,{method:'POST',headers:hdrs(),body:JSON.stringify(data)});
-    if(res.ok){closeModal('addTrainerModal');e.target.reset();toast('Trainer added!','success');loadTrainers();}
-    else{const err=await res.json();toast(err.error||'Could not add trainer','error');}
-  }catch(e){toast('Network error','error');}
-  btn.disabled=false; btn.textContent='Add Trainer';
-});
-
-/* ── INIT ── */
-window.addEventListener('DOMContentLoaded', async () => {
-  if (!checkAuth()) return;
-  setupCamera();
-
-  document.getElementById('topDate').textContent =
-    new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
-  document.getElementById('attDate').value = new Date().toISOString().split('T')[0];
-
-  // Load profile from server (plans + settings synced across devices)
-  await loadServerProfile();
-
-  // Pre-fill admission fee default
-  if (gymCfg.admissionFee) document.getElementById('mAdmFee').value = gymCfg.admissionFee;
-
-  try {
-    const u = JSON.parse(localStorage.getItem('user')||'{}');
-    if (u.name) document.getElementById('sbUser').innerHTML =
-      `<div class="u-name">👤 ${esc(u.name)}</div><div class="u-role">${u.role==='admin'?'Administrator':'Staff Member'}</div>`;
-  } catch(e){}
-
-  populatePlanSelect();
-  recalcPrice();
-  loadDashboard();
-
-  // Preload trainers for dropdowns
-  fetch(TAPI,{headers:hdrs()}).then(r=>r.json()).then(trainers=>{
-    trainerMap = {};
-    trainers.forEach(t=>{trainerMap[t._id]=t.name;});
-    const opts = '<option value="">Select Trainer</option>'+
-      trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
-    document.getElementById('mPtTrainer').innerHTML = opts;
-    document.getElementById('ePtTrainer').innerHTML = opts;
-  }).catch(()=>{});
-});
-</script>
+<script src="script.js"></script>
 </body>
 </html>
