@@ -1219,3 +1219,15 @@ window.onload = async () => {
   const dateInput = document.getElementById('attendance-date');
   if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 };
+// Register Service Worker for PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(registration => {
+        console.log('ServiceWorker registered successfully');
+      })
+      .catch(err => {
+        console.log('ServiceWorker registration failed: ', err);
+      });
+  });
+}
