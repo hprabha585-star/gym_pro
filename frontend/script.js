@@ -84,7 +84,15 @@ function toast(msg, type='') {
 }
 
 const esc  = s => String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmt  = d => d ? new Date(d).toLocaleDateString('en-IN') : '—';
+
+// TIMEZONE FIX: Strictly parses YYYY-MM-DD as local date
+const fmt = d => {
+  if(!d) return '—';
+  const p = d.split('T')[0].split('-');
+  if(p.length===3) return new Date(p[0], p[1]-1, p[2]).toLocaleDateString('en-IN');
+  return new Date(d).toLocaleDateString('en-IN');
+};
+
 const avClr = n => ['#5B4CFF','#0EA669','#E53E3E','#D97706','#0369A1','#7C3AED'][(n.charCodeAt(0)||0)%6];
 
 function av(name) {
@@ -104,9 +112,18 @@ function gBadge(g) {
   const m = {Male:'b-male',Female:'b-female',Other:'b-other'};
   return `<span class="badge ${m[g]||'b-other'}">${esc(g)}</span>`;
 }
+
+// TIMEZONE FIX: Local Math
 function expCell(expiryDate, status) {
+  if (!expiryDate) return '—';
+  const p = expiryDate.split('T')[0].split('-');
+  const expDate = new Date(p[0], p[1]-1, p[2]);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  
+  const days = Math.ceil((expDate - today) / 86400000);
+  
   if (status !== 'Active' && status !== 'Trial') return `<span class="exp-txt g">${fmt(expiryDate)}</span>`;
-  const days = Math.ceil((new Date(expiryDate) - new Date()) / 86400000);
   if (days <= 3) return `<div class="exp-cell"><div class="exp-dot r"></div><div><div class="exp-txt r">${fmt(expiryDate)}</div><div class="exp-txt r">${days<0?'Expired':days+'d left'}</div></div></div>`;
   if (days <= 5) return `<div class="exp-cell"><div class="exp-dot y"></div><div><div class="exp-txt y">${fmt(expiryDate)}</div><div class="exp-txt y">${days}d left</div></div></div>`;
   return `<div class="exp-cell"><div class="exp-dot g"></div><span class="exp-txt g">${fmt(expiryDate)}</span></div>`;
@@ -142,15 +159,18 @@ function showPage(page, btn) {
 }
 
 /* ── MODALS ── */
+function getLocalTodayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
 const openModal = id => {
   document.getElementById(id).classList.add('open');
-  
-  // Force Start Date to today and calculate Expiry instantly!
   if (id === 'addMemberModal') {
     const startInput = document.getElementById('mStart');
     if (startInput) {
-      startInput.value = new Date().toISOString().split('T')[0];
-      onPlanChange(); // Run the math immediately
+      startInput.value = getLocalTodayStr();
+      onPlanChange(); 
     }
   }
 };
@@ -174,7 +194,6 @@ function setupCamera() {
 
   document.getElementById('openCamBtn').onclick = async () => {
     try { 
-      // Forces the Back (environment) camera!
       curStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}); 
       vid.srcObject = curStream; 
       openModal('cameraModal'); 
@@ -224,7 +243,9 @@ function populatePlanSelect(selId='mPlan') {
 }
 
 function togglePT(detailId) {
-  const chk = detailId === 'mPtDetails' ? document.getElementById('mPtEnabled') : document.getElementById('ePtEnabled');
+  const chk = detailId === 'mPtDetails' ? document.getElementById('mPtEnabled') : 
+              detailId === 'ePtDetails' ? document.getElementById('ePtEnabled') : 
+              document.getElementById('payPtEnabled');
   if(document.getElementById(detailId)) {
     document.getElementById(detailId).style.display = chk.checked ? 'block' : 'none';
   }
@@ -258,23 +279,23 @@ function recalcEditPrice() {
   document.getElementById('eFinalPrice').textContent = `₹${final.toLocaleString('en-IN')}`;
 }
 
-/* ── AUTO-CALCULATE EXPIRY FROM START DATE ── */
+// TIMEZONE FIX: Uses strictly local dates
 function onPlanChange() {
   const sel = document.getElementById('mPlan');
   if (!sel || !sel.options[sel.selectedIndex]) return;
   const months = parseInt(sel.options[sel.selectedIndex].getAttribute('data-months'))||1;
   
   const startInput = document.getElementById('mStart');
-  let startDate = new Date();
+  let sd = new Date();
   if (startInput && startInput.value) {
-    startDate = new Date(startInput.value);
+    const p = startInput.value.split('-');
+    sd = new Date(p[0], p[1]-1, p[2]);
   } else if (startInput) {
-    startInput.value = startDate.toISOString().split('T')[0];
+    startInput.value = getLocalTodayStr();
   }
 
-  const exp = new Date(startDate);
-  exp.setMonth(exp.getMonth() + months);
-  document.getElementById('mExpiry').value = exp.toISOString().split('T')[0];
+  sd.setMonth(sd.getMonth() + months);
+  document.getElementById('mExpiry').value = sd.getFullYear() + '-' + String(sd.getMonth()+1).padStart(2,'0') + '-' + String(sd.getDate()).padStart(2,'0');
   
   recalcPrice();
 }
@@ -327,7 +348,9 @@ function filterDash(days) {
 
   const filtered = dashMembersCache.filter(m => {
     if (m.status !== 'Active' && m.status !== 'Trial') return false;
-    const exp = new Date(m.expiryDate);
+    // Timezone fix for filters
+    const p = m.expiryDate.split('T')[0].split('-');
+    const exp = new Date(p[0], p[1]-1, p[2]);
     return exp >= today && exp <= targetDate;
   });
   renderDashTable(filtered);
@@ -356,7 +379,19 @@ async function loadDashboard() {
     document.getElementById('revA').textContent   = `₹${Math.round(admission).toLocaleString('en-IN')}`;
     document.getElementById('revPT').textContent  = `₹${Math.round(pt).toLocaleString('en-IN')}`;
 
-    const due = members.filter(m => m.status==='Active' && new Date(m.expiryDate)<=new Date(Date.now()+7*86400000));
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const in7Days = new Date(today);
+    in7Days.setDate(today.getDate() + 7);
+    in7Days.setHours(23,59,59,999);
+
+    const due = members.filter(m => {
+      if(m.status !== 'Active') return false;
+      const p = m.expiryDate.split('T')[0].split('-');
+      const exp = new Date(p[0], p[1]-1, p[2]);
+      return exp <= in7Days;
+    });
+
     const banner = document.getElementById('alertBanner');
     if (!due.length) {
       banner.className = 'banner green';
@@ -514,7 +549,7 @@ document.getElementById('editMemberForm').addEventListener('submit', async e => 
     ptFee:     ptEnabled ? ptFee : 0,
     ptTrainer: ptEnabled ? document.getElementById('ePtTrainer').value : '',
     ptNotes:   ptEnabled ? document.getElementById('ePtNotes').value.trim() : '',
-    expiryDate: document.getElementById('eExpiry').value,
+    expiryDate: document.getElementById('eExpiry').value, // Standard YYYY-MM-DD
     status:    document.getElementById('eStatus').value,
     emergencyContact: {
       name:         document.getElementById('eEcName').value.trim(),
@@ -582,10 +617,7 @@ document.getElementById('addMemberForm').addEventListener('submit', async e => {
     ptFee:     ptEnabled?ptFee:0,
     ptTrainer: ptEnabled?document.getElementById('mPtTrainer').value:'',
     ptNotes:   ptEnabled?document.getElementById('mPtNotes').value.trim():'',
-    
-    // --> START DATE SAVED HERE <-- //
     joinDate: document.getElementById('mStart').value, 
-    
     expiryDate: document.getElementById('mExpiry').value,
     status:    document.getElementById('mStatus').value,
     emergencyContact:{name:document.getElementById('mEcName').value.trim(),phone:document.getElementById('mEcPhone').value.trim(),relationship:document.getElementById('mEcRel').value.trim()},
@@ -605,15 +637,16 @@ document.getElementById('addMemberForm').addEventListener('submit', async e => {
       document.getElementById('mPtDetails').style.display='none';
       resetPhoto(); 
       
-      // Reset start date to today and recalculate expiry for the next member
       if(document.getElementById('mStart')) {
-          document.getElementById('mStart').value = new Date().toISOString().split('T')[0];
+          document.getElementById('mStart').value = getLocalTodayStr();
       }
       onPlanChange();
       
       toast(`${added.name} added!`,'success');
       loadDashboard();
-      openPaymentFor(added);
+      
+      // Open Payment QR as a "New Member"
+      openPaymentFor(added, true);
     }else{
       const err=await res.json(); toast(err.error||'Could not add member','error');
     }
@@ -629,7 +662,7 @@ function attKey(date) {
 
 async function loadAttendance() {
   const dateEl = document.getElementById('attDate');
-  const date   = dateEl.value || new Date().toISOString().split('T')[0];
+  const date   = dateEl.value || getLocalTodayStr();
   dateEl.value = date;
   const tbody  = document.getElementById('attBody');
   try {
@@ -674,8 +707,8 @@ function markAtt(memberId, date, status) {
 }
 
 async function markAllPresent() {
-  const date = document.getElementById('attDate').value || new Date().toISOString().split('T')[0];
-  if (!confirm(`Mark ALL active members Present for ${new Date(date).toLocaleDateString('en-IN')}?`)) return;
+  const date = document.getElementById('attDate').value || getLocalTodayStr();
+  if (!confirm(`Mark ALL active members Present for ${fmt(date)}?`)) return;
   try {
     const members = await fetch(API,{headers:hdrs()}).then(r=>r.json());
     const active  = members.filter(m=>m.status==='Active'||m.status==='Trial');
@@ -819,7 +852,6 @@ function saveEditPlan() {
   const months   = parseInt(document.getElementById('editPlanMonths').value);
   if (!newName||!price||!months) { toast('Fill all fields','error'); return; }
   const idx = gymPlans.findIndex(p=>p.name===origName);
-  // Check name conflict
   if (newName!==origName && gymPlans.find(p=>p.name===newName)) { toast('Another plan with this name exists','error'); return; }
   gymPlans[idx] = {name:newName, price, months};
   saveServerProfile();
@@ -870,7 +902,7 @@ function removeDiscount(i) {
   gymDisc.splice(i,1); saveServerProfile(); renderDiscounts(); toast('Discount removed');
 }
 
-/* ── RENEWAL / PAYMENTS ── */
+/* ── SMART PAYMENTS / RENEWALS ── */
 async function loadPayments() {
   const container = document.getElementById('payList');
   try {
@@ -878,11 +910,26 @@ async function loadPayments() {
     if(res.status===401){logout();return;}
     const members = await res.json();
     const today   = new Date();
-    const due     = members.filter(m=>m.status==='Active'&&new Date(m.expiryDate)<=new Date(today.getTime()+14*86400000));
-    due.sort((a,b)=>new Date(a.expiryDate)-new Date(b.expiryDate));
+    today.setHours(0,0,0,0);
+    
+    const in14Days = new Date(today);
+    in14Days.setDate(today.getDate() + 14);
+    in14Days.setHours(23,59,59,999);
+
+    const due = members.filter(m => {
+      if(m.status !== 'Active') return false;
+      const p = m.expiryDate.split('T')[0].split('-');
+      const exp = new Date(p[0], p[1]-1, p[2]);
+      return exp <= in14Days;
+    });
+
+    due.sort((a,b) => new Date(a.expiryDate) - new Date(b.expiryDate));
+
     if(!due.length){container.innerHTML='<div class="empty"><div class="ei">✅</div><p>No payments due in 14 days!</p></div>';return;}
     container.innerHTML=due.map(m=>{
-      const d=Math.ceil((new Date(m.expiryDate)-today)/86400000);
+      const p = m.expiryDate.split('T')[0].split('-');
+      const expDate = new Date(p[0], p[1]-1, p[2]);
+      const d = Math.ceil((expDate - today)/86400000);
       return `<div class="pay-row">
         <div style="display:flex;align-items:center;gap:8px">${avImg(m)}<div><div style="font-weight:700;font-size:.85rem">${esc(m.name)}</div><div style="font-size:.72rem;color:var(--tx3)">${esc(m.plan)}</div><div style="font-size:.7rem;color:var(--tx3)">Exp: ${fmt(m.expiryDate)}</div></div></div>
         <span class="badge ${d<0?'b-inactive':'b-trial'}">${d<0?'Overdue':d+'d'}</span>
@@ -892,19 +939,30 @@ async function loadPayments() {
   }catch(e){container.innerHTML='<div class="empty"><p style="color:var(--gr)">Error</p></div>';}
 }
 
-function openPaymentFor(m) {
-  curPayMember = {id: m._id, name: m.name, expiryDate: m.expiryDate};
+function openPaymentFor(m, isNew = false) {
+  curPayMember = {id: m._id, name: m.name, expiryDate: m.expiryDate, isNew: isNew, originalData: m};
 
-  populatePlanSelect('payPlan');
-  document.getElementById('payPlan').value = m.plan || gymPlans[0].name;
-  
-  const ptEn = !!m.ptEnabled;
-  document.getElementById('payPtEnabled').checked = ptEn;
-  document.getElementById('payPtDetails').style.display = ptEn ? 'block' : 'none';
-  document.getElementById('payPtFee').value = m.ptFee || gymCfg.ptFee || 0;
-  
-  document.getElementById('payPtTrainer').innerHTML = document.getElementById('ePtTrainer').innerHTML || '<option value="">Select Trainer</option>';
-  document.getElementById('payPtTrainer').value = m.ptTrainer || '';
+  const mhdr = document.querySelector('#paymentModal .mhdr .mtitle');
+  if(mhdr) mhdr.textContent = isNew ? '💳 Complete Payment' : '💳 Renew Plan';
+
+  if (isNew) {
+    document.getElementById('payPlan').parentElement.style.display = 'none';
+    document.getElementById('payPtEnabled').closest('.pt-box').style.display = 'none';
+  } else {
+    document.getElementById('payPlan').parentElement.style.display = 'block';
+    document.getElementById('payPtEnabled').closest('.pt-box').style.display = 'block';
+    
+    populatePlanSelect('payPlan');
+    document.getElementById('payPlan').value = m.plan || gymPlans[0].name;
+    
+    const ptEn = !!m.ptEnabled;
+    document.getElementById('payPtEnabled').checked = ptEn;
+    document.getElementById('payPtDetails').style.display = ptEn ? 'block' : 'none';
+    document.getElementById('payPtFee').value = m.ptFee || gymCfg.ptFee || 0;
+    
+    document.getElementById('payPtTrainer').innerHTML = document.getElementById('ePtTrainer').innerHTML || '<option value="">Select Trainer</option>';
+    document.getElementById('payPtTrainer').value = m.ptTrainer || '';
+  }
 
   recalcPayment();
   openModal('paymentModal');
@@ -912,19 +970,33 @@ function openPaymentFor(m) {
 
 function recalcPayment() {
   if(!curPayMember) return;
-  const planSel = document.getElementById('payPlan');
-  const planName = planSel.value;
-  const planAmt = parseInt(planSel.options[planSel.selectedIndex]?.getAttribute('data-price')) || getPlanPrice(planName);
+  const isNew = curPayMember.isNew;
+  const m = curPayMember.originalData;
   
-  const isPt = document.getElementById('payPtEnabled').checked;
-  const ptAmt = isPt ? (parseFloat(document.getElementById('payPtFee').value)||0) : 0;
+  let planName, planAmt, ptAmt, admAmt;
   
-  const total = planAmt + ptAmt;
+  if (isNew) {
+    planName = m.plan;
+    planAmt = m.planPrice; 
+    ptAmt = m.ptEnabled ? (m.ptFee || 0) : 0;
+    admAmt = m.admissionWaived ? 0 : (m.admissionFee || 0);
+  } else {
+    const planSel = document.getElementById('payPlan');
+    planName = planSel.value;
+    planAmt = parseInt(planSel.options[planSel.selectedIndex]?.getAttribute('data-price')) || getPlanPrice(planName);
+    
+    const isPt = document.getElementById('payPtEnabled').checked;
+    ptAmt = isPt ? (parseFloat(document.getElementById('payPtFee').value)||0) : 0;
+    admAmt = 0; 
+  }
+
+  const total = planAmt + ptAmt + admAmt;
 
   let rows = `
     <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:var(--tx2);font-size:.82rem">Member</span><strong style="font-size:.82rem">${esc(curPayMember.name)}</strong></div>
     <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">Plan Fee (${esc(planName)})</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(planAmt).toLocaleString('en-IN')}</span></div>`;
   
+  if(admAmt > 0) rows += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">🎟️ Admission</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(admAmt).toLocaleString('en-IN')}</span></div>`;
   if(ptAmt > 0) rows += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">💪 PT Fee</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(ptAmt).toLocaleString('en-IN')}</span></div>`;
   
   rows += `<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1.5px solid var(--border);margin-top:6px"><span style="font-weight:800;font-size:.88rem">Total</span><strong style="color:var(--g);font-size:1.05rem">₹${total.toLocaleString('en-IN')}</strong></div>`;
@@ -941,6 +1013,13 @@ function recalcPayment() {
 async function confirmPayment() {
   if(!curPayMember) return;
   
+  if (curPayMember.isNew) {
+     toast(`✅ Payment Confirmed!`, 'success');
+     closeModal('paymentModal');
+     curPayMember = null;
+     return; 
+  }
+  
   const planName = document.getElementById('payPlan').value;
   const planAmt = getPlanPrice(planName);
   const months = getPlanMonths(planName);
@@ -949,12 +1028,16 @@ async function confirmPayment() {
   const ptAmt = isPt ? (parseFloat(document.getElementById('payPtFee').value)||0) : 0;
   const ptTrainer = isPt ? document.getElementById('payPtTrainer').value : '';
 
-  let baseDate = new Date(curPayMember.expiryDate);
-  if (isNaN(baseDate.getTime()) || baseDate < new Date()) {
-    baseDate = new Date();
+  let baseDate = new Date();
+  baseDate.setHours(0,0,0,0);
+  if (curPayMember.expiryDate) {
+      const p = curPayMember.expiryDate.split('T')[0].split('-');
+      const d = new Date(p[0], p[1]-1, p[2]);
+      if (d > new Date()) baseDate = d; 
   }
+  
   baseDate.setMonth(baseDate.getMonth() + months);
-  const newExpiry = baseDate.toISOString().split('T')[0];
+  const newExpiry = baseDate.getFullYear() + '-' + String(baseDate.getMonth()+1).padStart(2,'0') + '-' + String(baseDate.getDate()).padStart(2,'0');
 
   const payload = {
     plan: planName,
@@ -1012,11 +1095,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('topDate').textContent =
     new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
   
-  document.getElementById('attDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('attDate').value = getLocalTodayStr();
   
-  // --> START DATE AUTO-FILL FIX <-- //
   if(document.getElementById('mStart')) {
-    document.getElementById('mStart').value = new Date().toISOString().split('T')[0];
+    document.getElementById('mStart').value = getLocalTodayStr();
   }
 
   await loadServerProfile();
