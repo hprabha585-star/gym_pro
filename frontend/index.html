@@ -1,726 +1,1158 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#5B4CFF">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GymPro</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
-    :root{
-      --p:#5B4CFF;--p2:#7B6DFF;--pd:#3D2FD9;--pl:#ECEAFF;--pl2:#F5F4FF;
-      --g:#0EA669;--gb:#D1FAE5;--gr:#E53E3E;--grb:#FEE2E2;
-      --am:#D97706;--amb:#FEF3C7;
-      --tx:#111827;--tx2:#6B7280;--tx3:#9CA3AF;
-      --bg:#F3F4F8;--card:#FFFFFF;--border:#E5E7EB;--border2:#D1D5DB;
-      --r:14px;--r2:10px;--r3:8px;
-      --sh:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.04);
-      --sh2:0 4px 24px rgba(91,76,255,.18);
+/* ── Scroll-wheel fix ── */
+document.addEventListener('wheel', () => {
+  if (document.activeElement && ['number','text'].includes(document.activeElement.type))
+    document.activeElement.blur();
+}, { passive: true });
+
+/* ── CONFIG ── */
+const BASE = 'https://gym-pro-mvyv.onrender.com/api';
+const API  = `${BASE}/members`;
+const TAPI = `${BASE}/trainers`;
+const PROFILE_API = `${BASE}/auth/profile`;
+
+const DEFAULT_PLANS = [
+  {name:'1 Month Strength',price:1000,months:1},
+  {name:'1 Month Strength + Cardio',price:1500,months:1},
+  {name:'3 Months Strength',price:2700,months:3},
+  {name:'3 Months Strength + Cardio',price:4000,months:3},
+  {name:'6 Months Strength',price:5000,months:6},
+  {name:'6 Months Strength + Cardio',price:7500,months:6},
+  {name:'1 Year Strength',price:9000,months:12},
+  {name:'1 Year Strength + Cardio',price:14000,months:12}
+];
+
+/* ── In-memory state ── */
+let gymPlans   = [...DEFAULT_PLANS];
+let gymDisc    = [];
+let gymCfg     = {}; 
+let trainerMap = {}; 
+
+let curPayMember = null;
+let curStream    = null;
+
+/* ── AUTH HELPERS ── */
+const hdrs = () => ({ 'Content-Type':'application/json', 'Authorization':`Bearer ${localStorage.getItem('token')}` });
+const checkAuth = () => { if (!localStorage.getItem('token')) { location.href='/login.html'; return false; } return true; };
+function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); location.href='/login.html'; }
+
+/* ── PROFILE SYNC ── */
+async function loadServerProfile() {
+  try {
+    const res = await fetch(`${BASE}/auth/me`, { headers: hdrs() });
+    if (!res.ok) return;
+    const user = await res.json();
+    if (user.gymData) {
+      const d = typeof user.gymData === 'string' ? JSON.parse(user.gymData) : user.gymData;
+      if (d.plans && d.plans.length) gymPlans = d.plans;
+      if (d.cfg)  gymCfg  = d.cfg;
+      if (d.disc) gymDisc = d.disc;
     }
-    html{-webkit-text-size-adjust:100%;}
-    body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;-webkit-tap-highlight-color:transparent;overscroll-behavior:none;}
-    input[type=number]{-moz-appearance:textfield;}
-    input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
-    ::-webkit-scrollbar{width:3px;height:3px;}
-    ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
-
-    /* SIDEBAR */
-    .sidebar{position:fixed;top:0;left:0;width:272px;height:100vh;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:2000;overflow:hidden;transform:translateX(-100%);transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s;}
-    .sidebar.open{transform:translateX(0);box-shadow:4px 0 40px rgba(0,0,0,.12);}
-    .sb-top{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1rem .9rem;border-bottom:1px solid var(--border);}
-    .sb-brand{display:flex;align-items:center;gap:9px;}
-    .sb-logo{width:34px;height:34px;background:var(--p);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0;box-shadow:var(--sh2);}
-    .sb-name{font-size:1.1rem;font-weight:800;color:var(--tx);letter-spacing:-.3px;}
-    .sb-close{width:30px;height:30px;background:var(--bg);border:none;border-radius:var(--r3);color:var(--tx2);font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-    .sb-user{margin:.85rem 1rem;background:var(--pl2);border:1.5px solid var(--pl);border-radius:var(--r2);padding:10px 12px;}
-    .sb-user .u-name{font-size:.85rem;font-weight:700;color:var(--tx);}
-    .sb-user .u-role{font-size:.7rem;color:var(--p);font-weight:700;margin-top:2px;text-transform:uppercase;letter-spacing:.5px;}
-    .sb-section{font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--tx3);padding:.5rem 1.1rem .25rem;}
-    .sb-body{flex:1;overflow-y:auto;padding-bottom:.75rem;}
-    .nav-btn{display:flex;align-items:center;gap:10px;padding:9px 1rem;margin:2px .65rem;border-radius:var(--r3);color:var(--tx2);font-size:.85rem;font-weight:600;cursor:pointer;transition:all .15s;border:none;background:none;width:calc(100% - 1.3rem);text-align:left;}
-    .nav-btn .ni{font-size:.95rem;width:20px;text-align:center;flex-shrink:0;}
-    .nav-btn:hover{background:var(--pl2);color:var(--p);}
-    .nav-btn.active{background:var(--p);color:#fff;}
-    .sb-foot{padding:.75rem 1rem;border-top:1px solid var(--border);}
-    .logout-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:9px;background:var(--grb);color:var(--gr);border:1.5px solid #FCA5A5;border-radius:var(--r3);font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;width:100%;transition:all .15s;}
-    .logout-btn:hover{background:var(--gr);color:#fff;}
-
-    /* OVERLAY */
-    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1500;backdrop-filter:blur(2px);}
-    .overlay.show{display:block;}
-
-    /* TOPBAR */
-    .topbar{position:fixed;top:0;left:0;right:0;height:56px;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1rem;gap:.75rem;z-index:100;}
-    .menu-btn{width:36px;height:36px;background:var(--pl);border:none;border-radius:var(--r3);color:var(--p);font-size:1.05rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-    .topbar-title{font-size:.95rem;font-weight:800;color:var(--tx);flex:1;letter-spacing:-.2px;}
-    .topbar-date{font-size:.7rem;font-weight:600;color:var(--tx3);}
-
-    /* BOTTOM NAV */
-    .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:62px;background:var(--card);border-top:1px solid var(--border);z-index:900;padding-bottom:env(safe-area-inset-bottom);}
-    .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border:none;background:none;color:var(--tx3);font-size:.62rem;font-weight:700;gap:3px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:color .15s;}
-    .bn-item i{font-size:1.15rem;font-style:normal;transition:transform .15s;}
-    .bn-item.active{color:var(--p);}
-    .bn-item.active i{transform:scale(1.15);}
-
-    /* MAIN */
-    .main{margin-top:56px;padding:1rem;min-height:calc(100vh - 56px);}
-
-    /* PAGES */
-    .page{display:none;}
-    .page.active{display:block;animation:pageIn .22s ease;}
-    @keyframes pageIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
-
-    /* BANNER */
-    .banner{border-radius:var(--r2);padding:.85rem 1rem;margin-bottom:.85rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;border:1.5px solid;}
-    .banner.green{background:var(--gb);border-color:#6EE7B7;}
-    .banner.amber{background:var(--amb);border-color:#FCD34D;}
-    .banner-text{flex:1;}
-    .banner-text h3{font-size:.85rem;font-weight:700;}
-    .banner-text p{font-size:.75rem;color:var(--tx2);margin-top:1px;}
-
-    /* STATS */
-    .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:.7rem;}
-    .stat-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:.75rem .6rem;text-align:center;box-shadow:var(--sh);}
-    .stat-box .sv{font-size:1.4rem;font-weight:800;color:var(--p);line-height:1;}
-    .stat-box .sl{font-size:.6rem;font-weight:700;color:var(--tx3);margin-top:3px;text-transform:uppercase;letter-spacing:.4px;}
-    .rev-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:.8rem;}
-    .rev-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:.65rem .5rem;text-align:center;box-shadow:var(--sh);}
-    .rev-box .rl{font-size:.58rem;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
-    .rev-box .rv{font-size:.88rem;font-weight:800;}
-    .rv-p{color:var(--p);}
-    .rv-g{color:var(--g);}
-    .rv-a{color:var(--am);}
-
-    /* CARD */
-    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1rem;margin-bottom:.85rem;box-shadow:var(--sh);}
-    .card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;gap:.75rem;flex-wrap:wrap;}
-    .card-title{font-size:.92rem;font-weight:800;color:var(--tx);display:flex;align-items:center;gap:7px;}
-    .card-title::before{content:'';width:3px;height:16px;background:var(--p);border-radius:2px;display:block;}
-
-    /* TABLE */
-    .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -.5rem;padding:0 .5rem;}
-    table{width:100%;border-collapse:collapse;min-width:420px;}
-    th{text-align:left;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--tx3);padding:8px 10px;border-bottom:2px solid var(--border);white-space:nowrap;}
-    td{padding:11px 10px;border-bottom:1px solid var(--border);font-size:.83rem;vertical-align:middle;}
-    tr:last-child td{border-bottom:none;}
-    tr:hover td{background:var(--pl2);}
-
-    /* EXPIRY */
-    .exp-cell{display:flex;align-items:center;gap:5px;}
-    .exp-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-    .exp-dot.r{background:var(--gr);}
-    .exp-dot.y{background:var(--am);}
-    .exp-dot.g{background:var(--g);}
-    .exp-txt{font-size:.73rem;font-weight:600;}
-    .exp-txt.r{color:var(--gr);}
-    .exp-txt.y{color:var(--am);}
-    .exp-txt.g{color:var(--tx3);}
-
-    /* BADGES */
-    .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:.67rem;font-weight:700;white-space:nowrap;}
-    .b-active{background:var(--gb);color:#065F46;}
-    .b-trial{background:var(--amb);color:#92400E;}
-    .b-inactive,.b-expired{background:var(--grb);color:#991B1B;}
-    .b-present{background:var(--gb);color:#065F46;}
-    .b-absent{background:var(--grb);color:#991B1B;}
-    .b-male{background:#DBEAFE;color:#1E40AF;}
-    .b-female{background:#FCE7F3;color:#9D174D;}
-    .b-other{background:#F3F4F6;color:#374151;}
-
-    /* AVATAR */
-    .av{width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:#fff;flex-shrink:0;}
-
-    /* BUTTONS */
-    .btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border:none;border-radius:var(--r3);font-family:'Plus Jakarta Sans',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;min-height:36px;justify-content:center;transition:all .15s;}
-    .btn-primary{background:var(--p);color:#fff;}
-    .btn-primary:hover{background:var(--pd);}
-    .btn-success{background:var(--g);color:#fff;}
-    .btn-danger{background:var(--grb);color:var(--gr);border:1px solid #FCA5A5;}
-    .btn-danger:hover{background:var(--gr);color:#fff;}
-    .btn-ghost{background:var(--bg);color:var(--tx2);border:1px solid var(--border2);}
-    .btn-ghost:hover{background:var(--border);color:var(--tx);}
-    .btn-edit{background:var(--pl);color:var(--p);border:1px solid var(--pl);}
-    .btn-edit:hover{background:var(--p);color:#fff;}
-    .btn-sm{padding:5px 10px;font-size:.75rem;min-height:30px;}
-    .btn-full{width:100%;}
-
-    .att-btn-p{padding:5px 11px;border-radius:var(--r3);border:1.5px solid #6EE7B7;background:var(--gb);color:#065F46;font-family:'Plus Jakarta Sans',sans-serif;font-size:.75rem;font-weight:700;cursor:pointer;min-height:30px;transition:all .15s;}
-    .att-btn-a{padding:5px 11px;border-radius:var(--r3);border:1.5px solid #FCA5A5;background:var(--grb);color:var(--gr);font-family:'Plus Jakarta Sans',sans-serif;font-size:.75rem;font-weight:700;cursor:pointer;min-height:30px;transition:all .15s;}
-    .att-btn-p:hover{background:var(--g);color:#fff;border-color:var(--g);}
-    .att-btn-a:hover{background:var(--gr);color:#fff;border-color:var(--gr);}
-
-    /* FORM */
-    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
-    .form-group{margin-bottom:.75rem;}
-    .form-group label{display:block;font-size:.72rem;font-weight:800;color:var(--tx2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px;}
-    .form-group input,.form-group select,.form-group textarea,.cond-row select,.cond-row input{
-      width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--r3);
-      font-family:'Plus Jakarta Sans',sans-serif;font-size:.87rem;color:var(--tx);background:var(--card);
-      min-height:42px;-webkit-appearance:none;appearance:none;transition:border-color .15s;
+    localStorage.setItem('gymProfile_cache', JSON.stringify({ plans: gymPlans, cfg: gymCfg, disc: gymDisc }));
+  } catch(e) {
+    const cached = localStorage.getItem('gymProfile_cache');
+    if (cached) {
+      try {
+        const d = JSON.parse(cached);
+        if (d.plans && d.plans.length) gymPlans = d.plans;
+        if (d.cfg)  gymCfg  = d.cfg;
+        if (d.disc) gymDisc = d.disc;
+      } catch(_) {}
     }
-    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--p);box-shadow:0 0 0 3px rgba(91,76,255,.12);}
-    .form-group input[type="date"]{padding:8px 12px;}
-    .form-group textarea{resize:vertical;min-height:80px;}
-    .form-sep{font-size:.68rem;font-weight:800;color:var(--p);margin:1.1rem 0 .6rem;text-transform:uppercase;letter-spacing:.7px;padding-bottom:5px;border-bottom:2px solid var(--pl);}
+  }
+}
 
-    /* SPECIAL BOXES */
-    .disc-box{background:var(--pl2);border:1.5px dashed var(--pl);border-radius:var(--r2);padding:.85rem;margin-bottom:.75rem;}
-    .disc-box h4{font-size:.77rem;font-weight:800;color:var(--p);margin-bottom:.6rem;}
-    .radio-row{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:.6rem;}
-    .radio-row label{display:flex;align-items:center;gap:5px;font-size:.8rem;font-weight:600;color:var(--tx2);cursor:pointer;}
-    .price-sum{background:var(--card);border-radius:var(--r3);padding:8px 12px;margin-top:.55rem;border:1px solid var(--border);}
-    .price-sum .pl{display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:3px;color:var(--tx2);}
-    .price-sum .pl:last-child{margin-bottom:0;font-weight:800;font-size:.9rem;color:var(--g);border-top:1px solid var(--border);padding-top:5px;margin-top:4px;}
+async function saveServerProfile() {
+  const body = { gymData: JSON.stringify({ plans: gymPlans, cfg: gymCfg, disc: gymDisc }) };
+  try {
+    const res = await fetch(PROFILE_API, { method:'PATCH', headers: hdrs(), body: JSON.stringify(body) });
+    if (!res.ok) throw new Error('save failed');
+    localStorage.setItem('gymProfile_cache', JSON.stringify({ plans: gymPlans, cfg: gymCfg, disc: gymDisc }));
+  } catch(e) {
+    localStorage.setItem('gymProfile_cache', JSON.stringify({ plans: gymPlans, cfg: gymCfg, disc: gymDisc }));
+  }
+}
 
-    .adm-box{background:var(--gb);border:1.5px solid #6EE7B7;border-radius:var(--r2);padding:.85rem;margin-bottom:.75rem;}
-    .adm-box h4{font-size:.77rem;font-weight:800;color:#065F46;margin-bottom:.6rem;}
+/* ── PLAN HELPERS ── */
+const getPlanPrice  = n => (gymPlans.find(p=>p.name===n)||{}).price  || 0;
+const getPlanMonths = n => (gymPlans.find(p=>p.name===n)||{}).months || 1;
 
-    .pt-box{background:var(--amb);border:1.5px dashed #FCD34D;border-radius:var(--r2);padding:.85rem;margin-bottom:.75rem;}
-    .pt-box h4{font-size:.77rem;font-weight:800;color:#92400E;margin-bottom:.6rem;}
-    .toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:.6rem;}
-    .toggle-sw{position:relative;width:40px;height:22px;flex-shrink:0;}
-    .toggle-sw input{opacity:0;width:0;height:0;}
-    .toggle-track{position:absolute;inset:0;background:var(--border2);border-radius:22px;cursor:pointer;transition:.2s;}
-    .toggle-track::before{content:'';position:absolute;width:16px;height:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}
-    .toggle-sw input:checked+.toggle-track{background:var(--am);}
-    .toggle-sw input:checked+.toggle-track::before{transform:translateX(18px);}
+/* ── TOAST & UTILS ── */
+function toast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = `toast show ${type}`;
+  setTimeout(() => { el.className = 'toast'; }, 3200);
+}
 
-    /* PLANS */
-    .plans-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem;}
-    .plan-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);padding:1rem;text-align:center;position:relative;}
-    .plan-card h3{font-size:.8rem;font-weight:800;color:var(--tx);margin-bottom:.3rem;}
-    .plan-dur{font-size:.68rem;color:var(--tx3);margin-bottom:.4rem;}
-    .plan-price{font-size:1.4rem;font-weight:800;color:var(--p);margin:.4rem 0;}
-    .plan-orig{text-decoration:line-through;color:var(--tx3);font-size:.75rem;}
-    .plan-disc{position:absolute;top:8px;right:8px;background:var(--am);color:#fff;padding:2px 7px;border-radius:20px;font-size:.6rem;font-weight:800;}
+const esc  = s => String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-    /* ATT STATS */
-    .att-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:.8rem;}
-    .att-stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r3);padding:.7rem;text-align:center;}
-    .att-stat .an{font-size:1.45rem;font-weight:800;color:var(--p);}
-    .att-stat .al{font-size:.6rem;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.3px;}
+// TIMEZONE FIX: Strictly parses YYYY-MM-DD as local date
+const fmt = d => {
+  if(!d) return '—';
+  const p = d.split('T')[0].split('-');
+  if(p.length===3) return new Date(p[0], p[1]-1, p[2]).toLocaleDateString('en-IN');
+  return new Date(d).toLocaleDateString('en-IN');
+};
 
-    /* DISC TABLE */
-    .disc-tbl{width:100%;border-collapse:collapse;}
-    .disc-tbl th,.disc-tbl td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:.78rem;}
-    .disc-tbl th{background:var(--bg);font-weight:800;font-size:.62rem;text-transform:uppercase;letter-spacing:.4px;color:var(--tx3);}
+const avClr = n => ['#5B4CFF','#0EA669','#E53E3E','#D97706','#0369A1','#7C3AED'][(n.charCodeAt(0)||0)%6];
 
-    /* MODAL */
-    .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2500;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(3px);}
-    .modal.open{display:flex;}
-    .mbox{background:var(--card);border-radius:var(--r);padding:1.25rem;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.2);animation:mIn .22s cubic-bezier(.22,1,.36,1);}
-    @keyframes mIn{from{opacity:0;transform:translateY(14px) scale(.99)}to{opacity:1;transform:none}}
-    .mhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem;}
-    .mtitle{font-size:.98rem;font-weight:800;color:var(--tx);}
-    .mclose{width:30px;height:30px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r3);font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx2);transition:all .15s;}
-    .mclose:hover{background:var(--grb);color:var(--gr);}
+function av(name) {
+  const i = (name||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
+  return `<div class="av" style="background:${avClr(name)}">${esc(i)}</div>`;
+}
+function avImg(m) {
+  if (m.photo?.startsWith('data:image')) return `<img src="${m.photo}" alt="${esc(m.name)}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0">`;
+  return av(m.name);
+}
+function badge(status) {
+  const m = {Active:'b-active',Trial:'b-trial',Inactive:'b-inactive',Expired:'b-expired'};
+  return `<span class="badge ${m[status]||'b-inactive'}">${esc(status)}</span>`;
+}
+function gBadge(g) {
+  if (!g) return '<span style="font-size:.72rem;color:var(--tx3)">—</span>';
+  const m = {Male:'b-male',Female:'b-female',Other:'b-other'};
+  return `<span class="badge ${m[g]||'b-other'}">${esc(g)}</span>`;
+}
 
-    /* PAYMENT */
-    .pay-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);gap:.75rem;flex-wrap:wrap;}
-    .pay-row:last-child{border-bottom:none;}
-    .qr-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--r3);padding:1rem;text-align:center;margin:.7rem 0;}
-    .qr-box img{width:158px;height:158px;border-radius:var(--r3);border:2.5px solid var(--p);}
-    .upi-txt{font-size:.75rem;color:var(--tx2);margin-top:7px;display:block;font-weight:600;}
+// TIMEZONE FIX: Local Math
+function expCell(expiryDate, status) {
+  if (!expiryDate) return '—';
+  const p = expiryDate.split('T')[0].split('-');
+  const expDate = new Date(p[0], p[1]-1, p[2]);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  
+  const days = Math.ceil((expDate - today) / 86400000);
+  
+  if (status !== 'Active' && status !== 'Trial') return `<span class="exp-txt g">${fmt(expiryDate)}</span>`;
+  if (days <= 3) return `<div class="exp-cell"><div class="exp-dot r"></div><div><div class="exp-txt r">${fmt(expiryDate)}</div><div class="exp-txt r">${days<0?'Expired':days+'d left'}</div></div></div>`;
+  if (days <= 5) return `<div class="exp-cell"><div class="exp-dot y"></div><div><div class="exp-txt y">${fmt(expiryDate)}</div><div class="exp-txt y">${days}d left</div></div></div>`;
+  return `<div class="exp-cell"><div class="exp-dot g"></div><span class="exp-txt g">${fmt(expiryDate)}</span></div>`;
+}
 
-    /* TOAST */
-    .toast{position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-70px);background:var(--tx);color:#fff;padding:10px 20px;border-radius:30px;font-size:.83rem;font-weight:700;z-index:9999;opacity:0;transition:all .25s cubic-bezier(.22,1,.36,1);box-shadow:0 8px 32px rgba(0,0,0,.2);white-space:nowrap;}
-    .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
-    .toast.success{background:var(--g);}
-    .toast.error{background:var(--gr);}
+function sortByExpiry(members) {
+  return [...members].sort((a,b) => {
+    const aA = a.status==='Active'||a.status==='Trial';
+    const bA = b.status==='Active'||b.status==='Trial';
+    if (aA && !bA) return -1;
+    if (!aA && bA) return 1;
+    return new Date(a.expiryDate) - new Date(b.expiryDate);
+  });
+}
 
-    /* SETTINGS */
-    .settings-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1rem;margin-bottom:.85rem;box-shadow:var(--sh);}
-    .settings-card h3{font-size:.88rem;font-weight:800;color:var(--tx);margin-bottom:.85rem;}
+/* ── SIDEBAR & NAV ── */
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('show'); }
+function closeSidebar()  { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
+function updateBNav(id) {
+  document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
+  if (id !== 'none') document.getElementById(`bn-${id}`)?.classList.add('active');
+}
+function showPage(page, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(l => l.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  if (btn) btn.classList.add('active');
+  const titles = {dashboard:'Dashboard',members:'Members',attendance:'Attendance',trainers:'Trainers',plans:'Plans',discounts:'Discounts',payments:'Payments',settings:'Settings'};
+  document.getElementById('pageTitle').textContent = titles[page] || page;
+  closeSidebar();
+  const loaders = {dashboard:loadDashboard,members:loadAllMembers,attendance:loadAttendance,trainers:loadTrainers,plans:loadPlans,discounts:renderDiscounts,payments:loadPayments,settings:loadSettings};
+  if (loaders[page]) loaders[page]();
+}
 
-    /* EMPTY */
-    .empty{text-align:center;padding:2.5rem 1rem;color:var(--tx3);}
-    .empty .ei{font-size:2.2rem;margin-bottom:.5rem;}
+/* ── MODALS ── */
+function getLocalTodayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
 
-    /* SYNC NOTICE */
-    .sync-note{font-size:.7rem;color:var(--tx3);margin-top:.5rem;padding:.4rem .6rem;background:var(--bg);border-radius:var(--r3);border:1px solid var(--border);}
-
-    /* RESPONSIVE */
-    @media(max-width:768px){
-      .bottom-nav{display:flex;}
-      .main{padding-bottom:72px;}
-      .stats-row{gap:.5rem;}
-      .rev-row{grid-template-columns:1fr;}
-      .form-grid{grid-template-columns:1fr;}
-      .modal{align-items:flex-end;padding:0;}
-      .mbox{border-radius:20px 20px 0 0;max-height:88vh;padding:1.25rem 1rem 2rem;animation:slideUp .24s cubic-bezier(.22,1,.36,1);}
-      @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-      .plans-grid{grid-template-columns:1fr 1fr;}
+const openModal = id => {
+  document.getElementById(id).classList.add('open');
+  if (id === 'addMemberModal') {
+    const startInput = document.getElementById('mStart');
+    if (startInput) {
+      startInput.value = getLocalTodayStr();
+      onPlanChange(); 
     }
-    @media(max-width:420px){
-      .stat-box .sv{font-size:1.15rem;}
-      .plans-grid{grid-template-columns:1fr;}
+  }
+};
+
+const closeModal = id => document.getElementById(id).classList.remove('open');
+
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('modal')) {
+    closeModal(e.target.id);
+    if (e.target.id === 'cameraModal' && curStream) curStream.getTracks().forEach(t => t.stop());
+  }
+});
+
+/* ── CAMERA ── */
+function setupCamera() {
+  const vid  = document.getElementById('camVideo'),
+        can  = document.getElementById('camCanvas'),
+        prev = document.getElementById('photoPreview'),
+        pd   = document.getElementById('photoData'),
+        clr  = document.getElementById('clearPhotoBtn');
+
+  document.getElementById('openCamBtn').onclick = async () => {
+    try { 
+      curStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}); 
+      vid.srcObject = curStream; 
+      openModal('cameraModal'); 
     }
-  </style>
-</head>
-<body>
+    catch(e) { toast('Camera unavailable — use Upload','error'); }
+  };
+  document.getElementById('captureBtn').onclick = () => {
+    can.width = vid.videoWidth; can.height = vid.videoHeight;
+    can.getContext('2d').drawImage(vid,0,0);
+    const d = can.toDataURL('image/jpeg',.75);
+    prev.src = d; pd.value = d; clr.style.display = 'inline-flex';
+    closeModal('cameraModal');
+    if (curStream) curStream.getTracks().forEach(t => t.stop());
+  };
+  document.getElementById('closeCamBtn').onclick = () => {
+    closeModal('cameraModal');
+    if (curStream) curStream.getTracks().forEach(t => t.stop());
+  };
+  document.getElementById('uploadBtn').onclick = () => document.getElementById('photoFile').click();
+  document.getElementById('photoFile').onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = ev => { prev.src = ev.target.result; pd.value = ev.target.result; clr.style.display = 'inline-flex'; };
+    r.readAsDataURL(f);
+  };
+  clr.onclick = resetPhoto;
+}
 
-<nav class="sidebar" id="sidebar">
-  <div class="sb-top">
-    <div class="sb-brand"><div class="sb-logo">🏋️</div><span class="sb-name">GymPro</span></div>
-    <button class="sb-close" onclick="closeSidebar()">✕</button>
-  </div>
-  <div class="sb-user" id="sbUser"><div class="u-name">Loading…</div><div class="u-role">—</div></div>
-  <div class="sb-body">
-    <div class="sb-section">Main</div>
-    <button class="nav-btn active" onclick="showPage('dashboard',this);updateBNav('dashboard')" data-page="dashboard"><span class="ni">📊</span>Dashboard</button>
-    <button class="nav-btn" onclick="showPage('members',this);updateBNav('members')" data-page="members"><span class="ni">👥</span>Members</button>
-    <button class="nav-btn" onclick="showPage('attendance',this);updateBNav('attendance')" data-page="attendance"><span class="ni">📅</span>Attendance</button>
-    <div class="sb-section">Manage</div>
-    <button class="nav-btn" onclick="showPage('trainers',this);updateBNav('none')" data-page="trainers"><span class="ni">💪</span>Trainers</button>
-    <button class="nav-btn" onclick="showPage('plans',this);updateBNav('none')" data-page="plans"><span class="ni">💎</span>Plans</button>
-    <button class="nav-btn" onclick="showPage('discounts',this);updateBNav('none')" data-page="discounts"><span class="ni">🏷️</span>Discounts</button>
-    <button class="nav-btn" onclick="showPage('payments',this);updateBNav('none')" data-page="payments"><span class="ni">💰</span>Payments</button>
-    <button class="nav-btn" onclick="showPage('settings',this);updateBNav('none')" data-page="settings"><span class="ni">⚙️</span>Settings</button>
-  </div>
-  <div class="sb-foot"><button class="logout-btn" onclick="logout()">🚪 Logout</button></div>
-</nav>
-<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+function resetPhoto() {
+  document.getElementById('photoPreview').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%235B4CFF33'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+  document.getElementById('photoData').value = '';
+  document.getElementById('clearPhotoBtn').style.display = 'none';
+  document.getElementById('photoFile').value = '';
+}
 
-<div class="topbar">
-  <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-  <span class="topbar-title" id="pageTitle">Dashboard</span>
-  <span class="topbar-date" id="topDate"></span>
-</div>
+/* ── PLAN SELECT ── */
+function populatePlanSelect(selId='mPlan') {
+  const sel = document.getElementById(selId);
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = gymPlans.map(p => `<option value="${esc(p.name)}" data-price="${p.price}" data-months="${p.months}">${esc(p.name)} — ₹${p.price.toLocaleString('en-IN')}</option>`).join('');
+  if (cur) sel.value = cur;
+  const dp = document.getElementById('discPlan');
+  if (dp) dp.innerHTML = gymPlans.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
+  if (selId==='mPlan') recalcPrice();
+  if (selId==='ePlan') recalcEditPrice();
+}
 
-<div id="offline-banner" style="display: none; background: #dc3545; color: white; text-align: center; padding: 8px; font-size: 0.8rem; font-weight: bold; position: fixed; top: 56px; left: 0; right: 0; z-index: 1000;">
-  ⚠️ You are currently offline. Viewing saved data.
-</div>
+function togglePT(detailId) {
+  const chk = detailId === 'mPtDetails' ? document.getElementById('mPtEnabled') : 
+              detailId === 'ePtDetails' ? document.getElementById('ePtEnabled') : 
+              document.getElementById('payPtEnabled');
+  if(document.getElementById(detailId)) {
+    document.getElementById(detailId).style.display = chk.checked ? 'block' : 'none';
+  }
+}
 
-<nav class="bottom-nav">
-  <button class="bn-item active" id="bn-dashboard" onclick="showPage('dashboard',document.querySelector('[data-page=dashboard]'));updateBNav('dashboard')"><i>📊</i><span>Home</span></button>
-  <button class="bn-item" id="bn-members" onclick="showPage('members',document.querySelector('[data-page=members]'));updateBNav('members')"><i>👥</i><span>Members</span></button>
-  <button class="bn-item" id="bn-attendance" onclick="showPage('attendance',document.querySelector('[data-page=attendance]'));updateBNav('attendance')"><i>📅</i><span>Attend</span></button>
-  <button class="bn-item" id="bn-menu" onclick="toggleSidebar()"><i>☰</i><span>More</span></button>
-</nav>
+function recalcPrice() {
+  const sel = document.getElementById('mPlan');
+  if (!sel || !sel.options[sel.selectedIndex]) return;
+  const orig  = parseInt(sel.options[sel.selectedIndex].getAttribute('data-price')) || 0;
+  const dType = document.querySelector('input[name="dType"]:checked')?.value || 'none';
+  const raw   = (document.getElementById('dValue')?.value || '').replace(/,/g,'').trim();
+  const dVal  = raw==='' ? 0 : (parseFloat(raw)||0);
+  let final = orig;
+  if (dType==='percentage' && dVal>0) final = Math.round(orig - orig*Math.min(dVal,100)/100);
+  else if (dType==='fixed' && dVal>0)  final = Math.max(0, Math.round(orig-dVal));
+  document.getElementById('origPrice').textContent  = `₹${orig.toLocaleString('en-IN')}`;
+  document.getElementById('finalPrice').textContent = `₹${final.toLocaleString('en-IN')}`;
+}
 
-<main class="main">
+function recalcEditPrice() {
+  const sel = document.getElementById('ePlan');
+  if (!sel || !sel.options[sel.selectedIndex]) return;
+  const orig  = parseInt(sel.options[sel.selectedIndex].getAttribute('data-price')) || 0;
+  const dType = document.querySelector('input[name="edType"]:checked')?.value || 'none';
+  const raw   = (document.getElementById('edValue')?.value || '').replace(/,/g,'').trim();
+  const dVal  = raw==='' ? 0 : (parseFloat(raw)||0);
+  let final = orig;
+  if (dType==='percentage' && dVal>0) final = Math.round(orig - orig*Math.min(dVal,100)/100);
+  else if (dType==='fixed' && dVal>0)  final = Math.max(0, Math.round(orig-dVal));
+  document.getElementById('eOrigPrice').textContent  = `₹${orig.toLocaleString('en-IN')}`;
+  document.getElementById('eFinalPrice').textContent = `₹${final.toLocaleString('en-IN')}`;
+}
 
-  <div id="page-dashboard" class="page active">
-    <div id="alertBanner" class="banner green"><div class="banner-text"><h3>✅ All Good!</h3><p>No payments due this week</p></div></div>
-    <div class="stats-row">
-      <div class="stat-box"><div class="sv" id="statTotal">—</div><div class="sl">Members</div></div>
-      <div class="stat-box"><div class="sv" id="statActive">—</div><div class="sl">Active</div></div>
-      <div class="stat-box"><div class="sv" id="statRev">—</div><div class="sl">Revenue</div></div>
-    </div>
-    <div class="rev-row">
-      <div class="rev-box"><div class="rl">📅 Monthly</div><div class="rv rv-p" id="revM">—</div></div>
-      <div class="rev-box"><div class="rl">🎟️ Admission</div><div class="rv rv-g" id="revA">—</div></div>
-      <div class="rev-box"><div class="rl">💪 Training</div><div class="rv rv-a" id="revPT">—</div></div>
-    </div>
-    <div class="card">
-      <div class="card-head">
-        <span class="card-title">Expiring Soon</span>
-        <div style="display:flex;gap:4px;flex-wrap:wrap;">
-          <button class="btn btn-ghost btn-sm" onclick="filterDash(3)">3 Days</button>
-          <button class="btn btn-ghost btn-sm" onclick="filterDash(5)">5 Days</button>
-          <button class="btn btn-ghost btn-sm" onclick="filterDash(7)">7 Days</button>
-          <button class="btn btn-ghost btn-sm" onclick="filterDash('all')">All</button>
-          <button class="btn btn-primary btn-sm" onclick="openModal('addMemberModal')">+ Add</button>
-        </div>
-      </div>
-      <div class="tbl-wrap">
-        <table>
-          <thead><tr><th>Member</th><th>Plan</th><th>Gender</th><th>Expires</th><th>Status</th></tr></thead>
-          <tbody id="dashBody"><tr><td colspan="5"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+// TIMEZONE FIX: Uses strictly local dates
+function onPlanChange() {
+  const sel = document.getElementById('mPlan');
+  if (!sel || !sel.options[sel.selectedIndex]) return;
+  const months = parseInt(sel.options[sel.selectedIndex].getAttribute('data-months'))||1;
+  
+  const startInput = document.getElementById('mStart');
+  let sd = new Date();
+  if (startInput && startInput.value) {
+    const p = startInput.value.split('-');
+    sd = new Date(p[0], p[1]-1, p[2]);
+  } else if (startInput) {
+    startInput.value = getLocalTodayStr();
+  }
 
-  <div id="page-members" class="page">
-    <div class="card">
-      <div class="card-head">
-        <span class="card-title">All Members</span>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-primary btn-sm" onclick="openModal('addMemberModal')">+ Add</button>
-          <button class="btn btn-danger btn-sm" onclick="confirmDeleteAll()">🗑 All</button>
-        </div>
-      </div>
-      <div class="tbl-wrap">
-        <table>
-          <thead><tr><th>Name</th><th>Phone</th><th>Gender</th><th>Plan</th><th>Expires ↑</th><th>Trainer</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="membersBody"><tr><td colspan="8"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+  sd.setMonth(sd.getMonth() + months);
+  document.getElementById('mExpiry').value = sd.getFullYear() + '-' + String(sd.getMonth()+1).padStart(2,'0') + '-' + String(sd.getDate()).padStart(2,'0');
+  
+  recalcPrice();
+}
 
-  <div id="page-attendance" class="page">
-    <div class="card">
-      <div class="card-head"><span class="card-title">Attendance</span></div>
-      <div style="display:flex;gap:8px;margin-bottom:.75rem">
-        <input type="date" id="attDate" style="flex:1;min-height:42px;border:1.5px solid var(--border2);border-radius:var(--r3);font-family:'Plus Jakarta Sans',sans-serif;font-size:.85rem;padding:0 10px;background:var(--card);color:var(--tx)">
-        <button class="btn btn-primary" onclick="loadAttendance()">Load</button>
-      </div>
-      <button class="btn btn-success btn-full" style="margin-bottom:.7rem" onclick="markAllPresent()">✔ Mark All Present</button>
-      <div class="att-stats">
-        <div class="att-stat"><div class="an" id="attTotal">0</div><div class="al">Active</div></div>
-        <div class="att-stat"><div class="an" id="attPresent">0</div><div class="al">Present</div></div>
-        <div class="att-stat"><div class="an" id="attPct">0%</div><div class="al">Rate</div></div>
-      </div>
-      <div class="tbl-wrap">
-        <table>
-          <thead><tr><th>Member</th><th>Plan</th><th>Phone</th><th>Status</th><th>Action</th></tr></thead>
-          <tbody id="attBody"><tr><td colspan="5"><div class="empty"><p>Select a date and press Load</p></div></td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+function addCondition(containerId) {
+  const c = document.getElementById(containerId);
+  const row = document.createElement('div');
+  row.className = 'cond-row';
+  row.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;align-items:center';
+  row.innerHTML = `
+    <select class="cType" style="flex:1;min-width:120px;background:var(--card);border:1.5px solid var(--border2);border-radius:var(--r3);color:var(--tx);font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;padding:8px 10px;min-height:38px">
+      <option value="">Condition</option><option>Diabetes</option><option>Asthma</option><option>High Blood Pressure</option><option>Heart Condition</option><option>Knee Injury</option><option>Other</option>
+    </select>
+    <select class="cSev" style="flex:1;min-width:90px;background:var(--card);border:1.5px solid var(--border2);border-radius:var(--r3);color:var(--tx);font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;padding:8px 10px;min-height:38px">
+      <option>Mild</option><option>Moderate</option><option>Severe</option>
+    </select>
+    <input type="text" class="cNote" placeholder="Notes" style="flex:2;min-width:100px;background:var(--card);border:1.5px solid var(--border2);border-radius:var(--r3);color:var(--tx);font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;padding:8px 10px;min-height:38px">
+    <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>`;
+  c.appendChild(row);
+}
 
-  <div id="page-trainers" class="page">
-    <div class="card">
-      <div class="card-head">
-        <span class="card-title">Trainers</span>
-        <button class="btn btn-primary btn-sm" onclick="openModal('addTrainerModal')">+ Add</button>
-      </div>
-      <div class="tbl-wrap">
-        <table>
-          <thead><tr><th>Name</th><th>Specialty</th><th>Phone</th><th>Status</th><th></th></tr></thead>
-          <tbody id="trainersBody"><tr><td colspan="5"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+/* ── DASHBOARD FILTERS ── */
+let dashMembersCache = [];
 
-  <div id="page-plans" class="page">
-    <div class="card">
-      <div class="card-head">
-        <span class="card-title">Plans</span>
-        <button class="btn btn-primary btn-sm" onclick="openModal('addPlanModal')">+ Add</button>
-      </div>
-      <p class="sync-note">💡 Plans are synced to your account — available on all devices.</p>
-      <div class="plans-grid" id="plansGrid" style="margin-top:.75rem"></div>
-    </div>
-  </div>
+function renderDashTable(membersList) {
+  const tbody = document.getElementById('dashBody');
+  if (!membersList.length) { 
+    tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p>No members found in this timeframe.</p></div></td></tr>'; 
+    return; 
+  }
+  tbody.innerHTML = membersList.map(m => `<tr onclick="openEditMember('${m._id}')" style="cursor:pointer;" title="Tap to view details">
+    <td><div style="display:flex;align-items:center;gap:8px">${avImg(m)}<div><div style="font-weight:700;font-size:.82rem">${esc(m.name)}</div><div style="font-size:.7rem;color:var(--tx3)">${esc(m.phone)}</div></div></div></td>
+    <td style="font-size:.75rem;color:var(--tx2)">${esc(m.plan)}</td>
+    <td>${gBadge(m.gender)}</td>
+    <td>${expCell(m.expiryDate,m.status)}</td>
+    <td>${badge(m.status)}</td>
+  </tr>`).join('');
+}
 
-  <div id="page-discounts" class="page">
-    <div class="card">
-      <div class="card-head">
-        <span class="card-title">Discounts</span>
-        <button class="btn btn-primary btn-sm" onclick="openModal('addDiscountModal')">+ Add</button>
-      </div>
-      <div id="discTable"></div>
-    </div>
-  </div>
+function filterDash(days) {
+  if (days === 'all') {
+    renderDashTable(dashMembersCache.slice(0, 8));
+    return;
+  }
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const targetDate = new Date(today);
+  targetDate.setDate(today.getDate() + days);
+  targetDate.setHours(23,59,59,999);
 
-  <div id="page-payments" class="page">
-    <div class="card">
-      <div class="card-head"><span class="card-title">Due Payments</span></div>
-      <div id="payList"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></div>
-    </div>
-  </div>
+  const filtered = dashMembersCache.filter(m => {
+    if (m.status !== 'Active' && m.status !== 'Trial') return false;
+    // Timezone fix for filters
+    const p = m.expiryDate.split('T')[0].split('-');
+    const exp = new Date(p[0], p[1]-1, p[2]);
+    return exp >= today && exp <= targetDate;
+  });
+  renderDashTable(filtered);
+}
 
-  <div id="page-settings" class="page">
-    <div class="settings-card">
-      <h3>💳 UPI Payment Settings</h3>
-      <p class="sync-note" style="margin-bottom:.75rem">🔄 These settings sync across all your devices automatically.</p>
-      <div class="form-group"><label>Your UPI ID</label><input type="text" id="sUpiId" placeholder="e.g. yourname@upi"></div>
-      <div class="form-group"><label>Display Name (on QR)</label><input type="text" id="sUpiName" placeholder="e.g. My Gym"></div>
-      <button class="btn btn-primary btn-full" onclick="saveSettings()">Save UPI Settings</button>
-    </div>
-    <div class="settings-card">
-      <h3>🎟️ Default Fees</h3>
-      <div class="form-group"><label>Default Admission Fee (₹)</label><input type="number" id="sAdmFee" placeholder="e.g. 500" min="0"></div>
-      <div class="form-group"><label>Default PT Fee / month (₹)</label><input type="number" id="sPtFee" placeholder="e.g. 2000" min="0"></div>
-      <button class="btn btn-primary btn-full" onclick="saveSettings()">Save Fee Settings</button>
-    </div>
-  </div>
+async function loadDashboard() {
+  try {
+    const res = await fetch(API, {headers:hdrs()});
+    if (res.status===401) { logout(); return; }
+    const members = await res.json();
+    const sorted  = sortByExpiry(members);
 
-</main>
+    document.getElementById('statTotal').textContent  = members.length;
+    document.getElementById('statActive').textContent = members.filter(m=>m.status==='Active').length;
 
-<div class="modal" id="addMemberModal">
-  <div class="mbox">
-    <div class="mhdr"><span class="mtitle">Add New Member</span><button class="mclose" onclick="closeModal('addMemberModal')">✕</button></div>
-    <form id="addMemberForm">
-      <div class="form-sep" style="margin-top:0">📷 Profile Photo</div>
-      <div style="display:flex;gap:1rem;align-items:center;margin-bottom:.8rem">
-        <img id="photoPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%235B4CFF33'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" style="width:58px;height:58px;border-radius:50%;object-fit:cover;border:2px solid var(--border);flex-shrink:0;background:var(--pl2)">
-        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-          <button type="button" class="btn btn-ghost btn-sm" id="openCamBtn">📷 Camera</button>
-          <button type="button" class="btn btn-ghost btn-sm" id="uploadBtn">📁 Upload</button>
-          <button type="button" class="btn btn-danger btn-sm" id="clearPhotoBtn" style="display:none">🗑</button>
-        </div>
-        <input type="file" id="photoFile" accept="image/*" capture="environment" style="display:none">
-        <input type="hidden" id="photoData">
-      </div>
-      <div class="form-sep">👤 Basic Info</div>
-      <div class="form-grid">
-        <div class="form-group"><label>Full Name *</label><input type="text" id="mName" required placeholder="Arjun Reddy"></div>
-        <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="mPhone" required placeholder="9876543210" maxlength="10" inputmode="numeric"></div>
-        <div class="form-group"><label>Email</label><input type="email" id="mEmail" placeholder="optional"></div>
-        <div class="form-group"><label>Age</label><input type="text" id="mAge" placeholder="e.g. 25" inputmode="numeric" autocomplete="off"></div>
-        <div class="form-group">
-          <label>Gender *</label>
-          <select id="mGender" required>
-            <option value="">Select Gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-sep">💎 Membership Plan</div>
-      <div class="form-group"><label>Plan *</label><select id="mPlan" required onchange="onPlanChange()"></select></div>
-      <div class="disc-box">
-        <h4>🏷️ Discount (Optional)</h4>
-        <div class="radio-row">
-          <label><input type="radio" name="dType" value="none" checked onchange="recalcPrice()"> None</label>
-          <label><input type="radio" name="dType" value="percentage" onchange="recalcPrice()"> % Off</label>
-          <label><input type="radio" name="dType" value="fixed" onchange="recalcPrice()"> Fixed ₹</label>
-        </div>
-        <div class="form-grid">
-          <div class="form-group"><label>Discount Value</label><input type="text" id="dValue" inputmode="decimal" placeholder="e.g. 200" onchange="recalcPrice()" autocomplete="off"></div>
-          <div class="form-group"><label>Reason</label><input type="text" id="dReason" placeholder="e.g. Festival offer"></div>
-        </div>
-        <div class="price-sum">
-          <div class="pl"><span>Original</span><span id="origPrice">₹0</span></div>
-          <div class="pl"><span>Final Price</span><span id="finalPrice">₹0</span></div>
-        </div>
-      </div>
-      <div class="adm-box">
-        <h4>🎟️ Admission Fee (One-time)</h4>
-        <div class="form-grid">
-          <div class="form-group"><label>Amount (₹)</label><input type="text" id="mAdmFee" inputmode="decimal" placeholder="e.g. 500"></div>
-          <div class="form-group"><label>Waive Fee?</label>
-            <select id="mWaive"><option value="no">No — Collect</option><option value="yes">Yes — Waive</option></select>
-          </div>
-        </div>
-      </div>
-      <div class="pt-box">
-        <h4>💪 Personal Training</h4>
-        <div class="toggle-row">
-          <label class="toggle-sw"><input type="checkbox" id="mPtEnabled" onchange="togglePT('mPtDetails')"><span class="toggle-track"></span></label>
-          <span style="font-size:.82rem;font-weight:600">Enable PT</span>
-        </div>
-        <div id="mPtDetails" style="display:none">
-          <div class="form-grid">
-            <div class="form-group"><label>PT Fee / month (₹)</label><input type="text" id="mPtFee" inputmode="decimal" placeholder="e.g. 2000"></div>
-            <div class="form-group"><label>Trainer</label><select id="mPtTrainer"><option value="">Select Trainer</option></select></div>
-          </div>
-          <div class="form-group"><label>PT Notes</label><input type="text" id="mPtNotes" placeholder="e.g. Weight loss, 5 days/week"></div>
-        </div>
-      </div>
-      <div class="form-grid">
-        <div class="form-group"><label>Start Date *</label><input type="date" id="mStart" required onchange="onPlanChange()"></div>
-<div class="form-group"><label>Expiry Date *</label><input type="date" id="mExpiry" required></div>
-      </div>
-      <div class="form-group"><label>Status</label>
-        <select id="mStatus"><option value="Active">Active</option><option value="Trial">Trial</option><option value="Inactive">Inactive</option></select>
-      </div>
-      <div class="form-sep">🆘 Emergency Contact</div>
-      <div class="form-grid">
-        <div class="form-group"><label>Name</label><input type="text" id="mEcName" placeholder="Contact name"></div>
-        <div class="form-group"><label>Phone</label><input type="tel" id="mEcPhone" placeholder="Phone"></div>
-        <div class="form-group"><label>Relationship</label><input type="text" id="mEcRel" placeholder="e.g. Father"></div>
-      </div>
-      <div class="form-sep">🏥 Health Info</div>
-      <div id="condContainer"></div>
-      <button type="button" class="btn btn-ghost btn-sm btn-full" style="margin-bottom:.75rem" onclick="addCondition('condContainer')">+ Add Health Condition</button>
-      <div class="form-group"><label>Medical Notes</label><textarea id="mNotes" placeholder="Any notes…"></textarea></div>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-top:1rem">
-        <button type="submit" class="btn btn-primary btn-full">Add Member</button>
-        <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('addMemberModal')">Cancel</button>
-      </div>
-    </form>
-  </div>
-</div>
+    let monthly=0, admission=0, pt=0;
+    members.forEach(m => {
+      monthly   += (m.planPrice > 0 ? m.planPrice : getPlanPrice(m.plan));
+      if (!m.admissionWaived) admission += (m.admissionFee||0);
+      if (m.ptEnabled)        pt        += (m.ptFee||0);
+    });
+    const total = monthly + admission + pt;
+    const fmtR  = v => v>=1000 ? `₹${(v/1000).toFixed(1)}k` : `₹${v}`;
+    document.getElementById('statRev').textContent = fmtR(Math.round(total));
+    document.getElementById('revM').textContent   = `₹${Math.round(monthly).toLocaleString('en-IN')}`;
+    document.getElementById('revA').textContent   = `₹${Math.round(admission).toLocaleString('en-IN')}`;
+    document.getElementById('revPT').textContent  = `₹${Math.round(pt).toLocaleString('en-IN')}`;
 
-<div class="modal" id="editMemberModal">
-  <div class="mbox">
-    <div class="mhdr"><span class="mtitle">✏️ Edit Member</span><button class="mclose" onclick="closeModal('editMemberModal')">✕</button></div>
-    <form id="editMemberForm">
-      <input type="hidden" id="editMemberId">
-      <div class="form-sep" style="margin-top:0">👤 Basic Info</div>
-      <div class="form-grid">
-        <div class="form-group"><label>Full Name *</label><input type="text" id="eName" required></div>
-        <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="ePhone" required maxlength="10" inputmode="numeric"></div>
-        <div class="form-group"><label>Email</label><input type="email" id="eEmail"></div>
-        <div class="form-group"><label>Age</label><input type="text" id="eAge" inputmode="numeric" autocomplete="off"></div>
-        <div class="form-group">
-          <label>Gender *</label>
-          <select id="eGender" required>
-            <option value="">Select</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Status</label>
-          <select id="eStatus">
-            <option value="Active">Active</option>
-            <option value="Trial">Trial</option>
-            <option value="Inactive">Inactive</option>
-            <option value="Expired">Expired</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-sep">💎 Membership</div>
-      <div class="form-group"><label>Plan *</label><select id="ePlan" required onchange="recalcEditPrice()"></select></div>
-      <div class="disc-box">
-        <h4>🏷️ Discount</h4>
-        <div class="radio-row">
-          <label><input type="radio" name="edType" value="none" checked onchange="recalcEditPrice()"> None</label>
-          <label><input type="radio" name="edType" value="percentage" onchange="recalcEditPrice()"> % Off</label>
-          <label><input type="radio" name="edType" value="fixed" onchange="recalcEditPrice()"> Fixed ₹</label>
-        </div>
-        <div class="form-grid">
-          <div class="form-group"><label>Value</label><input type="text" id="edValue" inputmode="decimal" placeholder="e.g. 200" onchange="recalcEditPrice()" autocomplete="off"></div>
-          <div class="form-group"><label>Reason</label><input type="text" id="edReason" placeholder="e.g. Festival offer"></div>
-        </div>
-        <div class="price-sum">
-          <div class="pl"><span>Original</span><span id="eOrigPrice">₹0</span></div>
-          <div class="pl"><span>Final Price</span><span id="eFinalPrice">₹0</span></div>
-        </div>
-      </div>
-      <div class="adm-box">
-        <h4>🎟️ Admission Fee</h4>
-        <div class="form-grid">
-          <div class="form-group"><label>Amount (₹)</label><input type="text" id="eAdmFee" inputmode="decimal" placeholder="e.g. 500"></div>
-          <div class="form-group"><label>Waive Fee?</label>
-            <select id="eWaive"><option value="no">No — Collect</option><option value="yes">Yes — Waive</option></select>
-          </div>
-        </div>
-      </div>
-      <div class="pt-box">
-        <h4>💪 Personal Training</h4>
-        <div class="toggle-row">
-          <label class="toggle-sw"><input type="checkbox" id="ePtEnabled" onchange="togglePT('ePtDetails')"><span class="toggle-track"></span></label>
-          <span style="font-size:.82rem;font-weight:600">Enable PT</span>
-        </div>
-        <div id="ePtDetails" style="display:none">
-          <div class="form-grid">
-            <div class="form-group"><label>PT Fee / month (₹)</label><input type="text" id="ePtFee" inputmode="decimal" placeholder="e.g. 2000"></div>
-            <div class="form-group"><label>Trainer</label><select id="ePtTrainer"><option value="">Select Trainer</option></select></div>
-          </div>
-          <div class="form-group"><label>PT Notes</label><input type="text" id="ePtNotes" placeholder="e.g. Weight loss"></div>
-        </div>
-      </div>
-      <div class="form-grid">
-        <div class="form-group"><label>Expiry Date *</label><input type="date" id="eExpiry" required></div>
-      </div>
-      <div class="form-sep">🆘 Emergency Contact</div>
-      <div class="form-grid">
-        <div class="form-group"><label>Name</label><input type="text" id="eEcName"></div>
-        <div class="form-group"><label>Phone</label><input type="tel" id="eEcPhone"></div>
-        <div class="form-group"><label>Relationship</label><input type="text" id="eEcRel"></div>
-      </div>
-      <div class="form-sep">🏥 Medical Notes</div>
-      <div class="form-group"><label>Notes</label><textarea id="eNotes" placeholder="Any notes…"></textarea></div>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-top:1rem">
-        <button type="submit" class="btn btn-primary btn-full">Save Changes</button>
-        <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('editMemberModal')">Cancel</button>
-      </div>
-    </form>
-  </div>
-</div>
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const in7Days = new Date(today);
+    in7Days.setDate(today.getDate() + 7);
+    in7Days.setHours(23,59,59,999);
 
-<div class="modal" id="editPlanModal">
-  <div class="mbox" style="max-width:360px">
-    <div class="mhdr"><span class="mtitle">✏️ Edit Plan</span><button class="mclose" onclick="closeModal('editPlanModal')">✕</button></div>
-    <input type="hidden" id="editPlanOrigName">
-    <div class="form-group"><label>Plan Name *</label><input type="text" id="editPlanName" placeholder="e.g. 1 Month Strength"></div>
-    <div class="form-group"><label>Price (₹) *</label><input type="number" id="editPlanPrice" min="0" placeholder="e.g. 1000"></div>
-    <div class="form-group"><label>Duration (months) *</label><input type="number" id="editPlanMonths" min="1" placeholder="e.g. 1"></div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-top:.75rem">
-      <button class="btn btn-primary btn-full" onclick="saveEditPlan()">Save Plan</button>
-      <button class="btn btn-ghost btn-full" onclick="closeModal('editPlanModal')">Cancel</button>
-    </div>
-  </div>
-</div>
+    const due = members.filter(m => {
+      if(m.status !== 'Active') return false;
+      const p = m.expiryDate.split('T')[0].split('-');
+      const exp = new Date(p[0], p[1]-1, p[2]);
+      return exp <= in7Days;
+    });
 
-<div class="modal" id="cameraModal">
-  <div class="mbox" style="max-width:380px;text-align:center">
-    <div class="mhdr"><span class="mtitle">Take Photo</span><button type="button" class="mclose" id="closeCamBtn">✕</button></div>
-    <video id="camVideo" autoplay playsinline style="width:100%;max-height:260px;background:#000;border-radius:var(--r3);margin-bottom:.75rem"></video>
-    <canvas id="camCanvas" style="display:none"></canvas>
-    <button type="button" class="btn btn-primary btn-full" id="captureBtn">📸 Capture</button>
-  </div>
-</div>
+    const banner = document.getElementById('alertBanner');
+    if (!due.length) {
+      banner.className = 'banner green';
+      banner.innerHTML = '<div class="banner-text"><h3>✅ All Good!</h3><p>No payments due this week</p></div>';
+    } else {
+      banner.className = 'banner amber';
+      banner.innerHTML = `<div class="banner-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due</h3><p>Expiring within 7 days</p></div>
+        <button class="btn btn-ghost btn-sm" onclick="showPage('payments',document.querySelector('[data-page=payments]'));updateBNav('none')">View →</button>`;
+    }
 
-<div class="modal" id="addTrainerModal">
-  <div class="mbox" style="max-width:380px">
-    <div class="mhdr"><span class="mtitle">Add Trainer</span><button class="mclose" onclick="closeModal('addTrainerModal')">✕</button></div>
-    <form id="addTrainerForm">
-      <div class="form-group"><label>Full Name *</label><input type="text" id="tName" required placeholder="Trainer name"></div>
-      <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="tPhone" required placeholder="9876543210" maxlength="10"></div>
-      <div class="form-group"><label>Specialty *</label><input type="text" id="tSpecialty" required placeholder="e.g. Yoga, HIIT"></div>
-      <div class="form-group"><label>Status</label><select id="tStatus"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-top:.75rem">
-        <button type="submit" class="btn btn-primary btn-full">Add Trainer</button>
-        <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('addTrainerModal')">Cancel</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<div class="modal" id="addPlanModal">
-  <div class="mbox" style="max-width:360px">
-    <div class="mhdr"><span class="mtitle">Add Plan</span><button class="mclose" onclick="closeModal('addPlanModal')">✕</button></div>
-    <div class="form-group"><label>Plan Name *</label><input type="text" id="newPlanName" placeholder="e.g. 1 Month Strength"></div>
-    <div class="form-group"><label>Price (₹) *</label><input type="number" id="newPlanPrice" min="0" placeholder="e.g. 1000"></div>
-    <div class="form-group"><label>Duration (months) *</label><input type="number" id="newPlanMonths" min="1" placeholder="e.g. 1"></div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-top:.75rem">
-      <button class="btn btn-primary btn-full" onclick="addGymPlan()">Add Plan</button>
-      <button class="btn btn-ghost btn-full" onclick="closeModal('addPlanModal')">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal" id="addDiscountModal">
-  <div class="mbox" style="max-width:390px">
-    <div class="mhdr"><span class="mtitle">Add Discount</span><button class="mclose" onclick="closeModal('addDiscountModal')">✕</button></div>
-    <div class="form-group"><label>Discount Name *</label><input type="text" id="discName" placeholder="e.g. Festival Offer"></div>
-    <div class="form-group"><label>Applies To</label><select id="discApplies" onchange="toggleDiscPlan()"><option value="all">All Plans</option><option value="specific">Specific Plan</option></select></div>
-    <div class="form-group" id="discPlanGroup" style="display:none"><label>Select Plan</label><select id="discPlan"></select></div>
-    <div class="form-group"><label>Type</label><select id="discType"><option value="percentage">Percentage (%)</option><option value="fixed">Fixed (₹)</option></select></div>
-    <div class="form-group"><label>Value *</label><input type="number" id="discVal" min="0" placeholder="Enter value"></div>
-    <div class="form-group"><label>Valid Until</label><input type="date" id="discExpiry"></div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-top:.75rem">
-      <button class="btn btn-primary btn-full" onclick="addDiscount()">Add Discount</button>
-      <button class="btn btn-ghost btn-full" onclick="closeModal('addDiscountModal')">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal" id="paymentModal">
-  <div class="mbox" style="max-width:390px">
-    <div class="mhdr"><span class="mtitle">💳 Renew Plan</span><button class="mclose" onclick="closeModal('paymentModal')">✕</button></div>
+    dashMembersCache = sorted;
+    renderDashTable(sorted.slice(0,8));
     
-    <div class="form-group"><label>Change Plan</label><select id="payPlan" onchange="recalcPayment()"></select></div>
-    <div class="pt-box" style="margin-bottom:.8rem; padding:.6rem;">
-      <div class="toggle-row" style="margin-bottom:0;">
-        <label class="toggle-sw"><input type="checkbox" id="payPtEnabled" onchange="togglePT('payPtDetails'); recalcPayment()"><span class="toggle-track"></span></label>
-        <span style="font-size:.82rem;font-weight:600">Personal Training</span>
-      </div>
-      <div id="payPtDetails" style="display:none; margin-top:.6rem;">
-        <div class="form-grid">
-          <div class="form-group" style="margin-bottom:0;"><label>PT Fee (₹)</label><input type="number" id="payPtFee" onchange="recalcPayment()"></div>
-          <div class="form-group" style="margin-bottom:0;"><label>Trainer</label><select id="payPtTrainer"></select></div>
-        </div>
-      </div>
-    </div>
-    
-    <div id="payInfo"></div>
-    <div class="qr-box">
-      <p style="font-size:.72rem;color:var(--tx3);margin-bottom:7px">Scan to pay via UPI</p>
-      <img id="payQR" src="" alt="QR Code">
-      <span class="upi-txt" id="dispUpi">—</span>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <button class="btn btn-success btn-full" id="confirmPayBtn" onclick="confirmPayment()">✅ Confirm Payment</button>
-      <button class="btn btn-ghost btn-full" onclick="closeModal('paymentModal')">Cancel</button>
-    </div>
-  </div>
-</div>
-<div class="toast" id="toast"></div>
+  } catch(e) { toast('Error loading dashboard','error'); }
+}
 
-<script src="script.js"></script>
-</body>
-</html>
+/* ── ALL MEMBERS ── */
+async function loadAllMembers() {
+  const tbody = document.getElementById('membersBody');
+  try {
+    const res = await fetch(API, {headers:hdrs()});
+    if (res.status===401) { logout(); return; }
+    const members = await res.json();
+    if (!members.length) { tbody.innerHTML='<tr><td colspan="8"><div class="empty"><div class="ei">👥</div><p>No members yet</p></div></td></tr>'; return; }
+    const sorted = sortByExpiry(members);
+    
+    tbody.innerHTML = sorted.map(m => {
+      const tName = m.ptEnabled && m.ptTrainer ? (trainerMap[m.ptTrainer] || '—') : '—';
+      return `<tr onclick="openEditMember('${m._id}')" style="cursor:pointer;" title="Tap to view details">
+        <td><div style="display:flex;align-items:center;gap:7px">${avImg(m)}<div><div style="font-weight:700;font-size:.82rem">${esc(m.name)}</div><div style="font-size:.68rem;color:var(--tx3)">${esc(m.email||'')}</div></div></div></td>
+        <td style="font-size:.8rem">${esc(m.phone)}</td>
+        <td>${gBadge(m.gender)}</td>
+        <td style="font-size:.75rem;color:var(--tx2)">${esc(m.plan)}</td>
+        <td>${expCell(m.expiryDate,m.status)}</td>
+        <td style="font-size:.75rem">${m.ptEnabled?`<span class="badge b-active">PT</span><br><span style="font-size:.68rem;color:var(--tx2)">${esc(tName)}</span>`:'<span style="color:var(--tx3)">—</span>'}</td>
+        <td>${badge(m.status)}</td>
+        <td onclick="event.stopPropagation();"><div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="btn btn-edit btn-sm" onclick="openEditMember('${esc(m._id)}')">✏️ Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="delMember('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\'"))}')">🗑</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  } catch(e) { tbody.innerHTML='<tr><td colspan="8"><div class="empty"><p style="color:var(--gr)">Error loading</p></div></td></tr>'; }
+}
+
+async function delMember(id, name) {
+  if (!confirm(`Delete "${name}"? Cannot undo.`)) return;
+  try {
+    const res = await fetch(`${API}/${id}`, {method:'DELETE',headers:hdrs()});
+    if (res.ok) { toast(`${name} deleted`,'success'); loadAllMembers(); loadDashboard(); }
+    else toast('Error deleting','error');
+  } catch(e) { toast('Network error','error'); }
+}
+
+async function confirmDeleteAll() {
+  const v = prompt('Type DELETE ALL to confirm removing every member:');
+  if (v !== 'DELETE ALL') return;
+  try {
+    const members = await fetch(API,{headers:hdrs()}).then(r=>r.json());
+    for (const m of members) await fetch(`${API}/${m._id}`,{method:'DELETE',headers:hdrs()});
+    toast('All members deleted'); loadAllMembers(); loadDashboard();
+  } catch(e) { toast('Error','error'); }
+}
+
+/* ── EDIT MEMBER ── */
+async function openEditMember(id) {
+  try {
+    let member;
+    try {
+      const r = await fetch(`${API}/${id}`, {headers:hdrs()});
+      if (r.ok) member = await r.json();
+    } catch(_) {}
+    if (!member) {
+      const all = await fetch(API,{headers:hdrs()}).then(r=>r.json());
+      member = all.find(m=>m._id===id);
+    }
+    if (!member) { toast('Member not found','error'); return; }
+
+    document.getElementById('editMemberId').value = id;
+    document.getElementById('eName').value   = member.name   || '';
+    document.getElementById('ePhone').value  = member.phone  || '';
+    document.getElementById('eEmail').value  = member.email  || '';
+    document.getElementById('eAge').value    = member.age    || '';
+    document.getElementById('eGender').value = member.gender || '';
+    document.getElementById('eStatus').value = member.status || 'Active';
+
+    populatePlanSelect('ePlan');
+    document.getElementById('ePlan').value   = member.plan || '';
+    recalcEditPrice();
+
+    const dType = member.discountType || 'none';
+    document.querySelectorAll('input[name="edType"]').forEach(r => r.checked = r.value===dType);
+    document.getElementById('edValue').value  = member.discountValue  || '';
+    document.getElementById('edReason').value = member.discountReason || '';
+    recalcEditPrice();
+
+    document.getElementById('eExpiry').value = member.expiryDate ? member.expiryDate.split('T')[0] : '';
+    document.getElementById('eAdmFee').value  = member.admissionFee || '';
+    document.getElementById('eWaive').value   = member.admissionWaived ? 'yes' : 'no';
+
+    const ptEn = !!member.ptEnabled;
+    document.getElementById('ePtEnabled').checked      = ptEn;
+    document.getElementById('ePtDetails').style.display = ptEn ? 'block' : 'none';
+    document.getElementById('ePtFee').value  = member.ptFee   || '';
+    document.getElementById('ePtNotes').value= member.ptNotes || '';
+
+    const ePtSel = document.getElementById('ePtTrainer');
+    ePtSel.innerHTML = '<option value="">Select Trainer</option>' +
+      Object.entries(trainerMap).map(([tid,tname]) => `<option value="${esc(tid)}">${esc(tname)}</option>`).join('');
+    ePtSel.value = member.ptTrainer || '';
+
+    document.getElementById('eEcName').value = member.emergencyContact?.name         || '';
+    document.getElementById('eEcPhone').value= member.emergencyContact?.phone        || '';
+    document.getElementById('eEcRel').value  = member.emergencyContact?.relationship || '';
+    document.getElementById('eNotes').value = member.medicalNotes || '';
+
+    openModal('editMemberModal');
+  } catch(e) { toast('Error loading member','error'); console.error(e); }
+}
+
+document.getElementById('editMemberForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const id    = document.getElementById('editMemberId').value;
+  const phone = document.getElementById('ePhone').value.trim();
+  if (!/^\d{10}$/.test(phone)) { toast('Enter valid 10-digit phone','error'); return; }
+  
+  const sel       = document.getElementById('ePlan');
+  const origPrice = parseInt(sel.options[sel.selectedIndex]?.getAttribute('data-price')) || getPlanPrice(sel.value);
+  const dType     = document.querySelector('input[name="edType"]:checked')?.value || 'none';
+  const rawDVal   = (document.getElementById('edValue').value||'').replace(/,/g,'').trim();
+  const dVal      = rawDVal==='' ? 0 : (parseFloat(rawDVal)||0);
+  let finalPrice  = origPrice;
+  if (dType==='percentage' && dVal>0) finalPrice = Math.round(origPrice - origPrice*Math.min(dVal,100)/100);
+  else if (dType==='fixed' && dVal>0)  finalPrice = Math.max(0, Math.round(origPrice-dVal));
+
+  const admFee  = parseFloat(document.getElementById('eAdmFee').value||0) || 0;
+  const admWaived = document.getElementById('eWaive').value==='yes';
+  const ptEnabled = document.getElementById('ePtEnabled').checked;
+  const ptFee   = parseFloat(document.getElementById('ePtFee').value||0) || 0;
+
+  const data = {
+    name:    document.getElementById('eName').value.trim(),
+    phone,
+    email:   document.getElementById('eEmail').value.trim(),
+    age:     document.getElementById('eAge').value !== '' ? parseInt(document.getElementById('eAge').value,10) : null,
+    gender:  document.getElementById('eGender').value,
+    plan:    sel.value,
+    planPrice:       finalPrice,
+    discountType:    dType,
+    discountValue:   dVal,
+    discountReason:  document.getElementById('edReason').value.trim(),
+    admissionFee:    admFee,
+    admissionWaived: admWaived,
+    ptEnabled,
+    ptFee:     ptEnabled ? ptFee : 0,
+    ptTrainer: ptEnabled ? document.getElementById('ePtTrainer').value : '',
+    ptNotes:   ptEnabled ? document.getElementById('ePtNotes').value.trim() : '',
+    expiryDate: document.getElementById('eExpiry').value, // Standard YYYY-MM-DD
+    status:    document.getElementById('eStatus').value,
+    emergencyContact: {
+      name:         document.getElementById('eEcName').value.trim(),
+      phone:        document.getElementById('eEcPhone').value.trim(),
+      relationship: document.getElementById('eEcRel').value.trim()
+    },
+    medicalNotes: document.getElementById('eNotes').value.trim()
+  };
+
+  const btn = e.submitter; btn.disabled=true; btn.textContent='Saving…';
+  try {
+    const res = await fetch(`${API}/${id}`, {method:'PUT', headers:hdrs(), body:JSON.stringify(data)});
+    if (res.ok) {
+      closeModal('editMemberModal');
+      toast(`${data.name} updated!`,'success');
+      loadAllMembers(); loadDashboard();
+    } else {
+      const err = await res.json(); toast(err.error||'Could not update','error');
+    }
+  } catch(err) { toast('Network error','error'); }
+  btn.disabled=false; btn.textContent='Save Changes';
+});
+
+/* ── ADD MEMBER SUBMIT ── */
+document.getElementById('addMemberForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const phone=document.getElementById('mPhone').value.trim();
+  if(!/^\d{10}$/.test(phone)){toast('Enter valid 10-digit phone','error');return;}
+  const gender=document.getElementById('mGender').value;
+  if(!gender){toast('Select gender','error');return;}
+
+  const sel       = document.getElementById('mPlan');
+  const origPrice = parseInt(sel.options[sel.selectedIndex].getAttribute('data-price'))||0;
+  const dType     = document.querySelector('input[name="dType"]:checked')?.value||'none';
+  const dVal      = parseFloat(document.getElementById('dValue').value)||0;
+  let finalPrice  = origPrice;
+  if(dType==='percentage'&&dVal>0) finalPrice=Math.round(origPrice-origPrice*Math.min(dVal,100)/100);
+  else if(dType==='fixed'&&dVal>0) finalPrice=Math.max(0,Math.round(origPrice-dVal));
+
+  const ageRaw = document.getElementById('mAge').value.trim();
+  const age    = ageRaw!=='' ? parseInt(ageRaw,10) : null;
+  const admFee    = parseFloat(document.getElementById('mAdmFee').value||0) || gymCfg.admissionFee || 0;
+  const ptEnabled = document.getElementById('mPtEnabled').checked;
+  const ptFee     = parseFloat(document.getElementById('mPtFee').value||0) || gymCfg.ptFee || 0;
+
+  const conditions=[];
+  document.querySelectorAll('#condContainer .cond-row').forEach(row=>{
+    const cond=row.querySelector('.cType')?.value;
+    if(cond) conditions.push({condition:cond,severity:row.querySelector('.cSev')?.value||'Mild',notes:row.querySelector('.cNote')?.value||''});
+  });
+
+  const data={
+    name:    document.getElementById('mName').value.trim(),
+    phone, email: document.getElementById('mEmail').value.trim(),
+    age, gender,
+    photo:   document.getElementById('photoData').value||'',
+    plan:    sel.value,
+    planPrice:       finalPrice,
+    discountType:    dType,
+    discountValue:   dVal,
+    discountReason:  document.getElementById('dReason').value.trim(),
+    admissionFee:    admFee,
+    admissionWaived: document.getElementById('mWaive').value==='yes',
+    ptEnabled,
+    ptFee:     ptEnabled?ptFee:0,
+    ptTrainer: ptEnabled?document.getElementById('mPtTrainer').value:'',
+    ptNotes:   ptEnabled?document.getElementById('mPtNotes').value.trim():'',
+    joinDate: document.getElementById('mStart').value, 
+    expiryDate: document.getElementById('mExpiry').value,
+    status:    document.getElementById('mStatus').value,
+    emergencyContact:{name:document.getElementById('mEcName').value.trim(),phone:document.getElementById('mEcPhone').value.trim(),relationship:document.getElementById('mEcRel').value.trim()},
+    healthConditions:conditions,
+    medicalNotes: document.getElementById('mNotes').value.trim()
+  };
+
+  const btn=e.submitter; btn.disabled=true; btn.textContent='Adding…';
+  try{
+    const res=await fetch(API,{method:'POST',headers:hdrs(),body:JSON.stringify(data)});
+    if(res.ok){
+      const added=await res.json();
+      closeModal('addMemberModal');
+      e.target.reset();
+      document.getElementById('condContainer').innerHTML='';
+      document.getElementById('mPtEnabled').checked=false;
+      document.getElementById('mPtDetails').style.display='none';
+      resetPhoto(); 
+      
+      // Reset start date to today and recalculate expiry for the next member
+      if(document.getElementById('mStart')) {
+          document.getElementById('mStart').value = getLocalTodayStr();
+      }
+      onPlanChange();
+      
+      toast(`${added.name} added!`,'success');
+      loadDashboard();
+      
+      // Open Payment QR as a "New Member" (includes admission & applies discount)
+      openPaymentFor(added, true);
+    }else{
+      const err=await res.json(); toast(err.error||'Could not add member','error');
+    }
+  }catch(err){toast('Network error','error');}
+  btn.disabled=false; btn.textContent='Add Member';
+});
+
+/* ── ATTENDANCE ── */
+function attKey(date) {
+  try { const u=JSON.parse(localStorage.getItem('user')||'{}'); return `att_${u._id||u.email||'x'}_${date}`; }
+  catch(e) { return `att_${date}`; }
+}
+
+async function loadAttendance() {
+  const dateEl = document.getElementById('attDate');
+  const date   = dateEl.value || getLocalTodayStr();
+  dateEl.value = date;
+  const tbody  = document.getElementById('attBody');
+  try {
+    const res = await fetch(API, {headers:hdrs()});
+    if (res.status===401) { logout(); return; }
+    const members = await res.json();
+    const active  = members.filter(m => m.status==='Active'||m.status==='Trial');
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(attKey(date))||'{}'); } catch(e) {}
+    const pCount = Object.values(saved).filter(s=>s==='Present').length;
+    document.getElementById('attTotal').textContent   = active.length;
+    document.getElementById('attPresent').textContent = pCount;
+    document.getElementById('attPct').textContent     = active.length ? `${Math.min(100,Math.round(pCount/active.length*100))}%` : '0%';
+    if (!active.length) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p>No active members</p></div></td></tr>'; return; }
+    tbody.innerHTML = active.map(m => {
+      const st = saved[m._id] || 'Absent';
+      return `<tr>
+        <td><div style="display:flex;align-items:center;gap:7px">${avImg(m)}<span style="font-weight:700;font-size:.82rem">${esc(m.name)}</span></div></td>
+        <td style="font-size:.75rem;color:var(--tx2)">${esc(m.plan)}</td>
+        <td style="font-size:.78rem">${esc(m.phone)}</td>
+        <td><span id="ab-${m._id}" class="badge ${st==='Present'?'b-present':'b-absent'}">${st}</span></td>
+        <td style="white-space:nowrap">
+          <button class="att-btn-p" onclick="markAtt('${m._id}','${date}','Present')">✓ P</button>
+          <button class="att-btn-a" onclick="markAtt('${m._id}','${date}','Absent')">✗ A</button>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--gr)">Error</p></div></td></tr>'; }
+}
+
+function markAtt(memberId, date, status) {
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(attKey(date))||'{}'); } catch(e) {}
+  saved[memberId] = status;
+  localStorage.setItem(attKey(date), JSON.stringify(saved));
+  const b = document.getElementById(`ab-${memberId}`);
+  if (b) { b.textContent=status; b.className=`badge ${status==='Present'?'b-present':'b-absent'}`; }
+  const total   = parseInt(document.getElementById('attTotal').textContent)||0;
+  const present = Object.values(saved).filter(s=>s==='Present').length;
+  document.getElementById('attPresent').textContent = present;
+  document.getElementById('attPct').textContent = total ? `${Math.min(100,Math.round(present/total*100))}%` : '0%';
+}
+
+async function markAllPresent() {
+  const date = document.getElementById('attDate').value || getLocalTodayStr();
+  if (!confirm(`Mark ALL active members Present for ${fmt(date)}?`)) return;
+  try {
+    const members = await fetch(API,{headers:hdrs()}).then(r=>r.json());
+    const active  = members.filter(m=>m.status==='Active'||m.status==='Trial');
+    let saved = {};
+    try { saved=JSON.parse(localStorage.getItem(attKey(date))||'{}'); } catch(e){}
+    active.forEach(m=>{saved[m._id]='Present';});
+    localStorage.setItem(attKey(date),JSON.stringify(saved));
+    toast(`${active.length} members marked Present`,'success'); loadAttendance();
+  } catch(e) { toast('Error','error'); }
+}
+
+/* ── TRAINERS ── */
+async function loadTrainers() {
+  const tbody = document.getElementById('trainersBody');
+  try {
+    const res = await fetch(TAPI,{headers:hdrs()});
+    if (res.status===401){logout();return;}
+    const trainers = await res.json();
+    trainerMap = {};
+    trainers.forEach(t => { trainerMap[t._id] = t.name; });
+    if (!trainers.length) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="ei">💪</div><p>No trainers yet</p></div></td></tr>'; return; }
+    tbody.innerHTML = trainers.map(t=>`<tr>
+      <td><div style="display:flex;align-items:center;gap:7px">${av(t.name)}<span style="font-weight:700;font-size:.82rem">${esc(t.name)}</span></div></td>
+      <td style="font-size:.78rem;color:var(--tx2)">${esc(t.specialty)}</td>
+      <td style="font-size:.78rem">${esc(t.phone)}</td>
+      <td>${badge(t.status)}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="editTrainer('${esc(t._id)}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="delTrainer('${esc(t._id)}','${esc(t.name.replace(/'/g,"\\'"))}')">Del</button>
+      </td>
+    </tr>`).join('');
+    const opts = '<option value="">Select Trainer</option>'+
+      trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
+    document.getElementById('mPtTrainer').innerHTML = opts;
+    document.getElementById('ePtTrainer').innerHTML = opts;
+    if(document.getElementById('payPtTrainer')) document.getElementById('payPtTrainer').innerHTML = opts;
+  } catch(e) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--gr)">Error loading</p></div></td></tr>'; }
+}
+
+async function editTrainer(id) {
+  try {
+    const t  = await fetch(`${TAPI}/${id}`,{headers:hdrs()}).then(r=>r.json());
+    const n  = prompt('Name:',t.name);     if(!n) return;
+    const p  = prompt('Phone:',t.phone);   if(!p) return;
+    const s  = prompt('Specialty:',t.specialty); if(!s) return;
+    const st = prompt('Status (Active/Inactive):',t.status);
+    if(!['Active','Inactive'].includes(st)){toast('Invalid status','error');return;}
+    const res=await fetch(`${TAPI}/${id}`,{method:'PUT',headers:hdrs(),body:JSON.stringify({name:n.trim(),phone:p.trim(),specialty:s.trim(),status:st})});
+    if(res.ok){toast('Trainer updated','success');loadTrainers();}else toast('Update failed','error');
+  }catch(e){toast('Error','error');}
+}
+
+async function delTrainer(id,name) {
+  if(!confirm(`Delete trainer "${name}"?`))return;
+  try{
+    const res=await fetch(`${TAPI}/${id}`,{method:'DELETE',headers:hdrs()});
+    if(res.ok){toast('Deleted','success');loadTrainers();}else toast('Error','error');
+  }catch(e){toast('Error','error');}
+}
+
+document.getElementById('addTrainerForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const phone=document.getElementById('tPhone').value.trim();
+  if(!/^\d{10}$/.test(phone)){toast('Enter valid 10-digit phone','error');return;}
+  const data={name:document.getElementById('tName').value.trim(),phone,specialty:document.getElementById('tSpecialty').value.trim(),status:document.getElementById('tStatus').value};
+  const btn=e.submitter; btn.disabled=true; btn.textContent='Adding…';
+  try{
+    const res=await fetch(TAPI,{method:'POST',headers:hdrs(),body:JSON.stringify(data)});
+    if(res.ok){closeModal('addTrainerModal');e.target.reset();toast('Trainer added!','success');loadTrainers();}
+    else{const err=await res.json();toast(err.error||'Could not add trainer','error');}
+  }catch(e){toast('Network error','error');}
+  btn.disabled=false; btn.textContent='Add Trainer';
+});
+
+/* ── PLANS ── */
+function loadPlans() {
+  const grid = document.getElementById('plansGrid');
+  if (!gymPlans.length) { grid.innerHTML='<div class="empty"><div class="ei">💎</div><p>No plans yet</p></div>'; return; }
+  const plans = gymPlans.map(p => {
+    let disc=p.price,discInfo=null;
+    for(const d of gymDisc){
+      if(!d.validUntil||new Date(d.validUntil)>=new Date()){
+        if(d.appliesTo==='all'||d.planName===p.name){
+          if(d.type==='percentage'){disc=p.price-p.price*d.value/100;discInfo=`${d.value}% OFF`;}
+          else{disc=Math.max(0,p.price-d.value);discInfo=`₹${d.value} OFF`;}
+          break;
+        }
+      }
+    }
+    return{...p,disc:Math.round(disc),discInfo};
+  });
+  grid.innerHTML = plans.map(p=>`
+    <div class="plan-card">
+      ${p.discInfo?`<div class="plan-disc">${p.discInfo}</div>`:''}
+      <h3>${esc(p.name)}</h3>
+      <div class="plan-dur">${p.months} month${p.months>1?'s':''}</div>
+      ${p.discInfo?`<div class="plan-orig">₹${p.price.toLocaleString('en-IN')}</div>`:''}
+      <div class="plan-price">₹${p.disc.toLocaleString('en-IN')}</div>
+      <div style="display:flex;gap:5px;margin-top:.6rem">
+        <button class="btn btn-primary btn-sm" style="flex:1" onclick="selectPlan('${esc(p.name)}')">Select</button>
+        <button class="btn btn-edit btn-sm" onclick="openEditPlan('${esc(p.name)}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="removePlan('${esc(p.name)}')">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+function selectPlan(name) {
+  populatePlanSelect('mPlan');
+  document.getElementById('mPlan').value = name;
+  recalcPrice(); onPlanChange();
+  openModal('addMemberModal');
+}
+
+function addGymPlan() {
+  const name   = document.getElementById('newPlanName').value.trim();
+  const price  = parseFloat(document.getElementById('newPlanPrice').value);
+  const months = parseInt(document.getElementById('newPlanMonths').value);
+  if(!name||!price||!months){toast('Fill all fields','error');return;}
+  if(gymPlans.find(p=>p.name===name)){toast('Plan already exists','error');return;}
+  gymPlans.push({name,price,months});
+  saveServerProfile();
+  closeModal('addPlanModal');
+  ['newPlanName','newPlanPrice','newPlanMonths'].forEach(id=>document.getElementById(id).value='');
+  populatePlanSelect(); loadPlans(); toast('Plan added!','success');
+}
+
+function openEditPlan(name) {
+  const plan = gymPlans.find(p=>p.name===name);
+  if (!plan) return;
+  document.getElementById('editPlanOrigName').value = name;
+  document.getElementById('editPlanName').value     = plan.name;
+  document.getElementById('editPlanPrice').value    = plan.price;
+  document.getElementById('editPlanMonths').value   = plan.months;
+  openModal('editPlanModal');
+}
+
+function saveEditPlan() {
+  const origName = document.getElementById('editPlanOrigName').value;
+  const newName  = document.getElementById('editPlanName').value.trim();
+  const price    = parseFloat(document.getElementById('editPlanPrice').value);
+  const months   = parseInt(document.getElementById('editPlanMonths').value);
+  if (!newName||!price||!months) { toast('Fill all fields','error'); return; }
+  const idx = gymPlans.findIndex(p=>p.name===origName);
+  if (newName!==origName && gymPlans.find(p=>p.name===newName)) { toast('Another plan with this name exists','error'); return; }
+  gymPlans[idx] = {name:newName, price, months};
+  saveServerProfile();
+  closeModal('editPlanModal');
+  populatePlanSelect(); loadPlans(); toast('Plan updated!','success');
+}
+
+function removePlan(name) {
+  if(!confirm(`Remove plan "${name}"?`))return;
+  gymPlans = gymPlans.filter(p=>p.name!==name);
+  saveServerProfile(); populatePlanSelect(); loadPlans(); toast('Plan removed');
+}
+
+/* ── DISCOUNTS ── */
+function renderDiscounts() {
+  const c = document.getElementById('discTable');
+  if (!gymDisc.length) { c.innerHTML='<div class="empty"><div class="ei">🏷️</div><p>No discounts yet</p></div>'; return; }
+  c.innerHTML=`<div class="tbl-wrap"><table class="disc-tbl">
+    <thead><tr><th>Name</th><th>Applies</th><th>Type</th><th>Value</th><th>Until</th><th></th></tr></thead>
+    <tbody>${gymDisc.map((d,i)=>`<tr>
+      <td><strong style="font-size:.82rem">${esc(d.name)}</strong></td>
+      <td style="font-size:.78rem">${d.appliesTo==='all'?'All':esc(d.planName)}</td>
+      <td style="font-size:.78rem">${d.type==='percentage'?'%':'₹'}</td>
+      <td style="font-size:.82rem;font-weight:700">${d.type==='percentage'?`${d.value}%`:`₹${d.value.toLocaleString('en-IN')}`}</td>
+      <td style="font-size:.75rem">${d.validUntil?fmt(d.validUntil):'—'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="removeDiscount(${i})">Del</button></td>
+    </tr>`).join('')}</tbody></table></div>`;
+}
+
+function toggleDiscPlan() {
+  document.getElementById('discPlanGroup').style.display=document.getElementById('discApplies').value==='specific'?'block':'none';
+}
+
+function addDiscount() {
+  const name=document.getElementById('discName').value.trim();
+  const val=parseFloat(document.getElementById('discVal').value);
+  if(!name||!val||val<=0){toast('Fill all required fields','error');return;}
+  const type=document.getElementById('discType').value;
+  if(type==='percentage'&&val>100){toast('Percentage cannot exceed 100%','error');return;}
+  const appliesTo=document.getElementById('discApplies').value;
+  gymDisc.push({name,type,value:val,appliesTo,planName:appliesTo==='specific'?document.getElementById('discPlan').value:null,validUntil:document.getElementById('discExpiry').value||null});
+  saveServerProfile();
+  closeModal('addDiscountModal'); renderDiscounts(); toast('Discount added','success');
+}
+
+function removeDiscount(i) {
+  if(!confirm('Remove this discount?'))return;
+  gymDisc.splice(i,1); saveServerProfile(); renderDiscounts(); toast('Discount removed');
+}
+
+/* ── SMART PAYMENTS / RENEWALS ── */
+async function loadPayments() {
+  const container = document.getElementById('payList');
+  try {
+    const res = await fetch(API,{headers:hdrs()});
+    if(res.status===401){logout();return;}
+    const members = await res.json();
+    const today   = new Date();
+    today.setHours(0,0,0,0);
+    
+    const in14Days = new Date(today);
+    in14Days.setDate(today.getDate() + 14);
+    in14Days.setHours(23,59,59,999);
+
+    const due = members.filter(m => {
+      if(m.status !== 'Active') return false;
+      const p = m.expiryDate.split('T')[0].split('-');
+      const exp = new Date(p[0], p[1]-1, p[2]);
+      return exp <= in14Days;
+    });
+
+    due.sort((a,b) => new Date(a.expiryDate) - new Date(b.expiryDate));
+
+    if(!due.length){container.innerHTML='<div class="empty"><div class="ei">✅</div><p>No payments due in 14 days!</p></div>';return;}
+    container.innerHTML=due.map(m=>{
+      const p = m.expiryDate.split('T')[0].split('-');
+      const expDate = new Date(p[0], p[1]-1, p[2]);
+      const d = Math.ceil((expDate - today)/86400000);
+      return `<div class="pay-row">
+        <div style="display:flex;align-items:center;gap:8px">${avImg(m)}<div><div style="font-weight:700;font-size:.85rem">${esc(m.name)}</div><div style="font-size:.72rem;color:var(--tx3)">${esc(m.plan)}</div><div style="font-size:.7rem;color:var(--tx3)">Exp: ${fmt(m.expiryDate)}</div></div></div>
+        <span class="badge ${d<0?'b-inactive':'b-trial'}">${d<0?'Overdue':d+'d'}</span>
+        <button class="btn btn-success btn-sm" onclick='openPaymentFor(${JSON.stringify(m).replace(/'/g,"&#39;")})'>Renew</button>
+      </div>`;
+    }).join('');
+  }catch(e){container.innerHTML='<div class="empty"><p style="color:var(--gr)">Error</p></div>';}
+}
+
+// isNew flag determines if we are collecting a FIRST payment or a RENEWAL
+function openPaymentFor(m, isNew = false) {
+  curPayMember = {id: m._id, name: m.name, expiryDate: m.expiryDate, isNew: isNew, originalData: m};
+
+  const mhdr = document.querySelector('#paymentModal .mhdr .mtitle');
+  if(mhdr) mhdr.textContent = isNew ? '💳 Complete Payment' : '💳 Renew Plan';
+
+  if (isNew) {
+    // New Members: Hide the renewal edit form. They just need to pay.
+    document.getElementById('payPlan').parentElement.style.display = 'none';
+    document.getElementById('payPtEnabled').closest('.pt-box').style.display = 'none';
+  } else {
+    // Renewals: Show form to upgrade plan or toggle PT
+    document.getElementById('payPlan').parentElement.style.display = 'block';
+    document.getElementById('payPtEnabled').closest('.pt-box').style.display = 'block';
+    
+    populatePlanSelect('payPlan');
+    document.getElementById('payPlan').value = m.plan || gymPlans[0].name;
+    
+    const ptEn = !!m.ptEnabled;
+    document.getElementById('payPtEnabled').checked = ptEn;
+    document.getElementById('payPtDetails').style.display = ptEn ? 'block' : 'none';
+    document.getElementById('payPtFee').value = m.ptFee || gymCfg.ptFee || 0;
+    
+    document.getElementById('payPtTrainer').innerHTML = document.getElementById('ePtTrainer').innerHTML || '<option value="">Select Trainer</option>';
+    document.getElementById('payPtTrainer').value = m.ptTrainer || '';
+  }
+
+  recalcPayment();
+  openModal('paymentModal');
+}
+
+function recalcPayment() {
+  if(!curPayMember) return;
+  const isNew = curPayMember.isNew;
+  const m = curPayMember.originalData;
+  
+  let planName, planAmt, ptAmt, admAmt;
+  
+  if (isNew) {
+    // NEW Member: Read EXACT data just saved (includes discount & admission!)
+    planName = m.plan;
+    planAmt = m.planPrice; // Includes discount!
+    ptAmt = m.ptEnabled ? (m.ptFee || 0) : 0;
+    admAmt = m.admissionWaived ? 0 : (m.admissionFee || 0);
+  } else {
+    // RENEWAL: Read from the dropdowns. Never charge admission!
+    const planSel = document.getElementById('payPlan');
+    planName = planSel.value;
+    planAmt = parseInt(planSel.options[planSel.selectedIndex]?.getAttribute('data-price')) || getPlanPrice(planName);
+    
+    const isPt = document.getElementById('payPtEnabled').checked;
+    ptAmt = isPt ? (parseFloat(document.getElementById('payPtFee').value)||0) : 0;
+    admAmt = 0; 
+  }
+
+  const total = planAmt + ptAmt + admAmt;
+
+  let rows = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:var(--tx2);font-size:.82rem">Member</span><strong style="font-size:.82rem">${esc(curPayMember.name)}</strong></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">Plan Fee (${esc(planName)})</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(planAmt).toLocaleString('en-IN')}</span></div>`;
+  
+  if(admAmt > 0) rows += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">🎟️ Admission</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(admAmt).toLocaleString('en-IN')}</span></div>`;
+  if(ptAmt > 0) rows += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">💪 PT Fee</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(ptAmt).toLocaleString('en-IN')}</span></div>`;
+  
+  rows += `<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1.5px solid var(--border);margin-top:6px"><span style="font-weight:800;font-size:.88rem">Total</span><strong style="color:var(--g);font-size:1.05rem">₹${total.toLocaleString('en-IN')}</strong></div>`;
+
+  document.getElementById('payInfo').innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r3);padding:12px;margin-bottom:.6rem">${rows}</div>`;
+  
+  const upiId = gymCfg.upiId || 'your-upi@bank';
+  const upiName = gymCfg.upiName || 'GymPro';
+  document.getElementById('dispUpi').textContent = upiId;
+  const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${total}&cu=INR`;
+  document.getElementById('payQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=158x158&data=${encodeURIComponent(upiUrl)}`;
+}
+
+async function confirmPayment() {
+  if(!curPayMember) return;
+  
+  if (curPayMember.isNew) {
+     toast(`✅ Payment Confirmed!`, 'success');
+     closeModal('paymentModal');
+     curPayMember = null;
+     return; // App already saved the member, nothing to update!
+  }
+  
+  // This code only runs if they are renewing an existing membership!
+  const planName = document.getElementById('payPlan').value;
+  const planAmt = getPlanPrice(planName);
+  const months = getPlanMonths(planName);
+  
+  const isPt = document.getElementById('payPtEnabled').checked;
+  const ptAmt = isPt ? (parseFloat(document.getElementById('payPtFee').value)||0) : 0;
+  const ptTrainer = isPt ? document.getElementById('payPtTrainer').value : '';
+
+  // Safe local date addition!
+  let baseDate = new Date();
+  baseDate.setHours(0,0,0,0);
+  if (curPayMember.expiryDate) {
+      const p = curPayMember.expiryDate.split('T')[0].split('-');
+      const d = new Date(p[0], p[1]-1, p[2]);
+      if (d > new Date()) baseDate = d; // If they still have days left, add onto them!
+  }
+  
+  baseDate.setMonth(baseDate.getMonth() + months);
+  const newExpiry = baseDate.getFullYear() + '-' + String(baseDate.getMonth()+1).padStart(2,'0') + '-' + String(baseDate.getDate()).padStart(2,'0');
+
+  const payload = {
+    plan: planName,
+    planPrice: planAmt,
+    ptEnabled: isPt,
+    ptFee: ptAmt,
+    ptTrainer: ptTrainer,
+    expiryDate: newExpiry,
+    status: 'Active'
+  };
+
+  const btn = document.getElementById('confirmPayBtn');
+  if(btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
+
+  try {
+    await fetch(`${API}/${curPayMember.id}`, {
+      method:'PUT',
+      headers:hdrs(),
+      body:JSON.stringify(payload)
+    });
+    toast(`✅ Renewed to ${baseDate.toLocaleDateString('en-IN')}`, 'success');
+    closeModal('paymentModal');
+    curPayMember = null;
+    loadDashboard();
+    loadPayments();
+    loadAllMembers();
+  } catch(e) {
+    toast('Network error', 'error');
+  }
+  if(btn) { btn.disabled = false; btn.textContent = '✅ Confirm Payment'; }
+}
+
+/* ── SETTINGS ── */
+function loadSettings() {
+  document.getElementById('sUpiId').value   = gymCfg.upiId    || '';
+  document.getElementById('sUpiName').value = gymCfg.upiName  || '';
+  document.getElementById('sAdmFee').value  = gymCfg.admissionFee != null ? gymCfg.admissionFee : '';
+  document.getElementById('sPtFee').value   = gymCfg.ptFee    != null ? gymCfg.ptFee    : '';
+}
+
+async function saveSettings() {
+  gymCfg.upiId        = document.getElementById('sUpiId').value.trim();
+  gymCfg.upiName      = document.getElementById('sUpiName').value.trim();
+  gymCfg.admissionFee = parseFloat(document.getElementById('sAdmFee').value)||0;
+  gymCfg.ptFee        = parseFloat(document.getElementById('sPtFee').value)||0;
+  await saveServerProfile();
+  toast('Settings saved & synced!','success');
+}
+
+/* ── INIT & OFFLINE LOGIC ── */
+window.addEventListener('DOMContentLoaded', async () => {
+  if (!checkAuth()) return;
+  setupCamera();
+
+  document.getElementById('topDate').textContent =
+    new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+  
+  document.getElementById('attDate').value = getLocalTodayStr();
+  
+  if(document.getElementById('mStart')) {
+    document.getElementById('mStart').value = getLocalTodayStr();
+  }
+
+  await loadServerProfile();
+
+  if (gymCfg.admissionFee) document.getElementById('mAdmFee').value = gymCfg.admissionFee;
+
+  try {
+    const u = JSON.parse(localStorage.getItem('user')||'{}');
+    if (u.name) document.getElementById('sbUser').innerHTML =
+      `<div class="u-name">👤 ${esc(u.name)}</div><div class="u-role">${u.role==='admin'?'Administrator':'Staff Member'}</div>`;
+  } catch(e){}
+
+  populatePlanSelect();
+  recalcPrice();
+  loadDashboard();
+
+  fetch(TAPI,{headers:hdrs()}).then(r=>r.json()).then(trainers=>{
+    trainerMap = {};
+    trainers.forEach(t=>{trainerMap[t._id]=t.name;});
+    const opts = '<option value="">Select Trainer</option>'+
+      trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
+    document.getElementById('mPtTrainer').innerHTML = opts;
+    document.getElementById('ePtTrainer').innerHTML = opts;
+    if(document.getElementById('payPtTrainer')) document.getElementById('payPtTrainer').innerHTML = opts;
+  }).catch(()=>{});
+  
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(err => {
+        console.log('ServiceWorker registration failed: ', err);
+      });
+    });
+  }
+});
+
+// Offline Detection Listeners
+window.addEventListener('online', () => {
+  document.getElementById('offline-banner').style.display = 'none';
+  loadDashboard();
+  loadAllMembers();
+});
+
+window.addEventListener('offline', () => {
+  document.getElementById('offline-banner').style.display = 'block';
+});
+
+if (!navigator.onLine) {
+  document.getElementById('offline-banner').style.display = 'block';
+}
