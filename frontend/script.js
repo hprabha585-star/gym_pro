@@ -142,9 +142,9 @@ function showPage(page, btn) {
 }
 
 /* ── MODALS ── */
-/* ── MODALS ── */
 const openModal = id => {
   document.getElementById(id).classList.add('open');
+  
   // Force Start Date to today and calculate Expiry instantly!
   if (id === 'addMemberModal') {
     const startInput = document.getElementById('mStart');
@@ -154,7 +154,9 @@ const openModal = id => {
     }
   }
 };
+
 const closeModal = id => document.getElementById(id).classList.remove('open');
+
 document.addEventListener('click', e => {
   if (e.target.classList.contains('modal')) {
     closeModal(e.target.id);
@@ -223,7 +225,9 @@ function populatePlanSelect(selId='mPlan') {
 
 function togglePT(detailId) {
   const chk = detailId === 'mPtDetails' ? document.getElementById('mPtEnabled') : document.getElementById('ePtEnabled');
-  document.getElementById(detailId).style.display = chk.checked ? 'block' : 'none';
+  if(document.getElementById(detailId)) {
+    document.getElementById(detailId).style.display = chk.checked ? 'block' : 'none';
+  }
 }
 
 function recalcPrice() {
@@ -390,6 +394,7 @@ async function loadAllMembers() {
         <td style="font-size:.75rem">${m.ptEnabled?`<span class="badge b-active">PT</span><br><span style="font-size:.68rem;color:var(--tx2)">${esc(tName)}</span>`:'<span style="color:var(--tx3)">—</span>'}</td>
         <td>${badge(m.status)}</td>
         <td onclick="event.stopPropagation();"><div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="btn btn-edit btn-sm" onclick="openEditMember('${esc(m._id)}')">✏️ Edit</button>
           <button class="btn btn-danger btn-sm" onclick="delMember('${esc(m._id)}','${esc(m.name.replace(/'/g,"\\'"))}')">🗑</button>
         </div></td>
       </tr>`;
@@ -578,7 +583,7 @@ document.getElementById('addMemberForm').addEventListener('submit', async e => {
     ptTrainer: ptEnabled?document.getElementById('mPtTrainer').value:'',
     ptNotes:   ptEnabled?document.getElementById('mPtNotes').value.trim():'',
     
-    // --> START DATE FIX APPLIED HERE <-- //
+    // --> START DATE SAVED HERE <-- //
     joinDate: document.getElementById('mStart').value, 
     
     expiryDate: document.getElementById('mExpiry').value,
@@ -598,7 +603,14 @@ document.getElementById('addMemberForm').addEventListener('submit', async e => {
       document.getElementById('condContainer').innerHTML='';
       document.getElementById('mPtEnabled').checked=false;
       document.getElementById('mPtDetails').style.display='none';
-      resetPhoto(); recalcPrice();
+      resetPhoto(); 
+      
+      // Reset start date to today and recalculate expiry for the next member
+      if(document.getElementById('mStart')) {
+          document.getElementById('mStart').value = new Date().toISOString().split('T')[0];
+      }
+      onPlanChange();
+      
       toast(`${added.name} added!`,'success');
       loadDashboard();
       openPaymentFor(added);
@@ -699,6 +711,7 @@ async function loadTrainers() {
       trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
     document.getElementById('mPtTrainer').innerHTML = opts;
     document.getElementById('ePtTrainer').innerHTML = opts;
+    if(document.getElementById('payPtTrainer')) document.getElementById('payPtTrainer').innerHTML = opts;
   } catch(e) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--gr)">Error loading</p></div></td></tr>'; }
 }
 
@@ -857,7 +870,7 @@ function removeDiscount(i) {
   gymDisc.splice(i,1); saveServerProfile(); renderDiscounts(); toast('Discount removed');
 }
 
-/* ── PAYMENTS ── */
+/* ── RENEWAL / PAYMENTS ── */
 async function loadPayments() {
   const container = document.getElementById('payList');
   try {
@@ -873,46 +886,105 @@ async function loadPayments() {
       return `<div class="pay-row">
         <div style="display:flex;align-items:center;gap:8px">${avImg(m)}<div><div style="font-weight:700;font-size:.85rem">${esc(m.name)}</div><div style="font-size:.72rem;color:var(--tx3)">${esc(m.plan)}</div><div style="font-size:.7rem;color:var(--tx3)">Exp: ${fmt(m.expiryDate)}</div></div></div>
         <span class="badge ${d<0?'b-inactive':'b-trial'}">${d<0?'Overdue':d+'d'}</span>
-        <button class="btn btn-success btn-sm" onclick='openPaymentFor(${JSON.stringify(m).replace(/'/g,"&#39;")})'>Pay</button>
+        <button class="btn btn-success btn-sm" onclick='openPaymentFor(${JSON.stringify(m).replace(/'/g,"&#39;")})'>Renew</button>
       </div>`;
     }).join('');
   }catch(e){container.innerHTML='<div class="empty"><p style="color:var(--gr)">Error</p></div>';}
 }
 
 function openPaymentFor(m) {
-  const planAmt = (m.planPrice>0?m.planPrice:getPlanPrice(m.plan))||1000;
-  const admAmt  = m.admissionWaived ? 0 : (m.admissionFee||0);
-  const ptAmt   = m.ptEnabled ? (m.ptFee||0) : 0;
-  const total   = Math.round(planAmt+admAmt+ptAmt);
-  curPayMember  = {id:m._id, name:m.name, plan:m.plan};
+  curPayMember = {id: m._id, name: m.name, expiryDate: m.expiryDate};
 
-  let rows=`
-    <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:var(--tx2);font-size:.82rem">Member</span><strong style="font-size:.82rem">${esc(m.name)}</strong></div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:var(--tx2);font-size:.82rem">Plan</span><span style="font-size:.78rem;color:var(--tx2)">${esc(m.plan)}</span></div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">Plan Fee</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(planAmt).toLocaleString('en-IN')}</span></div>`;
-  if(admAmt>0) rows+=`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">🎟️ Admission</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(admAmt).toLocaleString('en-IN')}</span></div>`;
-  if(ptAmt>0)  rows+=`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">💪 PT Fee</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(ptAmt).toLocaleString('en-IN')}</span></div>`;
-  rows+=`<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1.5px solid var(--border);margin-top:6px"><span style="font-weight:800;font-size:.88rem">Total</span><strong style="color:var(--g);font-size:1.05rem">₹${total.toLocaleString('en-IN')}</strong></div>`;
+  populatePlanSelect('payPlan');
+  document.getElementById('payPlan').value = m.plan || gymPlans[0].name;
+  
+  const ptEn = !!m.ptEnabled;
+  document.getElementById('payPtEnabled').checked = ptEn;
+  document.getElementById('payPtDetails').style.display = ptEn ? 'block' : 'none';
+  document.getElementById('payPtFee').value = m.ptFee || gymCfg.ptFee || 0;
+  
+  document.getElementById('payPtTrainer').innerHTML = document.getElementById('ePtTrainer').innerHTML || '<option value="">Select Trainer</option>';
+  document.getElementById('payPtTrainer').value = m.ptTrainer || '';
 
-  document.getElementById('payInfo').innerHTML=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r3);padding:12px;margin-bottom:.6rem">${rows}</div>`;
-  const upiId=gymCfg.upiId||'your-upi@bank';
-  const upiName=gymCfg.upiName||'GymPro';
-  document.getElementById('dispUpi').textContent=upiId;
-  const upiUrl=`upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${total}&cu=INR`;
-  document.getElementById('payQR').src=`https://api.qrserver.com/v1/create-qr-code/?size=158x158&data=${encodeURIComponent(upiUrl)}`;
+  recalcPayment();
   openModal('paymentModal');
 }
 
+function recalcPayment() {
+  if(!curPayMember) return;
+  const planSel = document.getElementById('payPlan');
+  const planName = planSel.value;
+  const planAmt = parseInt(planSel.options[planSel.selectedIndex]?.getAttribute('data-price')) || getPlanPrice(planName);
+  
+  const isPt = document.getElementById('payPtEnabled').checked;
+  const ptAmt = isPt ? (parseFloat(document.getElementById('payPtFee').value)||0) : 0;
+  
+  const total = planAmt + ptAmt;
+
+  let rows = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:var(--tx2);font-size:.82rem">Member</span><strong style="font-size:.82rem">${esc(curPayMember.name)}</strong></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">Plan Fee (${esc(planName)})</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(planAmt).toLocaleString('en-IN')}</span></div>`;
+  
+  if(ptAmt > 0) rows += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">💪 PT Fee</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(ptAmt).toLocaleString('en-IN')}</span></div>`;
+  
+  rows += `<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1.5px solid var(--border);margin-top:6px"><span style="font-weight:800;font-size:.88rem">Total</span><strong style="color:var(--g);font-size:1.05rem">₹${total.toLocaleString('en-IN')}</strong></div>`;
+
+  document.getElementById('payInfo').innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r3);padding:12px;margin-bottom:.6rem">${rows}</div>`;
+  
+  const upiId = gymCfg.upiId || 'your-upi@bank';
+  const upiName = gymCfg.upiName || 'GymPro';
+  document.getElementById('dispUpi').textContent = upiId;
+  const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${total}&cu=INR`;
+  document.getElementById('payQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=158x158&data=${encodeURIComponent(upiUrl)}`;
+}
+
 async function confirmPayment() {
-  if(!curPayMember)return;
-  const months=getPlanMonths(curPayMember.plan);
-  const expiry=new Date(); expiry.setMonth(expiry.getMonth()+months);
+  if(!curPayMember) return;
+  
+  const planName = document.getElementById('payPlan').value;
+  const planAmt = getPlanPrice(planName);
+  const months = getPlanMonths(planName);
+  
+  const isPt = document.getElementById('payPtEnabled').checked;
+  const ptAmt = isPt ? (parseFloat(document.getElementById('payPtFee').value)||0) : 0;
+  const ptTrainer = isPt ? document.getElementById('payPtTrainer').value : '';
+
+  let baseDate = new Date(curPayMember.expiryDate);
+  if (isNaN(baseDate.getTime()) || baseDate < new Date()) {
+    baseDate = new Date();
+  }
+  baseDate.setMonth(baseDate.getMonth() + months);
+  const newExpiry = baseDate.toISOString().split('T')[0];
+
+  const payload = {
+    plan: planName,
+    planPrice: planAmt,
+    ptEnabled: isPt,
+    ptFee: ptAmt,
+    ptTrainer: ptTrainer,
+    expiryDate: newExpiry,
+    status: 'Active'
+  };
+
+  const btn = document.getElementById('confirmPayBtn');
+  if(btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
+
   try {
-    await fetch(`${API}/${curPayMember.id}`,{method:'PUT',headers:hdrs(),body:JSON.stringify({expiryDate:expiry.toISOString().split('T')[0],status:'Active'})}).catch(()=>{});
-  }catch(e){}
-  toast(`✅ Extended to ${expiry.toLocaleDateString('en-IN')}`,'success');
-  closeModal('paymentModal'); curPayMember=null;
-  loadDashboard(); loadPayments();
+    await fetch(`${API}/${curPayMember.id}`, {
+      method:'PUT',
+      headers:hdrs(),
+      body:JSON.stringify(payload)
+    });
+    toast(`✅ Renewed to ${baseDate.toLocaleDateString('en-IN')}`, 'success');
+    closeModal('paymentModal');
+    curPayMember = null;
+    loadDashboard();
+    loadPayments();
+    loadAllMembers();
+  } catch(e) {
+    toast('Network error', 'error');
+  }
+  if(btn) { btn.disabled = false; btn.textContent = '✅ Confirm Payment'; }
 }
 
 /* ── SETTINGS ── */
@@ -968,6 +1040,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
     document.getElementById('mPtTrainer').innerHTML = opts;
     document.getElementById('ePtTrainer').innerHTML = opts;
+    if(document.getElementById('payPtTrainer')) document.getElementById('payPtTrainer').innerHTML = opts;
   }).catch(()=>{});
   
   if ('serviceWorker' in navigator) {
