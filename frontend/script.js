@@ -229,13 +229,28 @@ function resetPhoto() {
   document.getElementById('photoFile').value = '';
 }
 
-/* ── PLAN SELECT ── */
+/* ── SMART PLAN SELECT (Includes Global Discounts!) ── */
 function populatePlanSelect(selId='mPlan') {
   const sel = document.getElementById(selId);
   if (!sel) return;
   const cur = sel.value;
-  sel.innerHTML = gymPlans.map(p => `<option value="${esc(p.name)}" data-price="${p.price}" data-months="${p.months}">${esc(p.name)} — ₹${p.price.toLocaleString('en-IN')}</option>`).join('');
+  sel.innerHTML = gymPlans.map(p => {
+    let discPrice = p.price;
+    for(const d of gymDisc){
+      if(!d.validUntil || new Date(d.validUntil) >= new Date()){
+        if(d.appliesTo === 'all' || d.planName === p.name){
+          if(d.type === 'percentage') discPrice -= (p.price * d.value / 100);
+          else discPrice -= d.value;
+          break;
+        }
+      }
+    }
+    discPrice = Math.max(0, Math.round(discPrice));
+    const txt = discPrice < p.price ? `₹${discPrice} (Sale!)` : `₹${p.price}`;
+    return `<option value="${esc(p.name)}" data-price="${discPrice}" data-months="${p.months}">${esc(p.name)} — ${txt}</option>`;
+  }).join('');
   if (cur) sel.value = cur;
+  
   const dp = document.getElementById('discPlan');
   if (dp) dp.innerHTML = gymPlans.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
   if (selId==='mPlan') recalcPrice();
@@ -645,7 +660,6 @@ document.getElementById('addMemberForm').addEventListener('submit', async e => {
       toast(`${added.name} added!`,'success');
       loadDashboard();
       
-      // Open Payment QR as a "New Member"
       openPaymentFor(added, true);
     }else{
       const err=await res.json(); toast(err.error||'Could not add member','error');
@@ -693,7 +707,7 @@ async function loadAttendance() {
   } catch(e) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--gr)">Error</p></div></td></tr>'; }
 }
 
-/* ── ATTENDANCE ── */
+/* ── SAVING ATTENDANCE TO MONGODB ── */
 async function markAtt(memberId, date, status) {
   // 1. Immediately update the UI for a snappy feel
   const b = document.getElementById(`ab-${memberId}`);
@@ -724,7 +738,7 @@ async function markAtt(memberId, date, status) {
 
     const res = await fetch(`${BASE}/attendance`, {
       method: 'POST',
-      headers: hdrs(), // Includes your JWT token
+      headers: hdrs(),
       body: JSON.stringify(payload)
     });
 
@@ -745,7 +759,13 @@ async function markAllPresent() {
     const active  = members.filter(m=>m.status==='Active'||m.status==='Trial');
     let saved = {};
     try { saved=JSON.parse(localStorage.getItem(attKey(date))||'{}'); } catch(e){}
-    active.forEach(m=>{saved[m._id]='Present';});
+    
+    // Mark UI & Save to DB for each member
+    for (const m of active) {
+      saved[m._id] = 'Present';
+      await markAtt(m._id, date, 'Present'); // Reusing the individual function to ensure DB saving
+    }
+    
     localStorage.setItem(attKey(date),JSON.stringify(saved));
     toast(`${active.length} members marked Present`,'success'); loadAttendance();
   } catch(e) { toast('Error','error'); }
@@ -1122,6 +1142,15 @@ async function saveSettings() {
 window.addEventListener('DOMContentLoaded', async () => {
   if (!checkAuth()) return;
   setupCamera();
+
+  // Attach instant input listeners for real-time calculation
+  ['dValue', 'mPlan'].forEach(id => {
+    if(document.getElementById(id)) document.getElementById(id).addEventListener('input', recalcPrice);
+  });
+  if(document.getElementById('mStart')) document.getElementById('mStart').addEventListener('input', onPlanChange);
+  ['edValue', 'ePlan'].forEach(id => {
+    if(document.getElementById(id)) document.getElementById(id).addEventListener('input', recalcEditPrice);
+  });
 
   document.getElementById('topDate').textContent =
     new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
