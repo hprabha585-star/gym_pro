@@ -523,6 +523,9 @@ async function openEditMember(id) {
     document.getElementById('eEcRel').value  = member.emergencyContact?.relationship || '';
     document.getElementById('eNotes').value = member.medicalNotes || '';
 
+// Trigger the analytics in the background!
+    renderMemberAttendanceStats(id);
+    
     openModal('editMemberModal');
   } catch(e) { toast('Error loading member','error'); console.error(e); }
 }
