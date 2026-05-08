@@ -770,7 +770,97 @@ async function markAllPresent() {
     toast(`${active.length} members marked Present`,'success'); loadAttendance();
   } catch(e) { toast('Error','error'); }
 }
+/* ── MEMBER ATTENDANCE ANALYTICS ── */
+async function renderMemberAttendanceStats(memberId) {
+  const container = document.getElementById('eAttStats');
+  if(!container) return;
+  
+  // Show loading state while fetching
+  container.innerHTML = '<div class="sync-note" style="text-align:center;">⏳ Analyzing attendance data...</div>';
+  
+  try {
+    // Fetch all attendance records
+    const res = await fetch(`${BASE}/attendance`, {headers:hdrs()});
+    if (!res.ok) throw new Error('fetch failed');
+    const allAtt = await res.json();
 
+    // Filter only this member's "Present" days
+    const memberAtt = allAtt.filter(a => ((a.memberId && a.memberId._id === memberId) || a.memberId === memberId) && a.status === 'Present');
+    
+    // Group attendance by Month and Year (YYYY-MM)
+    const monthlyStats = {};
+    memberAtt.forEach(record => {
+      const [y, m, d] = record.date.split('-');
+      const monthKey = `${y}-${m}`;
+      if(!monthlyStats[monthKey]) monthlyStats[monthKey] = 0;
+      monthlyStats[monthKey]++;
+    });
+
+    // Identify the current running month
+    const today = new Date();
+    const curY = today.getFullYear();
+    const curM = String(today.getMonth() + 1).padStart(2, '0');
+    const curMonthKey = `${curY}-${curM}`;
+
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    // JS Trick: Day 0 of next month = Last day of current month
+    const getDaysInMonth = (year, month) => new Date(year, month, 0).getDate();
+
+    // Sort so newest months show at the top
+    const keys = Object.keys(monthlyStats).sort().reverse(); 
+    
+    if(keys.length === 0) {
+       container.innerHTML = '<div class="sync-note" style="text-align:center;">No attendance records found yet. Mark them present to see stats!</div>';
+       return;
+    }
+
+    let html = '<div style="display:flex; flex-direction:column; gap:10px;">';
+
+    keys.forEach(key => {
+      const [y, m] = key.split('-');
+      const monthName = `${monthNames[parseInt(m)-1]} ${y}`;
+      const presentDays = monthlyStats[key];
+
+      if (key === curMonthKey) {
+        // CURRENT MONTH: Show exact days attended
+        html += `
+          <div style="background:var(--pl2); padding:12px 16px; border-radius:14px; display:flex; justify-content:space-between; align-items:center; border: 1.5px solid var(--pl);">
+            <span style="font-size:.9rem; font-weight:800; color:var(--p);">${monthName} (Current)</span>
+            <span style="background:var(--p); color:#fff; padding:6px 12px; border-radius:20px; font-size:.8rem; font-weight:800;">${presentDays} Days Attended</span>
+          </div>
+        `;
+      } else {
+        // PAST MONTHS: Show Percentage Progress Bar
+        const totalDays = getDaysInMonth(parseInt(y), parseInt(m));
+        const pct = Math.round((presentDays / totalDays) * 100);
+        
+        // Change color based on performance (Red < 40%, Yellow < 70%, Green > 70%)
+        let barClr = 'var(--g)';
+        if(pct < 40) barClr = 'var(--gr)';
+        else if(pct < 70) barClr = 'var(--am)';
+
+        html += `
+          <div style="background:var(--bg); padding:12px 16px; border-radius:14px; border: 1px solid var(--border2);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-size:.85rem; font-weight:700; color:var(--tx2);">${monthName}</span>
+              <span style="font-size:.85rem; font-weight:800; color:${barClr};">${pct}% Attended</span>
+            </div>
+            <div style="height:8px; background:var(--border2); border-radius:10px; overflow:hidden;">
+              <div style="height:100%; width:${pct}%; background:${barClr}; border-radius:10px; transition: width 0.5s ease;"></div>
+            </div>
+            <div style="font-size:.7rem; color:var(--tx3); margin-top:6px; text-align:right;">${presentDays} out of ${totalDays} days</div>
+          </div>
+        `;
+      }
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+
+  } catch(e) {
+    container.innerHTML = '<div class="sync-note" style="color:var(--gr); text-align:center;">Failed to load stats. Check connection.</div>';
+  }
+}
 /* ── TRAINERS ── */
 async function loadTrainers() {
   const tbody = document.getElementById('trainersBody');
