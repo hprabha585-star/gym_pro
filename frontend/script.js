@@ -693,17 +693,48 @@ async function loadAttendance() {
   } catch(e) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--gr)">Error</p></div></td></tr>'; }
 }
 
-function markAtt(memberId, date, status) {
+/* ── ATTENDANCE ── */
+async function markAtt(memberId, date, status) {
+  // 1. Immediately update the UI for a snappy feel
+  const b = document.getElementById(`ab-${memberId}`);
+  if (b) { 
+    b.textContent = status; 
+    b.className = `badge ${status === 'Present' ? 'b-present' : 'b-absent'}`; 
+  }
+  
+  // 2. Fallback: Keep local storage just in case they are offline
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem(attKey(date))||'{}'); } catch(e) {}
   saved[memberId] = status;
   localStorage.setItem(attKey(date), JSON.stringify(saved));
-  const b = document.getElementById(`ab-${memberId}`);
-  if (b) { b.textContent=status; b.className=`badge ${status==='Present'?'b-present':'b-absent'}`; }
-  const total   = parseInt(document.getElementById('attTotal').textContent)||0;
+  
+  // Update the on-screen percentages
+  const total = parseInt(document.getElementById('attTotal').textContent)||0;
   const present = Object.values(saved).filter(s=>s==='Present').length;
   document.getElementById('attPresent').textContent = present;
   document.getElementById('attPct').textContent = total ? `${Math.min(100,Math.round(present/total*100))}%` : '0%';
+
+  // 3. THE FIX: Send the data to your MongoDB Backend!
+  try {
+    const payload = {
+      memberId: memberId,
+      date: date,
+      status: status
+    };
+
+    const res = await fetch(`${BASE}/attendance`, {
+      method: 'POST',
+      headers: hdrs(), // Includes your JWT token
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+        throw new Error('Failed to save to database');
+    }
+  } catch (error) {
+    console.error("Attendance Sync Error:", error);
+    toast("Saved locally (Sync error)", "error");
+  }
 }
 
 async function markAllPresent() {
