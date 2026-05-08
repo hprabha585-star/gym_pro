@@ -4,6 +4,7 @@
   <link rel="manifest" href="/manifest.json">
   <meta charset="UTF-8">
   
+  <!-- NATIVE APP META TAGS -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,6 +14,7 @@
   <title>GymPro</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
+  <!-- LINK TO CSS -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -191,6 +193,7 @@
 
 </main>
 
+<!-- ADD MEMBER MODAL -->
 <div class="modal" id="addMemberModal">
   <div class="mbox">
     <div class="mhdr"><span class="mtitle">Add New Member</span><button class="mclose" onclick="closeModal('addMemberModal')">✕</button></div>
@@ -257,7 +260,7 @@
         </div>
         <div id="mPtDetails" style="display:none">
           <div class="form-grid">
-            <div class="form-group"><label>PT Fee / month (₹)</label><input type="text" id="mPtFee" inputmode="decimal" placeholder="e.g. 2000"></div>
+            <div class="form-group"><label>PT Fee / month (₹)</label><input type="text" id="mPtFee" inputmode="decimal" placeholder="e.g. 2000" onchange="recalcPrice()"></div>
             <div class="form-group"><label>Trainer</label><select id="mPtTrainer"><option value="">Select Trainer</option></select></div>
           </div>
           <div class="form-group"><label>PT Notes</label><input type="text" id="mPtNotes" placeholder="e.g. Weight loss, 5 days/week"></div>
@@ -288,6 +291,7 @@
   </div>
 </div>
 
+<!-- EDIT MEMBER MODAL -->
 <div class="modal" id="editMemberModal">
   <div class="mbox">
     <div class="mhdr"><span class="mtitle">✏️ Edit Member</span><button class="mclose" onclick="closeModal('editMemberModal')">✕</button></div>
@@ -352,7 +356,7 @@
         </div>
         <div id="ePtDetails" style="display:none">
           <div class="form-grid">
-            <div class="form-group"><label>PT Fee / month (₹)</label><input type="text" id="ePtFee" inputmode="decimal" placeholder="e.g. 2000"></div>
+            <div class="form-group"><label>PT Fee / month (₹)</label><input type="text" id="ePtFee" inputmode="decimal" placeholder="e.g. 2000" onchange="recalcEditPrice()"></div>
             <div class="form-group"><label>Trainer</label><select id="ePtTrainer"><option value="">Select Trainer</option></select></div>
           </div>
           <div class="form-group"><label>PT Notes</label><input type="text" id="ePtNotes" placeholder="e.g. Weight loss"></div>
@@ -377,6 +381,7 @@
   </div>
 </div>
 
+<!-- EDIT PLAN MODAL -->
 <div class="modal" id="editPlanModal">
   <div class="mbox" style="max-width:360px">
     <div class="mhdr"><span class="mtitle">✏️ Edit Plan</span><button class="mclose" onclick="closeModal('editPlanModal')">✕</button></div>
@@ -391,6 +396,7 @@
   </div>
 </div>
 
+<!-- CAMERA MODAL -->
 <div class="modal" id="cameraModal">
   <div class="mbox" style="max-width:400px;text-align:center">
     <div class="mhdr"><span class="mtitle">Take Photo</span><button type="button" class="mclose" id="closeCamBtn">✕</button></div>
@@ -400,6 +406,7 @@
   </div>
 </div>
 
+<!-- ADD TRAINER MODAL -->
 <div class="modal" id="addTrainerModal">
   <div class="mbox" style="max-width:380px">
     <div class="mhdr"><span class="mtitle">Add Trainer</span><button class="mclose" onclick="closeModal('addTrainerModal')">✕</button></div>
@@ -416,6 +423,7 @@
   </div>
 </div>
 
+<!-- ADD PLAN MODAL -->
 <div class="modal" id="addPlanModal">
   <div class="mbox" style="max-width:360px">
     <div class="mhdr"><span class="mtitle">Add Plan</span><button class="mclose" onclick="closeModal('addPlanModal')">✕</button></div>
@@ -429,6 +437,7 @@
   </div>
 </div>
 
+<!-- ADD DISCOUNT MODAL -->
 <div class="modal" id="addDiscountModal">
   <div class="mbox" style="max-width:390px">
     <div class="mhdr"><span class="mtitle">Add Discount</span><button class="mclose" onclick="closeModal('addDiscountModal')">✕</button></div>
@@ -445,6 +454,7 @@
   </div>
 </div>
 
+<!-- PAYMENT/RENEWAL MODAL -->
 <div class="modal" id="paymentModal">
   <div class="mbox" style="max-width:390px">
     <div class="mhdr"><span class="mtitle">💳 Renew Plan</span><button class="mclose" onclick="closeModal('paymentModal')">✕</button></div>
@@ -478,6 +488,7 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- Link to external JS -->
 <script src="script.js"></script>
 </body>
 </html>
