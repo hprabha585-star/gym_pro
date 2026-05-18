@@ -3,82 +3,139 @@
 <head>
   <link rel="manifest" href="/manifest.json">
   <meta charset="UTF-8">
-  
-  <!-- NATIVE APP META TAGS -->
+
+  <!-- PWA & NATIVE APP META TAGS -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="theme-color" content="#FFFFFF">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1A1A2E">
 
   <title>GymPro</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  
-  <!-- LINK TO CSS -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<!-- ═══════════════════════════════════════
+     SIDEBAR
+═══════════════════════════════════════ -->
 <nav class="sidebar" id="sidebar">
   <div class="sb-top">
-    <div class="sb-brand"><div class="sb-logo">🏋️</div><span class="sb-name">GymPro</span></div>
+    <div class="sb-brand">
+      <div class="sb-logo">🏋️</div>
+      <span class="sb-name">GymPro</span>
+    </div>
     <button class="sb-close" onclick="closeSidebar()">✕</button>
   </div>
-  <div class="sb-user" id="sbUser"><div class="u-name">Loading…</div><div class="u-role">—</div></div>
+
+  <div class="sb-user" id="sbUser">
+    <div class="u-name">Loading…</div>
+    <div class="u-role">—</div>
+  </div>
+
   <div class="sb-body">
     <div class="sb-section">Main</div>
-    <button class="nav-btn active" onclick="showPage('dashboard',this);updateBNav('dashboard')" data-page="dashboard"><span class="ni">📊</span>Dashboard</button>
-    <button class="nav-btn" onclick="showPage('members',this);updateBNav('members')" data-page="members"><span class="ni">👥</span>Members</button>
-    <button class="nav-btn" onclick="showPage('attendance',this);updateBNav('attendance')" data-page="attendance"><span class="ni">📅</span>Attendance</button>
+    <button class="nav-btn active" onclick="showPage('dashboard',this);updateBNav('dashboard')" data-page="dashboard">
+      <span class="ni">📊</span>Dashboard
+    </button>
+    <button class="nav-btn" onclick="showPage('members',this);updateBNav('members')" data-page="members">
+      <span class="ni">👥</span>Members
+    </button>
+    <button class="nav-btn" onclick="showPage('attendance',this);updateBNav('attendance')" data-page="attendance">
+      <span class="ni">📅</span>Attendance
+    </button>
+
     <div class="sb-section">Manage</div>
-    <button class="nav-btn" onclick="showPage('trainers',this);updateBNav('none')" data-page="trainers"><span class="ni">💪</span>Trainers</button>
-    <button class="nav-btn" onclick="showPage('plans',this);updateBNav('none')" data-page="plans"><span class="ni">💎</span>Plans</button>
-    <button class="nav-btn" onclick="showPage('discounts',this);updateBNav('none')" data-page="discounts"><span class="ni">🏷️</span>Discounts</button>
-    <button class="nav-btn" onclick="showPage('payments',this);updateBNav('none')" data-page="payments"><span class="ni">💰</span>Payments</button>
-    <button class="nav-btn" onclick="showPage('settings',this);updateBNav('none')" data-page="settings"><span class="ni">⚙️</span>Settings</button>
+    <button class="nav-btn" onclick="showPage('trainers',this);updateBNav('none')" data-page="trainers">
+      <span class="ni">💪</span>Trainers
+    </button>
+    <button class="nav-btn" onclick="showPage('plans',this);updateBNav('none')" data-page="plans">
+      <span class="ni">💎</span>Plans
+    </button>
+    <button class="nav-btn" onclick="showPage('discounts',this);updateBNav('none')" data-page="discounts">
+      <span class="ni">🏷️</span>Discounts
+    </button>
+    <button class="nav-btn" onclick="showPage('payments',this);updateBNav('none')" data-page="payments">
+      <span class="ni">💰</span>Payments
+    </button>
+    <button class="nav-btn" onclick="showPage('settings',this);updateBNav('none')" data-page="settings">
+      <span class="ni">⚙️</span>Settings
+    </button>
   </div>
-  <div class="sb-foot"><button class="logout-btn" onclick="logout()">🚪 Logout</button></div>
+
+  <div class="sb-foot">
+    <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+  </div>
 </nav>
+
 <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
+<!-- ═══════════════════════════════════════
+     TOP BAR
+═══════════════════════════════════════ -->
 <div class="topbar">
   <button class="menu-btn" onclick="toggleSidebar()">☰</button>
   <span class="topbar-title" id="pageTitle">Dashboard</span>
   <span class="topbar-date" id="topDate"></span>
 </div>
 
-<div id="offline-banner" style="display: none; background: var(--gr); color: white; text-align: center; padding: 12px; font-size: .85rem; font-weight: 800; position: fixed; top: 64px; left: 0; right: 0; z-index: 1000; box-shadow: var(--sh);">
-  ⚠️ You are currently offline. Viewing saved data.
+<!-- Offline Banner -->
+<div id="offline-banner">
+  ⚠️ You are offline — viewing saved data.
 </div>
 
+<!-- ═══════════════════════════════════════
+     BOTTOM NAV
+═══════════════════════════════════════ -->
 <nav class="bottom-nav">
-  <button class="bn-item active" id="bn-dashboard" onclick="showPage('dashboard',document.querySelector('[data-page=dashboard]'));updateBNav('dashboard')"><i>📊</i><span>Home</span></button>
-  <button class="bn-item" id="bn-members" onclick="showPage('members',document.querySelector('[data-page=members]'));updateBNav('members')"><i>👥</i><span>Members</span></button>
-  <button class="bn-item" id="bn-attendance" onclick="showPage('attendance',document.querySelector('[data-page=attendance]'));updateBNav('attendance')"><i>📅</i><span>Attend</span></button>
-  <button class="bn-item" id="bn-menu" onclick="toggleSidebar()"><i>☰</i><span>More</span></button>
+  <button class="bn-item active" id="bn-dashboard" onclick="showPage('dashboard',document.querySelector('[data-page=dashboard]'));updateBNav('dashboard')">
+    <i>📊</i><span>Home</span>
+  </button>
+  <button class="bn-item" id="bn-members" onclick="showPage('members',document.querySelector('[data-page=members]'));updateBNav('members')">
+    <i>👥</i><span>Members</span>
+  </button>
+  <button class="bn-item" id="bn-attendance" onclick="showPage('attendance',document.querySelector('[data-page=attendance]'));updateBNav('attendance')">
+    <i>📅</i><span>Attend</span>
+  </button>
+  <button class="bn-item" id="bn-menu" onclick="toggleSidebar()">
+    <i>☰</i><span>More</span>
+  </button>
 </nav>
 
+<!-- ═══════════════════════════════════════
+     MAIN CONTENT
+═══════════════════════════════════════ -->
 <main class="main">
 
+  <!-- ── DASHBOARD PAGE ── -->
   <div id="page-dashboard" class="page active">
-    <div id="alertBanner" class="banner green"><div class="banner-text"><h3>✅ All Good!</h3><p>No payments due this week</p></div></div>
+    <div id="alertBanner" class="banner green">
+      <div class="banner-text">
+        <h3>✅ All Good!</h3>
+        <p>No payments due this week</p>
+      </div>
+    </div>
+
     <div class="stats-row">
       <div class="stat-box"><div class="sv" id="statTotal">—</div><div class="sl">Members</div></div>
       <div class="stat-box"><div class="sv" id="statActive">—</div><div class="sl">Active</div></div>
       <div class="stat-box"><div class="sv" id="statRev">—</div><div class="sl">Revenue</div></div>
     </div>
+
     <div class="rev-row">
       <div class="rev-box"><div class="rl">📅 Monthly</div><div class="rv rv-p" id="revM">—</div></div>
       <div class="rev-box"><div class="rl">🎟️ Admission</div><div class="rv rv-g" id="revA">—</div></div>
       <div class="rev-box"><div class="rl">💪 Training</div><div class="rv rv-a" id="revPT">—</div></div>
     </div>
+
     <div class="card">
       <div class="card-head">
         <span class="card-title">Expiring Soon</span>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <button class="btn btn-ghost btn-sm" onclick="filterDash(3)">3 Days</button>
-          <button class="btn btn-ghost btn-sm" onclick="filterDash(5)">5 Days</button>
-          <button class="btn btn-ghost btn-sm" onclick="filterDash(7)">7 Days</button>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button class="btn btn-ghost btn-sm" onclick="filterDash(3)">3d</button>
+          <button class="btn btn-ghost btn-sm" onclick="filterDash(5)">5d</button>
+          <button class="btn btn-ghost btn-sm" onclick="filterDash(7)">7d</button>
           <button class="btn btn-ghost btn-sm" onclick="filterDash('all')">All</button>
           <button class="btn btn-primary btn-sm" onclick="openModal('addMemberModal')">+ Add</button>
         </div>
@@ -86,52 +143,68 @@
       <div class="tbl-wrap">
         <table>
           <thead><tr><th>Member</th><th>Plan</th><th>Gender</th><th>Expires</th><th>Status</th></tr></thead>
-          <tbody id="dashBody"><tr><td colspan="5"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr></tbody>
+          <tbody id="dashBody">
+            <tr><td colspan="5"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr>
+          </tbody>
         </table>
       </div>
     </div>
   </div>
 
+  <!-- ── MEMBERS PAGE ── -->
   <div id="page-members" class="page">
     <div class="card">
       <div class="card-head">
         <span class="card-title">All Members</span>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
           <button class="btn btn-primary btn-sm" onclick="openModal('addMemberModal')">+ Add</button>
           <button class="btn btn-danger btn-sm" onclick="confirmDeleteAll()">🗑 All</button>
         </div>
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>Name</th><th>Phone</th><th>Gender</th><th>Plan</th><th>Expires ↑</th><th>Trainer</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="membersBody"><tr><td colspan="8"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr></tbody>
+          <thead>
+            <tr>
+              <th>Name</th><th>Phone</th><th>Gender</th><th>Plan</th>
+              <th>Expires ↑</th><th>Trainer</th><th>Status</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="membersBody">
+            <tr><td colspan="8"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr>
+          </tbody>
         </table>
       </div>
     </div>
   </div>
 
+  <!-- ── ATTENDANCE PAGE ── -->
   <div id="page-attendance" class="page">
     <div class="card">
       <div class="card-head"><span class="card-title">Attendance</span></div>
-      <div style="display:flex;gap:10px;margin-bottom:1rem">
-        <input type="date" id="attDate" style="flex:1;min-height:48px;border:none;border-radius:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:.95rem;padding:0 16px;background:var(--bg);color:var(--tx);font-weight:600;">
+      <div style="display:flex;gap:10px;margin-bottom:12px">
+        <input type="date" id="attDate" style="flex:1;min-height:48px;border:2px solid transparent;border-radius:13px;font-family:'DM Sans',sans-serif;font-size:.93rem;padding:0 14px;background:var(--bg);color:var(--tx);font-weight:600;-webkit-appearance:none;appearance:none;">
         <button class="btn btn-primary" onclick="loadAttendance()">Load</button>
       </div>
-      <button class="btn btn-success btn-full" style="margin-bottom:1rem" onclick="markAllPresent()">✔ Mark All Present</button>
+      <button class="btn btn-success btn-full" style="margin-bottom:12px" onclick="markAllPresent()">✔ Mark All Present</button>
+
       <div class="att-stats">
         <div class="att-stat"><div class="an" id="attTotal">0</div><div class="al">Active</div></div>
         <div class="att-stat"><div class="an" id="attPresent">0</div><div class="al">Present</div></div>
         <div class="att-stat"><div class="an" id="attPct">0%</div><div class="al">Rate</div></div>
       </div>
+
       <div class="tbl-wrap">
         <table>
           <thead><tr><th>Member</th><th>Plan</th><th>Phone</th><th>Status</th><th>Action</th></tr></thead>
-          <tbody id="attBody"><tr><td colspan="5"><div class="empty"><p>Select a date and press Load</p></div></td></tr></tbody>
+          <tbody id="attBody">
+            <tr><td colspan="5"><div class="empty"><p>Select a date and press Load</p></div></td></tr>
+          </tbody>
         </table>
       </div>
     </div>
   </div>
 
+  <!-- ── TRAINERS PAGE ── -->
   <div id="page-trainers" class="page">
     <div class="card">
       <div class="card-head">
@@ -141,12 +214,15 @@
       <div class="tbl-wrap">
         <table>
           <thead><tr><th>Name</th><th>Specialty</th><th>Phone</th><th>Status</th><th></th></tr></thead>
-          <tbody id="trainersBody"><tr><td colspan="5"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr></tbody>
+          <tbody id="trainersBody">
+            <tr><td colspan="5"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr>
+          </tbody>
         </table>
       </div>
     </div>
   </div>
 
+  <!-- ── PLANS PAGE ── -->
   <div id="page-plans" class="page">
     <div class="card">
       <div class="card-head">
@@ -158,6 +234,7 @@
     </div>
   </div>
 
+  <!-- ── DISCOUNTS PAGE ── -->
   <div id="page-discounts" class="page">
     <div class="card">
       <div class="card-head">
@@ -168,6 +245,7 @@
     </div>
   </div>
 
+  <!-- ── PAYMENTS PAGE ── -->
   <div id="page-payments" class="page">
     <div class="card">
       <div class="card-head"><span class="card-title">Due Payments</span></div>
@@ -175,16 +253,22 @@
     </div>
   </div>
 
+  <!-- ── SETTINGS PAGE ── -->
   <div id="page-settings" class="page">
     <div class="card">
-      <h3 style="font-size:1.05rem;font-weight:800;color:var(--tx);margin-bottom:1rem;display:flex;align-items:center;gap:8px;"><span style="font-size:1.3rem">💳</span> UPI Payment Settings</h3>
-      <p class="sync-note" style="margin-bottom:1rem">🔄 These settings sync across all your devices automatically.</p>
+      <h3 style="font-size:1rem;font-weight:800;color:var(--tx);margin-bottom:.75rem;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:1.2rem">💳</span> UPI Payment Settings
+      </h3>
+      <p class="sync-note" style="margin-bottom:1rem">🔄 These settings sync across all your devices.</p>
       <div class="form-group"><label>Your UPI ID</label><input type="text" id="sUpiId" placeholder="e.g. yourname@upi"></div>
       <div class="form-group"><label>Display Name (on QR)</label><input type="text" id="sUpiName" placeholder="e.g. My Gym"></div>
       <button class="btn btn-primary btn-full" onclick="saveSettings()">Save UPI Settings</button>
     </div>
+
     <div class="card">
-      <h3 style="font-size:1.05rem;font-weight:800;color:var(--tx);margin-bottom:1rem;display:flex;align-items:center;gap:8px;"><span style="font-size:1.3rem">🎟️</span> Default Fees</h3>
+      <h3 style="font-size:1rem;font-weight:800;color:var(--tx);margin-bottom:.75rem;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:1.2rem">🎟️</span> Default Fees
+      </h3>
       <div class="form-group"><label>Default Admission Fee (₹)</label><input type="number" id="sAdmFee" placeholder="e.g. 500" min="0"></div>
       <div class="form-group"><label>Default PT Fee / month (₹)</label><input type="number" id="sPtFee" placeholder="e.g. 2000" min="0"></div>
       <button class="btn btn-primary btn-full" onclick="saveSettings()">Save Fee Settings</button>
@@ -193,15 +277,22 @@
 
 </main>
 
-<!-- ADD MEMBER MODAL -->
+<!-- ═══════════════════════════════════════
+     ADD MEMBER MODAL
+═══════════════════════════════════════ -->
 <div class="modal" id="addMemberModal">
   <div class="mbox">
-    <div class="mhdr"><span class="mtitle">Add New Member</span><button class="mclose" onclick="closeModal('addMemberModal')">✕</button></div>
+    <div class="mhdr">
+      <span class="mtitle">Add New Member</span>
+      <button class="mclose" onclick="closeModal('addMemberModal')">✕</button>
+    </div>
     <form id="addMemberForm">
       <div class="form-sep" style="margin-top:0">📷 Profile Photo</div>
-      <div style="display:flex;gap:1.2rem;align-items:center;margin-bottom:1rem">
-        <img id="photoPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%235B4CFF33'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" style="width:64px;height:64px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--bg)">
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <div style="display:flex;gap:1rem;align-items:center;margin-bottom:14px">
+        <img id="photoPreview"
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23E9456022'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"
+          style="width:60px;height:60px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--bg);border:2px solid var(--border)">
+        <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
           <button type="button" class="btn btn-ghost btn-sm" id="openCamBtn" style="border-radius:20px;">📷 Camera</button>
           <button type="button" class="btn btn-ghost btn-sm" id="uploadBtn" style="border-radius:20px;">📁 Upload</button>
           <button type="button" class="btn btn-danger btn-sm" id="clearPhotoBtn" style="display:none;border-radius:20px;">🗑</button>
@@ -209,6 +300,7 @@
         <input type="file" id="photoFile" accept="image/*" capture="environment" style="display:none">
         <input type="hidden" id="photoData">
       </div>
+
       <div class="form-sep">👤 Basic Info</div>
       <div class="form-grid">
         <div class="form-group"><label>Full Name *</label><input type="text" id="mName" required placeholder="Arjun Reddy"></div>
@@ -225,6 +317,7 @@
           </select>
         </div>
       </div>
+
       <div class="form-sep">💎 Membership Plan</div>
       <div class="form-group"><label>Plan *</label><select id="mPlan" required onchange="onPlanChange()"></select></div>
       <div class="disc-box">
@@ -243,19 +336,27 @@
           <div class="pl"><span>Final Price</span><span id="finalPrice">₹0</span></div>
         </div>
       </div>
+
       <div class="adm-box">
         <h4>🎟️ Admission Fee (One-time)</h4>
         <div class="form-grid">
           <div class="form-group"><label>Amount (₹)</label><input type="text" id="mAdmFee" inputmode="decimal" placeholder="e.g. 500"></div>
           <div class="form-group"><label>Waive Fee?</label>
-            <select id="mWaive"><option value="no">No — Collect</option><option value="yes">Yes — Waive</option></select>
+            <select id="mWaive">
+              <option value="no">No — Collect</option>
+              <option value="yes">Yes — Waive</option>
+            </select>
           </div>
         </div>
       </div>
+
       <div class="pt-box">
         <h4>💪 Personal Training</h4>
         <div class="toggle-row">
-          <label class="toggle-sw"><input type="checkbox" id="mPtEnabled" onchange="togglePT('mPtDetails')"><span class="toggle-track"></span></label>
+          <label class="toggle-sw">
+            <input type="checkbox" id="mPtEnabled" onchange="togglePT('mPtDetails')">
+            <span class="toggle-track"></span>
+          </label>
           <span style="font-size:.9rem;font-weight:700">Enable PT</span>
         </div>
         <div id="mPtDetails" style="display:none">
@@ -266,24 +367,35 @@
           <div class="form-group"><label>PT Notes</label><input type="text" id="mPtNotes" placeholder="e.g. Weight loss, 5 days/week"></div>
         </div>
       </div>
+
       <div class="form-grid">
         <div class="form-group"><label>Start Date *</label><input type="date" id="mStart" required onchange="onPlanChange()"></div>
         <div class="form-group"><label>Expiry Date *</label><input type="date" id="mExpiry" required></div>
       </div>
+
       <div class="form-group"><label>Status</label>
-        <select id="mStatus"><option value="Active">Active</option><option value="Trial">Trial</option><option value="Inactive">Inactive</option></select>
+        <select id="mStatus">
+          <option value="Active">Active</option>
+          <option value="Trial">Trial</option>
+          <option value="Inactive">Inactive</option>
+        </select>
       </div>
+
       <div class="form-sep">🆘 Emergency Contact</div>
       <div class="form-grid">
         <div class="form-group"><label>Name</label><input type="text" id="mEcName" placeholder="Contact name"></div>
         <div class="form-group"><label>Phone</label><input type="tel" id="mEcPhone" placeholder="Phone"></div>
         <div class="form-group" style="grid-column: 1 / -1;"><label>Relationship</label><input type="text" id="mEcRel" placeholder="e.g. Father"></div>
       </div>
+
       <div class="form-sep">🏥 Health Info</div>
       <div id="condContainer"></div>
-      <button type="button" class="btn btn-ghost btn-sm btn-full" style="margin-bottom:1rem; border-radius:12px; min-height:44px;" onclick="addCondition('condContainer')">+ Add Health Condition</button>
+      <button type="button" class="btn btn-ghost btn-sm btn-full" style="margin-bottom:12px;border-radius:12px;min-height:44px;" onclick="addCondition('condContainer')">
+        + Add Health Condition
+      </button>
       <div class="form-group"><label>Medical Notes</label><textarea id="mNotes" placeholder="Any notes…"></textarea></div>
-      <div style="display:flex;flex-direction:column;gap:12px;margin-top:1.5rem">
+
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:1.25rem">
         <button type="submit" class="btn btn-primary btn-full">Add Member</button>
         <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('addMemberModal')">Cancel</button>
       </div>
@@ -291,10 +403,15 @@
   </div>
 </div>
 
-<!-- EDIT MEMBER MODAL -->
+<!-- ═══════════════════════════════════════
+     EDIT MEMBER MODAL
+═══════════════════════════════════════ -->
 <div class="modal" id="editMemberModal">
   <div class="mbox">
-    <div class="mhdr"><span class="mtitle">✏️ Edit Member</span><button class="mclose" onclick="closeModal('editMemberModal')">✕</button></div>
+    <div class="mhdr">
+      <span class="mtitle">✏️ Edit Member</span>
+      <button class="mclose" onclick="closeModal('editMemberModal')">✕</button>
+    </div>
     <form id="editMemberForm">
       <input type="hidden" id="editMemberId">
       <div class="form-sep" style="margin-top:0">👤 Basic Info</div>
@@ -321,6 +438,7 @@
           </select>
         </div>
       </div>
+
       <div class="form-sep">💎 Membership</div>
       <div class="form-group"><label>Plan *</label><select id="ePlan" required onchange="recalcEditPrice()"></select></div>
       <div class="disc-box">
@@ -339,19 +457,27 @@
           <div class="pl"><span>Final Price</span><span id="eFinalPrice">₹0</span></div>
         </div>
       </div>
+
       <div class="adm-box">
         <h4>🎟️ Admission Fee</h4>
         <div class="form-grid">
           <div class="form-group"><label>Amount (₹)</label><input type="text" id="eAdmFee" inputmode="decimal" placeholder="e.g. 500"></div>
           <div class="form-group"><label>Waive Fee?</label>
-            <select id="eWaive"><option value="no">No — Collect</option><option value="yes">Yes — Waive</option></select>
+            <select id="eWaive">
+              <option value="no">No — Collect</option>
+              <option value="yes">Yes — Waive</option>
+            </select>
           </div>
         </div>
       </div>
+
       <div class="pt-box">
         <h4>💪 Personal Training</h4>
         <div class="toggle-row">
-          <label class="toggle-sw"><input type="checkbox" id="ePtEnabled" onchange="togglePT('ePtDetails')"><span class="toggle-track"></span></label>
+          <label class="toggle-sw">
+            <input type="checkbox" id="ePtEnabled" onchange="togglePT('ePtDetails')">
+            <span class="toggle-track"></span>
+          </label>
           <span style="font-size:.9rem;font-weight:700">Enable PT</span>
         </div>
         <div id="ePtDetails" style="display:none">
@@ -362,22 +488,28 @@
           <div class="form-group"><label>PT Notes</label><input type="text" id="ePtNotes" placeholder="e.g. Weight loss"></div>
         </div>
       </div>
+
       <div class="form-grid">
-        <div class="form-group" style="grid-column: 1 / -1;"><label>Expiry Date *</label><input type="date" id="eExpiry" required></div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label>Expiry Date *</label>
+          <input type="date" id="eExpiry" required>
+        </div>
       </div>
+
       <div class="form-sep">📊 Attendance Analytics</div>
-      <div id="eAttStats" style="margin-bottom: 1.5rem;">
-        <!-- Stats will load here automatically -->
-      </div>
+      <div id="eAttStats" style="margin-bottom:1.25rem"></div>
+
       <div class="form-sep">🆘 Emergency Contact</div>
       <div class="form-grid">
         <div class="form-group"><label>Name</label><input type="text" id="eEcName"></div>
         <div class="form-group"><label>Phone</label><input type="tel" id="eEcPhone"></div>
         <div class="form-group" style="grid-column: 1 / -1;"><label>Relationship</label><input type="text" id="eEcRel"></div>
       </div>
+
       <div class="form-sep">🏥 Medical Notes</div>
       <div class="form-group"><label>Notes</label><textarea id="eNotes" placeholder="Any notes…"></textarea></div>
-      <div style="display:flex;flex-direction:column;gap:12px;margin-top:1.5rem">
+
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:1.25rem">
         <button type="submit" class="btn btn-primary btn-full">Save Changes</button>
         <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('editMemberModal')">Cancel</button>
       </div>
@@ -385,41 +517,61 @@
   </div>
 </div>
 
-<!-- EDIT PLAN MODAL -->
+<!-- ═══════════════════════════════════════
+     EDIT PLAN MODAL
+═══════════════════════════════════════ -->
 <div class="modal" id="editPlanModal">
   <div class="mbox" style="max-width:360px">
-    <div class="mhdr"><span class="mtitle">✏️ Edit Plan</span><button class="mclose" onclick="closeModal('editPlanModal')">✕</button></div>
+    <div class="mhdr">
+      <span class="mtitle">✏️ Edit Plan</span>
+      <button class="mclose" onclick="closeModal('editPlanModal')">✕</button>
+    </div>
     <input type="hidden" id="editPlanOrigName">
     <div class="form-group"><label>Plan Name *</label><input type="text" id="editPlanName" placeholder="e.g. 1 Month Strength"></div>
     <div class="form-group"><label>Price (₹) *</label><input type="number" id="editPlanPrice" min="0" placeholder="e.g. 1000"></div>
     <div class="form-group"><label>Duration (months) *</label><input type="number" id="editPlanMonths" min="1" placeholder="e.g. 1"></div>
-    <div style="display:flex;flex-direction:column;gap:12px;margin-top:1.5rem">
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:1.25rem">
       <button class="btn btn-primary btn-full" onclick="saveEditPlan()">Save Plan</button>
       <button class="btn btn-ghost btn-full" onclick="closeModal('editPlanModal')">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- CAMERA MODAL -->
+<!-- ═══════════════════════════════════════
+     CAMERA MODAL
+═══════════════════════════════════════ -->
 <div class="modal" id="cameraModal">
   <div class="mbox" style="max-width:400px;text-align:center">
-    <div class="mhdr"><span class="mtitle">Take Photo</span><button type="button" class="mclose" id="closeCamBtn">✕</button></div>
-    <video id="camVideo" autoplay playsinline style="width:100%;max-height:300px;background:#000;border-radius:16px;margin-bottom:1.5rem"></video>
+    <div class="mhdr">
+      <span class="mtitle">Take Photo</span>
+      <button type="button" class="mclose" id="closeCamBtn">✕</button>
+    </div>
+    <video id="camVideo" autoplay playsinline style="width:100%;max-height:300px;background:#000;border-radius:16px;margin-bottom:1.25rem"></video>
     <canvas id="camCanvas" style="display:none"></canvas>
     <button type="button" class="btn btn-primary btn-full" id="captureBtn">📸 Capture Photo</button>
   </div>
 </div>
 
-<!-- ADD TRAINER MODAL -->
+<!-- ═══════════════════════════════════════
+     ADD TRAINER MODAL
+═══════════════════════════════════════ -->
 <div class="modal" id="addTrainerModal">
   <div class="mbox" style="max-width:380px">
-    <div class="mhdr"><span class="mtitle">Add Trainer</span><button class="mclose" onclick="closeModal('addTrainerModal')">✕</button></div>
+    <div class="mhdr">
+      <span class="mtitle">Add Trainer</span>
+      <button class="mclose" onclick="closeModal('addTrainerModal')">✕</button>
+    </div>
     <form id="addTrainerForm">
       <div class="form-group"><label>Full Name *</label><input type="text" id="tName" required placeholder="Trainer name"></div>
       <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="tPhone" required placeholder="9876543210" maxlength="10"></div>
       <div class="form-group"><label>Specialty *</label><input type="text" id="tSpecialty" required placeholder="e.g. Yoga, HIIT"></div>
-      <div class="form-group"><label>Status</label><select id="tStatus"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
-      <div style="display:flex;flex-direction:column;gap:12px;margin-top:1.5rem">
+      <div class="form-group"><label>Status</label>
+        <select id="tStatus">
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:1.25rem">
         <button type="submit" class="btn btn-primary btn-full">Add Trainer</button>
         <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('addTrainerModal')">Cancel</button>
       </div>
@@ -427,72 +579,108 @@
   </div>
 </div>
 
-<!-- ADD PLAN MODAL -->
+<!-- ═══════════════════════════════════════
+     ADD PLAN MODAL
+═══════════════════════════════════════ -->
 <div class="modal" id="addPlanModal">
   <div class="mbox" style="max-width:360px">
-    <div class="mhdr"><span class="mtitle">Add Plan</span><button class="mclose" onclick="closeModal('addPlanModal')">✕</button></div>
+    <div class="mhdr">
+      <span class="mtitle">Add Plan</span>
+      <button class="mclose" onclick="closeModal('addPlanModal')">✕</button>
+    </div>
     <div class="form-group"><label>Plan Name *</label><input type="text" id="newPlanName" placeholder="e.g. 1 Month Strength"></div>
     <div class="form-group"><label>Price (₹) *</label><input type="number" id="newPlanPrice" min="0" placeholder="e.g. 1000"></div>
     <div class="form-group"><label>Duration (months) *</label><input type="number" id="newPlanMonths" min="1" placeholder="e.g. 1"></div>
-    <div style="display:flex;flex-direction:column;gap:12px;margin-top:1.5rem">
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:1.25rem">
       <button class="btn btn-primary btn-full" onclick="addGymPlan()">Add Plan</button>
       <button class="btn btn-ghost btn-full" onclick="closeModal('addPlanModal')">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- ADD DISCOUNT MODAL -->
+<!-- ═══════════════════════════════════════
+     ADD DISCOUNT MODAL
+═══════════════════════════════════════ -->
 <div class="modal" id="addDiscountModal">
   <div class="mbox" style="max-width:390px">
-    <div class="mhdr"><span class="mtitle">Add Discount</span><button class="mclose" onclick="closeModal('addDiscountModal')">✕</button></div>
+    <div class="mhdr">
+      <span class="mtitle">Add Discount</span>
+      <button class="mclose" onclick="closeModal('addDiscountModal')">✕</button>
+    </div>
     <div class="form-group"><label>Discount Name *</label><input type="text" id="discName" placeholder="e.g. Festival Offer"></div>
-    <div class="form-group"><label>Applies To</label><select id="discApplies" onchange="toggleDiscPlan()"><option value="all">All Plans</option><option value="specific">Specific Plan</option></select></div>
-    <div class="form-group" id="discPlanGroup" style="display:none"><label>Select Plan</label><select id="discPlan"></select></div>
-    <div class="form-group"><label>Type</label><select id="discType"><option value="percentage">Percentage (%)</option><option value="fixed">Fixed (₹)</option></select></div>
+    <div class="form-group"><label>Applies To</label>
+      <select id="discApplies" onchange="toggleDiscPlan()">
+        <option value="all">All Plans</option>
+        <option value="specific">Specific Plan</option>
+      </select>
+    </div>
+    <div class="form-group" id="discPlanGroup" style="display:none">
+      <label>Select Plan</label>
+      <select id="discPlan"></select>
+    </div>
+    <div class="form-group"><label>Type</label>
+      <select id="discType">
+        <option value="percentage">Percentage (%)</option>
+        <option value="fixed">Fixed (₹)</option>
+      </select>
+    </div>
     <div class="form-group"><label>Value *</label><input type="number" id="discVal" min="0" placeholder="Enter value"></div>
     <div class="form-group"><label>Valid Until</label><input type="date" id="discExpiry"></div>
-    <div style="display:flex;flex-direction:column;gap:12px;margin-top:1.5rem">
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:1.25rem">
       <button class="btn btn-primary btn-full" onclick="addDiscount()">Add Discount</button>
       <button class="btn btn-ghost btn-full" onclick="closeModal('addDiscountModal')">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- PAYMENT/RENEWAL MODAL -->
+<!-- ═══════════════════════════════════════
+     PAYMENT / RENEWAL MODAL
+═══════════════════════════════════════ -->
 <div class="modal" id="paymentModal">
   <div class="mbox" style="max-width:390px">
-    <div class="mhdr"><span class="mtitle">💳 Renew Plan</span><button class="mclose" onclick="closeModal('paymentModal')">✕</button></div>
-    
+    <div class="mhdr">
+      <span class="mtitle">💳 Renew Plan</span>
+      <button class="mclose" onclick="closeModal('paymentModal')">✕</button>
+    </div>
+
     <div class="form-group"><label>Change Plan</label><select id="payPlan" onchange="recalcPayment()"></select></div>
-    <div class="pt-box" style="margin-bottom:1rem; padding:1.25rem;">
+
+    <div class="pt-box" style="margin-bottom:12px;padding:1.1rem;">
       <div class="toggle-row" style="margin-bottom:0;">
-        <label class="toggle-sw"><input type="checkbox" id="payPtEnabled" onchange="togglePT('payPtDetails'); recalcPayment()"><span class="toggle-track"></span></label>
-        <span style="font-size:.95rem;font-weight:700">Personal Training</span>
+        <label class="toggle-sw">
+          <input type="checkbox" id="payPtEnabled" onchange="togglePT('payPtDetails'); recalcPayment()">
+          <span class="toggle-track"></span>
+        </label>
+        <span style="font-size:.92rem;font-weight:700">Personal Training</span>
       </div>
-      <div id="payPtDetails" style="display:none; margin-top:1rem;">
+      <div id="payPtDetails" style="display:none;margin-top:.9rem">
         <div class="form-grid">
-          <div class="form-group" style="margin-bottom:0;"><label>PT Fee (₹)</label><input type="number" id="payPtFee" onchange="recalcPayment()"></div>
-          <div class="form-group" style="margin-bottom:0;"><label>Trainer</label><select id="payPtTrainer"></select></div>
+          <div class="form-group" style="margin-bottom:0"><label>PT Fee (₹)</label><input type="number" id="payPtFee" onchange="recalcPayment()"></div>
+          <div class="form-group" style="margin-bottom:0"><label>Trainer</label><select id="payPtTrainer"></select></div>
         </div>
       </div>
     </div>
-    
+
     <div id="payInfo"></div>
+
     <div class="qr-box">
-      <p style="font-size:.8rem;color:var(--tx3);margin-bottom:10px;font-weight:700;">SCAN TO PAY VIA UPI</p>
+      <p style="font-size:.75rem;color:var(--tx3);margin-bottom:10px;font-weight:700;">SCAN TO PAY VIA UPI</p>
       <img id="payQR" src="" alt="QR Code">
       <span class="upi-txt" id="dispUpi">—</span>
     </div>
-    <div style="display:flex;flex-direction:column;gap:12px">
+
+    <div style="display:flex;flex-direction:column;gap:10px">
       <button class="btn btn-success btn-full" id="confirmPayBtn" onclick="confirmPayment()">✅ Confirm Payment</button>
       <button class="btn btn-ghost btn-full" onclick="closeModal('paymentModal')">Cancel</button>
     </div>
   </div>
 </div>
 
+<!-- Toast notification -->
 <div class="toast" id="toast"></div>
 
-<!-- Link to external JS -->
+<!-- External JS — unchanged -->
 <script src="script.js"></script>
+
 </body>
 </html>
