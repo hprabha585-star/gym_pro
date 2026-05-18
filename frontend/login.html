@@ -2,243 +2,242 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>GymPro - Login</title>
-  
+  <title>GymPro — Login</title>
+
   <!-- PWA & NATIVE APP META TAGS -->
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#f8f7ff">
+  <meta name="theme-color" content="#1A1A2E">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-  
+
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=Barlow+Condensed:wght@700;800&display=swap" rel="stylesheet">
+
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
     :root {
-      --primary: #6C47FF;
-      --primary-dark: #5535e0;
-      --primary-light: #EDE9FF;
-      --success: #16a34a;
-      --danger: #dc2626;
-      --text: #1a1a2e;
-      --muted: #64748b;
-      --border: #e2e8f0;
-      --bg: #f8f7ff;
-      --card: #ffffff;
-      --radius: 14px;
+      --p:   #1A1A2E;
+      --acc: #E94560;
+      --acc2:#FF6B6B;
+      --g:   #00C48C;
+      --gr:  #E94560;
+      --tx:  #1A1A2E;
+      --tx2: #5C6B8A;
+      --bg:  #F2F4F8;
+      --card:#FFFFFF;
+      --border: #EAEEF5;
     }
 
     body {
       font-family: 'DM Sans', sans-serif;
-      background: var(--bg);
+      background: var(--p);
       min-height: 100vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 1rem;
-      background-image: radial-gradient(ellipse at 20% 50%, #ede9ff55 0%, transparent 60%),
-                        radial-gradient(ellipse at 80% 20%, #c7d2fe44 0%, transparent 50%);
-                        
-      /* NATIVE APP BEHAVIORS */
+      padding: env(safe-area-inset-top) 1rem env(safe-area-inset-bottom);
       -webkit-tap-highlight-color: transparent;
       overscroll-behavior-y: none;
       -webkit-font-smoothing: antialiased;
       -webkit-user-select: none;
       user-select: none;
-      -webkit-touch-callout: none;
+      position: relative;
+      overflow: hidden;
     }
 
-    /* Allow typing inside input boxes! */
-    input, select {
-      -webkit-user-select: auto;
-      user-select: auto;
+    /* background decoration */
+    body::before {
+      content: '';
+      position: absolute;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(233,69,96,.25) 0%, transparent 70%);
+      top: -120px; right: -100px;
+      pointer-events: none;
+    }
+    body::after {
+      content: '';
+      position: absolute;
+      width: 350px; height: 350px;
+      background: radial-gradient(circle, rgba(0,196,140,.1) 0%, transparent 70%);
+      bottom: -80px; left: -80px;
+      pointer-events: none;
     }
 
-    .auth-wrapper {
+    input, select { -webkit-user-select: auto; user-select: auto; }
+
+    .login-wrap {
       width: 100%;
-      max-width: 440px;
+      max-width: 400px;
+      position: relative;
+      z-index: 1;
     }
 
+    /* ── brand ── */
     .brand {
       text-align: center;
       margin-bottom: 2rem;
     }
-
     .brand-logo {
-      width: 56px;
-      height: 56px;
-      background: var(--primary);
-      border-radius: 16px;
+      width: 68px; height: 68px;
+      background: var(--acc);
+      border-radius: 20px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.6rem;
-      margin-bottom: 0.75rem;
-      box-shadow: 0 8px 24px #6C47FF44;
+      font-size: 1.9rem;
+      margin-bottom: .9rem;
+      box-shadow: 0 12px 32px rgba(233,69,96,.45);
     }
-
     .brand h1 {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 1.75rem;
-      color: var(--primary);
-      letter-spacing: -0.5px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 2.4rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      line-height: 1;
+      margin-bottom: 4px;
     }
-
+    .brand h1 span { color: var(--acc); }
     .brand p {
-      color: var(--muted);
-      font-size: 0.9rem;
-      margin-top: 4px;
+      color: rgba(255,255,255,.45);
+      font-size: .85rem;
+      font-weight: 500;
+      letter-spacing: .5px;
     }
 
+    /* ── card ── */
     .auth-card {
       background: var(--card);
-      border-radius: var(--radius);
-      padding: 2rem;
-      box-shadow: 0 4px 32px rgba(108,71,255,0.1), 0 1px 4px rgba(0,0,0,0.06);
-      border: 1px solid #ede9ff;
+      border-radius: 24px;
+      padding: 1.75rem;
+      box-shadow: 0 24px 64px rgba(0,0,0,.3);
     }
 
+    /* ── tabs ── */
     .tabs {
       display: flex;
       background: var(--bg);
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 4px;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.4rem;
       gap: 4px;
     }
-
     .tab-btn {
       flex: 1;
-      padding: 8px;
+      padding: 9px;
       border: none;
       background: transparent;
-      border-radius: 8px;
+      border-radius: 9px;
       font-family: 'DM Sans', sans-serif;
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--muted);
+      font-size: .88rem;
+      font-weight: 700;
+      color: var(--tx2);
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all .2s;
+      letter-spacing: -.1px;
     }
-
     .tab-btn.active {
       background: var(--card);
-      color: var(--primary);
-      box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+      color: var(--tx);
+      box-shadow: 0 1px 8px rgba(0,0,0,.1);
     }
 
-    .form-group {
+    /* ── message ── */
+    .message {
+      padding: 10px 13px;
+      border-radius: 10px;
+      font-size: .85rem;
+      font-weight: 600;
       margin-bottom: 1rem;
+      display: none;
+      line-height: 1.4;
     }
+    .message.error   { background: #FFF0F2; color: var(--gr); border: 1px solid #FECDD5; display:block; }
+    .message.success { background: #EAFBF5; color: #027A55; border: 1px solid #A7F3D0; display:block; }
 
+    /* ── form ── */
+    .form-group { margin-bottom: .9rem; }
     .form-group label {
       display: block;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 6px;
+      font-size: .72rem;
+      font-weight: 800;
+      color: var(--tx2);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: .6px;
     }
-
     .form-group input,
     .form-group select {
       width: 100%;
-      padding: 11px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
+      padding: 13px 14px;
+      border: 2px solid var(--border);
+      border-radius: 13px;
       font-family: 'DM Sans', sans-serif;
-      font-size: 0.95rem;
-      color: var(--text);
-      background: white;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      font-size: .95rem;
+      font-weight: 500;
+      color: var(--tx);
+      background: var(--bg);
+      min-height: 50px;
       -webkit-appearance: none;
       appearance: none;
+      transition: all .2s;
     }
-
     .form-group input:focus,
     .form-group select:focus {
       outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px #6C47FF18;
+      border-color: var(--acc);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(233,69,96,.1);
     }
 
     .hidden-field { display: none; }
 
+    /* ── submit button ── */
     .btn-primary {
       width: 100%;
-      padding: 13px;
-      background: var(--primary);
+      padding: 14px;
+      background: var(--acc);
       color: white;
       border: none;
-      border-radius: 10px;
+      border-radius: 13px;
       font-family: 'DM Sans', sans-serif;
       font-size: 1rem;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
-      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
-      margin-top: 0.5rem;
-      box-shadow: 0 4px 14px #6C47FF40;
+      transition: all .2s;
+      margin-top: .4rem;
+      box-shadow: 0 6px 20px rgba(233,69,96,.38);
+      letter-spacing: -.1px;
     }
+    .btn-primary:hover { background: #d13050; box-shadow: 0 8px 28px rgba(233,69,96,.45); }
+    .btn-primary:active { transform: scale(.97); }
+    .btn-primary:disabled { opacity: .65; cursor: not-allowed; transform: none; }
 
-    .btn-primary:hover { background: var(--primary-dark); box-shadow: 0 6px 20px #6C47FF55; }
-    .btn-primary:active { transform: scale(0.98); }
-
-    .btn-primary:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .message {
-      padding: 10px 14px;
-      border-radius: 8px;
-      font-size: 0.88rem;
-      margin-bottom: 1rem;
-      display: none;
-    }
-
-    .message.error { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; display: block; }
-    .message.success { background: #f0fdf4; color: var(--success); border: 1px solid #bbf7d0; display: block; }
-
-    .divider {
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.8rem;
-      margin: 1rem 0;
-      position: relative;
-    }
-
-    .divider::before, .divider::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      width: 40%;
-      height: 1px;
-      background: var(--border);
-    }
-
-    .divider::before { left: 0; }
-    .divider::after { right: 0; }
-
+    /* ── hint ── */
     .demo-hint {
-      background: var(--primary-light);
-      border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 0.82rem;
-      color: var(--primary-dark);
-      margin-top: 1rem;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-size: .8rem;
+      color: rgba(255,255,255,.5);
+      margin-top: 1.25rem;
       text-align: center;
+      line-height: 1.5;
     }
+    .demo-hint strong { color: rgba(255,255,255,.75); font-weight: 700; }
   </style>
 </head>
 <body>
-  <div class="auth-wrapper">
+  <div class="login-wrap">
     <div class="brand">
       <div class="brand-logo">🏋️</div>
-      <h1>GymPro</h1>
-      <p>Gym Management System</p>
+      <h1>Gym<span>Pro</span></h1>
+      <p>BUILD · TRANSFORM · ACHIEVE</p>
     </div>
 
     <div class="auth-card">
@@ -275,10 +274,10 @@
 
         <button type="submit" class="btn-primary" id="submit-btn">Login</button>
       </form>
+    </div>
 
-      <div class="demo-hint">
-        💡 First time? Register an admin account to get started.
-      </div>
+    <div class="demo-hint">
+      💡 First time? <strong>Register an admin account</strong> to get started.
     </div>
   </div>
 
@@ -286,7 +285,6 @@
     const API_URL = 'https://gym-pro-mvyv.onrender.com/api/auth';
     let isLogin = true;
 
-    // Redirect if already logged in
     if (localStorage.getItem('token')) window.location.href = '/';
 
     function setMode(mode) {
@@ -344,14 +342,14 @@
           localStorage.setItem('token', data.token);
           localStorage.setItem('user', JSON.stringify(data.user));
           showMsg(isLogin ? 'Login successful! Redirecting…' : 'Account created! Redirecting…', 'success');
-          setTimeout(() => window.location.href = '/', 1200);
+          setTimeout(() => window.location.href = '/', 1000);
         } else {
-          showMsg(data.error || data.message || 'Authentication failed. Please try again.', 'error');
+          showMsg(data.error || data.message || 'Authentication failed. Try again.', 'error');
           btn.disabled = false;
           btn.textContent = isLogin ? 'Login' : 'Create Account';
         }
       } catch (err) {
-        showMsg('Network error. Please check your connection.', 'error');
+        showMsg('Network error. Check your connection.', 'error');
         btn.disabled = false;
         btn.textContent = isLogin ? 'Login' : 'Create Account';
       }
