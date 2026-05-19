@@ -3,42 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <title>GymPro — Login</title>
-
-  <!-- PWA & NATIVE APP META TAGS -->
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#1A1A2E">
+  <meta name="theme-color" content="#1A8C8C">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=Barlow+Condensed:wght@700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
 
   <style>
-    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --p:   #1A1A2E;
-      --acc: #E94560;
-      --acc2:#FF6B6B;
-      --g:   #00C48C;
-      --gr:  #E94560;
-      --tx:  #1A1A2E;
-      --tx2: #5C6B8A;
-      --bg:  #F2F4F8;
-      --card:#FFFFFF;
-      --border: #EAEEF5;
+      --teal:  #1A8C8C;
+      --teal2: #1E9E9E;
+      --green: #27AE60;
+      --red:   #E74C3C;
+      --tx:    #1A2E2E;
+      --tx2:   #4A6464;
+      --tx3:   #8AABAB;
+      --bg:    #F0F5F5;
+      --card:  #FFFFFF;
+      --border:#E0ECEC;
     }
 
     body {
       font-family: 'DM Sans', sans-serif;
-      background: var(--p);
+      background: var(--teal);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: env(safe-area-inset-top) 1rem env(safe-area-inset-bottom);
+      padding: env(safe-area-inset-top, 1rem) 1rem env(safe-area-inset-bottom, 1rem);
       -webkit-tap-highlight-color: transparent;
       overscroll-behavior-y: none;
       -webkit-font-smoothing: antialiased;
@@ -48,21 +45,23 @@
       overflow: hidden;
     }
 
-    /* background decoration */
+    /* Subtle background circles */
     body::before {
       content: '';
       position: absolute;
-      width: 400px; height: 400px;
-      background: radial-gradient(circle, rgba(233,69,96,.25) 0%, transparent 70%);
-      top: -120px; right: -100px;
+      width: 340px; height: 340px;
+      background: rgba(255,255,255,.06);
+      border-radius: 50%;
+      top: -80px; right: -80px;
       pointer-events: none;
     }
     body::after {
       content: '';
       position: absolute;
-      width: 350px; height: 350px;
-      background: radial-gradient(circle, rgba(0,196,140,.1) 0%, transparent 70%);
-      bottom: -80px; left: -80px;
+      width: 280px; height: 280px;
+      background: rgba(255,255,255,.05);
+      border-radius: 50%;
+      bottom: -60px; left: -60px;
       pointer-events: none;
     }
 
@@ -75,169 +74,144 @@
       z-index: 1;
     }
 
-    /* ── brand ── */
-    .brand {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
+    /* Brand */
+    .brand { text-align: center; margin-bottom: 1.75rem; }
     .brand-logo {
-      width: 68px; height: 68px;
-      background: var(--acc);
-      border-radius: 20px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.9rem;
-      margin-bottom: .9rem;
-      box-shadow: 0 12px 32px rgba(233,69,96,.45);
+      width: 72px; height: 72px;
+      background: rgba(255,255,255,.2);
+      border: 2px solid rgba(255,255,255,.3);
+      border-radius: 22px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+      margin-bottom: .85rem;
     }
     .brand h1 {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 2.4rem;
-      font-weight: 800;
+      font-size: 2rem; font-weight: 800;
       color: #fff;
-      letter-spacing: 1px;
-      text-transform: uppercase;
+      letter-spacing: -.5px;
       line-height: 1;
       margin-bottom: 4px;
     }
-    .brand h1 span { color: var(--acc); }
     .brand p {
-      color: rgba(255,255,255,.45);
-      font-size: .85rem;
-      font-weight: 500;
-      letter-spacing: .5px;
+      color: rgba(255,255,255,.65);
+      font-size: .82rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
     }
 
-    /* ── card ── */
+    /* Card */
     .auth-card {
       background: var(--card);
-      border-radius: 24px;
-      padding: 1.75rem;
-      box-shadow: 0 24px 64px rgba(0,0,0,.3);
+      border-radius: 22px;
+      padding: 1.6rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,.22);
     }
 
-    /* ── tabs ── */
+    /* Tabs */
     .tabs {
       display: flex;
       background: var(--bg);
       border-radius: 12px;
       padding: 4px;
-      margin-bottom: 1.4rem;
+      margin-bottom: 1.3rem;
       gap: 4px;
     }
     .tab-btn {
-      flex: 1;
-      padding: 9px;
-      border: none;
-      background: transparent;
+      flex: 1; padding: 9px;
+      border: none; background: transparent;
       border-radius: 9px;
       font-family: 'DM Sans', sans-serif;
-      font-size: .88rem;
-      font-weight: 700;
+      font-size: .88rem; font-weight: 700;
       color: var(--tx2);
-      cursor: pointer;
-      transition: all .2s;
-      letter-spacing: -.1px;
+      cursor: pointer; transition: all .2s;
     }
     .tab-btn.active {
       background: var(--card);
-      color: var(--tx);
+      color: var(--teal);
       box-shadow: 0 1px 8px rgba(0,0,0,.1);
     }
 
-    /* ── message ── */
+    /* Message */
     .message {
       padding: 10px 13px;
       border-radius: 10px;
-      font-size: .85rem;
-      font-weight: 600;
+      font-size: .84rem; font-weight: 600;
       margin-bottom: 1rem;
-      display: none;
-      line-height: 1.4;
+      display: none; line-height: 1.4;
     }
-    .message.error   { background: #FFF0F2; color: var(--gr); border: 1px solid #FECDD5; display:block; }
-    .message.success { background: #EAFBF5; color: #027A55; border: 1px solid #A7F3D0; display:block; }
+    .message.error   { background: #FFF0F0; color: var(--red); border: 1px solid #FECDD5; display: block; }
+    .message.success { background: #EDFBF3; color: #1A6B3C; border: 1px solid #A7F3D0; display: block; }
 
-    /* ── form ── */
+    /* Form */
     .form-group { margin-bottom: .9rem; }
     .form-group label {
       display: block;
-      font-size: .72rem;
-      font-weight: 800;
-      color: var(--tx2);
+      font-size: .7rem; font-weight: 800;
+      color: var(--teal);
       margin-bottom: 5px;
-      text-transform: uppercase;
-      letter-spacing: .6px;
+      text-transform: uppercase; letter-spacing: .6px;
     }
     .form-group input,
     .form-group select {
       width: 100%;
       padding: 13px 14px;
       border: 2px solid var(--border);
-      border-radius: 13px;
+      border-radius: 12px;
       font-family: 'DM Sans', sans-serif;
-      font-size: .95rem;
-      font-weight: 500;
+      font-size: .93rem; font-weight: 500;
       color: var(--tx);
       background: var(--bg);
       min-height: 50px;
-      -webkit-appearance: none;
-      appearance: none;
+      -webkit-appearance: none; appearance: none;
       transition: all .2s;
     }
     .form-group input:focus,
     .form-group select:focus {
       outline: none;
-      border-color: var(--acc);
+      border-color: var(--teal);
       background: #fff;
-      box-shadow: 0 0 0 3px rgba(233,69,96,.1);
+      box-shadow: 0 0 0 3px rgba(26,140,140,.12);
     }
 
     .hidden-field { display: none; }
 
-    /* ── submit button ── */
     .btn-primary {
-      width: 100%;
-      padding: 14px;
-      background: var(--acc);
-      color: white;
-      border: none;
-      border-radius: 13px;
+      width: 100%; padding: 14px;
+      background: var(--teal); color: #fff;
+      border: none; border-radius: 13px;
       font-family: 'DM Sans', sans-serif;
-      font-size: 1rem;
-      font-weight: 800;
-      cursor: pointer;
-      transition: all .2s;
+      font-size: 1rem; font-weight: 800;
+      cursor: pointer; transition: all .2s;
       margin-top: .4rem;
-      box-shadow: 0 6px 20px rgba(233,69,96,.38);
+      box-shadow: 0 6px 18px rgba(26,140,140,.35);
       letter-spacing: -.1px;
     }
-    .btn-primary:hover { background: #d13050; box-shadow: 0 8px 28px rgba(233,69,96,.45); }
+    .btn-primary:hover  { background: var(--teal2); }
     .btn-primary:active { transform: scale(.97); }
     .btn-primary:disabled { opacity: .65; cursor: not-allowed; transform: none; }
 
-    /* ── hint ── */
+    /* Hint */
     .demo-hint {
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.15);
       border-radius: 12px;
       padding: 11px 14px;
-      font-size: .8rem;
-      color: rgba(255,255,255,.5);
-      margin-top: 1.25rem;
+      font-size: .78rem;
+      color: rgba(255,255,255,.6);
+      margin-top: 1.1rem;
       text-align: center;
       line-height: 1.5;
     }
-    .demo-hint strong { color: rgba(255,255,255,.75); font-weight: 700; }
+    .demo-hint strong { color: rgba(255,255,255,.9); font-weight: 700; }
   </style>
 </head>
 <body>
   <div class="login-wrap">
     <div class="brand">
       <div class="brand-logo">🏋️</div>
-      <h1>Gym<span>Pro</span></h1>
-      <p>BUILD · TRANSFORM · ACHIEVE</p>
+      <h1>GymPro</h1>
+      <p>Build · Transform · Achieve</p>
     </div>
 
     <div class="auth-card">
@@ -277,11 +251,12 @@
     </div>
 
     <div class="demo-hint">
-      💡 First time? <strong>Register an admin account</strong> to get started.
+      💡 First time? <strong>Register an Admin account</strong> to get started.
     </div>
   </div>
 
   <script>
+    /* ── Identical logic to original login.html — zero changes ── */
     const API_URL = 'https://gym-pro-mvyv.onrender.com/api/auth';
     let isLogin = true;
 
@@ -289,7 +264,8 @@
 
     function setMode(mode) {
       isLogin = mode === 'login';
-      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', (i === 0) === isLogin));
+      document.querySelectorAll('.tab-btn').forEach((b, i) =>
+        b.classList.toggle('active', (i === 0) === isLogin));
       document.getElementById('name-field').classList.toggle('hidden-field', isLogin);
       document.getElementById('role-field').classList.toggle('hidden-field', isLogin);
       document.getElementById('submit-btn').textContent = isLogin ? 'Login' : 'Create Account';
@@ -308,7 +284,7 @@
       btn.disabled = true;
       btn.textContent = 'Please wait…';
 
-      const email = document.getElementById('email').value.trim();
+      const email    = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
 
       if (!email || !password) {
@@ -321,7 +297,11 @@
       const endpoint = isLogin ? '/login' : '/register';
       const body = isLogin
         ? { email, password }
-        : { name: document.getElementById('name').value.trim(), email, password, role: document.getElementById('role').value };
+        : {
+            name: document.getElementById('name').value.trim(),
+            email, password,
+            role: document.getElementById('role').value
+          };
 
       if (!isLogin && !body.name) {
         showMsg('Please enter your name.', 'error');
@@ -331,7 +311,7 @@
       }
 
       try {
-        const res = await fetch(`${API_URL}${endpoint}`, {
+        const res  = await fetch(`${API_URL}${endpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
@@ -340,7 +320,7 @@
 
         if (res.ok) {
           localStorage.setItem('token', data.token);
-          localStorage.setItem('user', JSON.stringify(data.user));
+          localStorage.setItem('user',  JSON.stringify(data.user));
           showMsg(isLogin ? 'Login successful! Redirecting…' : 'Account created! Redirecting…', 'success');
           setTimeout(() => window.location.href = '/', 1000);
         } else {
