@@ -235,57 +235,61 @@
   <!-- ──────────────── MEMBERS ──────────────── -->
   <div id="page-members" class="page">
 
-    <!-- Search bar -->
-    <div class="search-bar">
-      <input type="text" id="memberSearch" placeholder='Search by name or phone…'
-        oninput="filterMembersUI(this.value)">
-      <div class="search-icon">🔍</div>
+    <!-- Search bar (matches reference screenshot) -->
+    <div style="position:relative;margin-bottom:10px">
+      <input type="search" id="memberSearch"
+        placeholder='Search for "Name or Phone"'
+        oninput="searchMembers(this.value)"
+        inputmode="search"
+        style="width:100%;padding:11px 46px 11px 14px;background:#fff;border:1.5px solid #D5D5DF;border-radius:22px;font-family:inherit;font-size:.88rem;font-weight:500;color:#1A2E2E;-webkit-appearance:none;appearance:none;transition:border-color .2s">
+      <button onclick="searchMembers(document.getElementById('memberSearch').value)"
+        style="position:absolute;right:4px;top:4px;bottom:4px;background:#1A8C8C;color:#fff;border:none;border-radius:18px;padding:0 14px;font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer">🔍</button>
     </div>
 
-    <!-- Filter chips -->
-    <div class="filter-chips">
-      <div class="filter-chip active" onclick="setMemberFilterUI('all',this)">
-        All Members ▾
-      </div>
-      <div class="filter-chip" onclick="setMemberFilterUI('Active',this)">Active</div>
-      <div class="filter-chip" onclick="setMemberFilterUI('Trial',this)">Trial</div>
-      <div class="filter-chip" onclick="setMemberFilterUI('Expired',this)">Expired</div>
-      <div class="filter-chip" onclick="setMemberFilterUI('Inactive',this)">Inactive</div>
+    <!-- Filter chips (All Member ▾ / Active / Trial / Expired / Inactive) -->
+    <div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:10px;padding-bottom:2px">
+      <button class="member-filter-chip active" onclick="setMembersFilter('all',this)"
+        style="display:inline-flex;align-items:center;padding:7px 14px;border-radius:20px;font-size:.75rem;font-weight:700;white-space:nowrap;cursor:pointer;transition:all .15s;border:1.5px solid #1A8C8C;font-family:inherit;background:#1A8C8C;color:#fff;flex-shrink:0">
+        All Member ▾
+      </button>
+      <button class="member-filter-chip" onclick="setMembersFilter('Active',this)"
+        style="display:inline-flex;align-items:center;padding:7px 14px;border-radius:20px;font-size:.75rem;font-weight:700;white-space:nowrap;cursor:pointer;border:1.5px solid #D5D5DF;font-family:inherit;background:#fff;color:#555566;flex-shrink:0">
+        Active
+      </button>
+      <button class="member-filter-chip" onclick="setMembersFilter('Trial',this)"
+        style="display:inline-flex;align-items:center;padding:7px 14px;border-radius:20px;font-size:.75rem;font-weight:700;white-space:nowrap;cursor:pointer;border:1.5px solid #D5D5DF;font-family:inherit;background:#fff;color:#555566;flex-shrink:0">
+        Trial
+      </button>
+      <button class="member-filter-chip" onclick="setMembersFilter('Expired',this)"
+        style="display:inline-flex;align-items:center;padding:7px 14px;border-radius:20px;font-size:.75rem;font-weight:700;white-space:nowrap;cursor:pointer;border:1.5px solid #D5D5DF;font-family:inherit;background:#fff;color:#555566;flex-shrink:0">
+        Expired
+      </button>
+      <button class="member-filter-chip" onclick="setMembersFilter('Inactive',this)"
+        style="display:inline-flex;align-items:center;padding:7px 14px;border-radius:20px;font-size:.75rem;font-weight:700;white-space:nowrap;cursor:pointer;border:1.5px solid #D5D5DF;font-family:inherit;background:#fff;color:#555566;flex-shrink:0">
+        Inactive
+      </button>
     </div>
 
-    <!-- Add / Delete-all actions -->
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <button class="btn btn-primary" style="flex:1;border-radius:12px;"
-        onclick="openModal('addMemberModal')">➕ Add Member</button>
-      <button class="btn btn-danger btn-sm" style="border-radius:12px;padding:0 14px;"
-        onclick="confirmDeleteAll()">🗑 All</button>
+    <!-- Member cards list — rendered by script.js into membersListWrap -->
+    <div id="membersListWrap">
+      <div class="empty"><div class="ei">⏳</div><p>Loading members…</p></div>
     </div>
 
-    <!-- Member cards container — script.js renders into #membersBody inside this table -->
-    <!-- We wrap in a card but keep tbody id="membersBody" intact for script.js -->
-    <div class="card" style="padding:0;overflow:hidden;">
-      <div class="tbl-wrap" style="margin:0;padding:0;">
-        <table id="membersTable">
-          <thead>
-            <tr>
-              <th>Member</th>
-              <th>Phone</th>
-              <th>Gender</th>
-              <th>Plan</th>
-              <th>Expires ↑</th>
-              <th>Trainer</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="membersBody">
-            <tr><td colspan="8">
-              <div class="empty"><div class="ei">⏳</div><p>Loading…</p></div>
-            </td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <!-- Hidden table kept for any legacy code that references membersBody -->
+    <div style="display:none"><table><tbody id="membersBody"></tbody></table></div>
+
+    <!-- FAB: Add Member button (floating, matches reference) -->
+    <button onclick="openModal('addMemberModal')"
+      style="position:fixed;right:1rem;bottom:calc(68px + env(safe-area-inset-bottom));
+        height:48px;background:#1A8C8C;color:#fff;border:none;border-radius:30px;
+        padding:0 20px 0 14px;display:flex;align-items:center;gap:8px;
+        font-family:inherit;font-size:.88rem;font-weight:800;cursor:pointer;
+        box-shadow:0 4px 18px rgba(26,140,140,.45);z-index:800;transition:all .2s">
+      👤 Add Member
+    </button>
+
+    <!-- Delete all (small, secondary) -->
+    <div style="height:50px"></div><!-- spacer for FAB -->
   </div>
 
   <!-- ──────────────── ATTENDANCE ──────────────── -->
@@ -862,42 +866,32 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- ═══════════════════ DASHBOARD EXTRA TILES SCRIPT ═══════════════════ -->
+<!-- ═══════════════════ DASHBOARD EXTRA TILES + MEMBER FILTER CHIP STYLES ═══════════════════ -->
+<style>
+/* Active chip style override */
+.member-filter-chip.active {
+  background: #1A8C8C !important;
+  color: #fff !important;
+  border-color: #1A8C8C !important;
+}
+/* Attendance analytics colour vars that match script.js */
+:root {
+  --pl2: #F2FAFA;
+  --pl:  #C8E6E6;
+  --p:   #1A8C8C;
+  --g:   #27AE60;
+  --gr:  #E74C3C;
+  --am:  #F39C12;
+  --border2: #D5D5DF;
+}
+</style>
+
 <script>
-/**
- * Extra UI helpers — purely additive, zero function overrides.
- * Populates the extra dashboard tiles (statExpToday, statExp3, etc.)
- * and provides client-side member search/filter for the members page.
- * All original script.js functions (loadAllMembers, loadDashboard, etc.)
- * remain completely unchanged.
- */
-
-/* ── Client-side member search / filter ── */
-let _memberFilter = 'all';
-
-function filterMembersUI(query) {
-  const q = (query || '').toLowerCase().trim();
-  const rows = document.querySelectorAll('#membersBody tr');
-  rows.forEach(row => {
-    if (row.cells.length < 2) { row.style.display = ''; return; }
-    const text = row.textContent.toLowerCase();
-    const matchSearch = !q || text.includes(q);
-    const matchFilter = _memberFilter === 'all' || text.includes(_memberFilter.toLowerCase());
-    row.style.display = (matchSearch && matchFilter) ? '' : 'none';
-  });
-}
-
-function setMemberFilterUI(filter, el) {
-  _memberFilter = filter;
-  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  filterMembersUI(document.getElementById('memberSearch')?.value || '');
-}
-
-/* ── Extra dashboard counters (injected after loadDashboard runs) ── */
+/* ── Extra dashboard tile filler (hooks into fetch, zero conflicts) ── */
 function _fillExtraDashTiles(members) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const parseExp = m => {
+    if (!m.expiryDate) return new Date(0);
     const [y, mo, d] = m.expiryDate.split('T')[0].split('-');
     return new Date(+y, +mo - 1, +d);
   };
@@ -913,28 +907,23 @@ function _fillExtraDashTiles(members) {
     active.filter(m => { const d = daysLeft(m); return d >= 4 && d <= 7; }).length;
   if (el('statExp15')) el('statExp15').textContent =
     active.filter(m => { const d = daysLeft(m); return d >= 8 && d <= 15; }).length;
-
-  // Collection this month = sum of planPrice for active members
   const total = active.reduce((s, m) => s + (m.planPrice || 0), 0);
   if (el('statCollThisMonth'))
     el('statCollThisMonth').textContent =
       total >= 1000 ? `₹${(total / 1000).toFixed(1)}k` : `₹${total}`;
-
-  // Today's label
   const d = new Date();
   if (el('dashTodayLabel'))
     el('dashTodayLabel').textContent =
       `Today — ${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`;
 }
 
-/* Intercept fetch so we can read member data after loadDashboard() */
+/* Intercept fetch to hook extra tiles — only applies to members list GET */
 (function () {
   const _fetch = window.fetch;
   window.fetch = async function (...args) {
     const res = await _fetch(...args);
     const url = typeof args[0] === 'string' ? args[0] : '';
-    // Only intercept members list GET (no body, not a sub-route like /stats)
-    if (url.includes('/api/members') && !url.match(/\/members\/[^/]+$/) &&
+    if (url.includes('/api/members') && !url.match(/\/members\/[^/?]+($|\?)/) &&
         (!args[1] || !args[1].method || args[1].method === 'GET')) {
       const clone = res.clone();
       clone.json().then(data => {
@@ -946,7 +935,7 @@ function _fillExtraDashTiles(members) {
 })();
 </script>
 
-<!-- Original script — completely untouched -->
+<!-- Updated script.js — member card UI + MongoDB attendance -->
 <script src="script.js"></script>
 
 </body>
