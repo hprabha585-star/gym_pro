@@ -337,17 +337,52 @@ let dashMembersCache = [];
 
 function renderDashTable(membersList) {
   const tbody = document.getElementById('dashBody');
-  if (!membersList.length) { 
-    tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p>No members found in this timeframe.</p></div></td></tr>'; 
-    return; 
+  if (!membersList.length) {
+    tbody.innerHTML = '<tr><td colspan="2"><div class="empty"><p>No members found in this timeframe.</p></div></td></tr>';
+    return;
   }
-  tbody.innerHTML = membersList.map(m => `<tr onclick="openEditMember('${m._id}')" style="cursor:pointer;" title="Tap to view details">
-    <td><div style="display:flex;align-items:center;gap:8px">${avImg(m)}<div><div style="font-weight:700;font-size:.82rem">${esc(m.name)}</div><div style="font-size:.7rem;color:var(--tx3)">${esc(m.phone)}</div></div></div></td>
-    <td style="font-size:.75rem;color:var(--tx2)">${esc(m.plan)}</td>
-    <td>${gBadge(m.gender)}</td>
-    <td>${expCell(m.expiryDate,m.status)}</td>
-    <td>${badge(m.status)}</td>
-  </tr>`).join('');
+  tbody.innerHTML = membersList.map(m => {
+    let expLabel = '\u2014', expColor = '#8AABAB';
+    if (m.expiryDate) {
+      const p   = m.expiryDate.split('T')[0].split('-');
+      const exp = new Date(+p[0], +p[1]-1, +p[2]);
+      const today = new Date(); today.setHours(0,0,0,0);
+      const days  = Math.ceil((exp - today) / 86400000);
+      expLabel = exp.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
+      expColor = days <= 0 ? '#E74C3C' : days <= 5 ? '#F39C12' : '#27AE60';
+    }
+    const stClr = {Active:'#27AE60',Trial:'#2980B9',Inactive:'#95A5A6',Expired:'#E74C3C'};
+    const stBg  = {Active:'#E8F8EF',Trial:'#E3F2FD',Inactive:'#F3F4F6',Expired:'#FEECEB'};
+    const sc = stClr[m.status] || '#95A5A6';
+    const sb = stBg[m.status]  || '#F3F4F6';
+    const gc = {Male:'#1565C0',Female:'#AD1457',Other:'#6A1B9A'};
+    const gb = {Male:'#E3F2FD',Female:'#FCE4EC',Other:'#F3E5F5'};
+    const genderPill = m.gender
+      ? `<span style="background:${gb[m.gender]||'#F3F4F6'};color:${gc[m.gender]||'#555'};padding:2px 9px;border-radius:20px;font-size:.62rem;font-weight:800">${esc(m.gender)}</span>`
+      : '';
+    return `<tr onclick="openEditMember('${m._id}')" style="cursor:pointer;border-bottom:1px solid #F0F5F5">
+      <td style="padding:10px 8px 10px 12px;vertical-align:middle">
+        <div style="display:flex;align-items:center;gap:10px">
+          ${avImg(m)}
+          <div style="min-width:0">
+            <div style="font-weight:800;font-size:.88rem;color:#1A2E2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px">${esc(m.name)}</div>
+            <div style="font-size:.72rem;color:#8AABAB;margin-top:1px">${esc(m.phone||'')}</div>
+            <div style="margin-top:3px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+              ${genderPill}
+              <span style="font-size:.68rem;color:#4A6464;font-weight:600">${esc(m.plan||'')}</span>
+            </div>
+          </div>
+        </div>
+      </td>
+      <td style="padding:10px 12px 10px 6px;vertical-align:middle;text-align:right;white-space:nowrap">
+        <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end;margin-bottom:5px">
+          <span style="width:8px;height:8px;border-radius:50%;background:${expColor};flex-shrink:0"></span>
+          <span style="font-size:.78rem;font-weight:700;color:#1A2E2E">${expLabel}</span>
+        </div>
+        <span style="background:${sb};color:${sc};padding:3px 10px;border-radius:20px;font-size:.65rem;font-weight:800">${esc(m.status||'')}</span>
+      </td>
+    </tr>`;
+  }).join('');
 }
 
 function filterDash(days) {
@@ -868,33 +903,36 @@ async function loadAttendance() {
       return;
     }
 
-    // Step 4: Render attendance rows with member cards
+    // Step 4: Render attendance rows — mobile-optimised 2-col layout
+    // Col 1: Photo + Name + Phone + Plan  |  Col 2: Status badge + P/A buttons
     tbody.innerHTML = active.map(m => {
-      const st = dbSaved[m._id] || 'Absent';
-      const rowBg = st === 'Present' ? 'rgba(39,174,96,.04)' : '';
-      return `<tr style="background:${rowBg}">
-        <td>
-          <div style="display:flex;align-items:center;gap:8px">
+      const st    = dbSaved[m._id] || 'Absent';
+      const isP   = st === 'Present';
+      const rowBg = isP ? '#F5FFFB' : '#fff';
+      return `<tr style="background:${rowBg};border-bottom:1px solid #F0F5F5">
+        <td style="padding:10px 6px 10px 12px;vertical-align:middle">
+          <div style="display:flex;align-items:center;gap:10px">
             ${avImg(m)}
-            <div>
-              <div style="font-weight:700;font-size:.82rem;color:var(--tx)">${esc(m.name)}</div>
-              <div style="font-size:.68rem;color:var(--tx3)">${esc(m.phone||'')}</div>
+            <div style="min-width:0">
+              <div style="font-weight:800;font-size:.88rem;color:#1A2E2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px">${esc(m.name)}</div>
+              <div style="font-size:.7rem;color:#8AABAB;margin-top:1px">${esc(m.phone||'')}</div>
+              <div style="font-size:.68rem;color:#4A6464;margin-top:2px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px">${esc(m.plan||'')}</div>
             </div>
           </div>
         </td>
-        <td style="font-size:.75rem;color:var(--tx2)">${esc(m.plan)}</td>
-        <td style="font-size:.78rem">${esc(m.phone)}</td>
-        <td>
+        <td style="padding:10px 12px 10px 6px;vertical-align:middle;text-align:right;white-space:nowrap">
           <span id="ab-${m._id}" style="
-            display:inline-block;padding:4px 10px;border-radius:20px;
-            font-size:.68rem;font-weight:800;
-            background:${st==='Present'?'var(--grn-l,#E8F8EF)':'var(--red-l,#FEECEB)'};
-            color:${st==='Present'?'#27AE60':'#E74C3C'};
+            display:inline-block;padding:4px 12px;border-radius:20px;
+            font-size:.72rem;font-weight:800;margin-bottom:6px;
+            background:${isP?'#E8F8EF':'#FEECEB'};
+            color:${isP?'#27AE60':'#E74C3C'};
           ">${st}</span>
-        </td>
-        <td style="white-space:nowrap">
-          <button class="att-btn-p" onclick="markAtt('${m._id}','${date}','Present')">✓ P</button>
-          <button class="att-btn-a" onclick="markAtt('${m._id}','${date}','Absent')">✗ A</button>
+          <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:2px">
+            <button onclick="markAtt('${m._id}','${date}','Present')"
+              style="padding:5px 13px;border-radius:20px;border:none;background:#E8F8EF;color:#27AE60;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;min-height:34px">✓ P</button>
+            <button onclick="markAtt('${m._id}','${date}','Absent')"
+              style="padding:5px 13px;border-radius:20px;border:none;background:#FEECEB;color:#E74C3C;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;min-height:34px">✗ A</button>
+          </div>
         </td>
       </tr>`;
     }).join('');
