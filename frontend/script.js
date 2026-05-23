@@ -852,10 +852,68 @@ document.getElementById('addMemberForm').addEventListener('submit', async e => {
   btn.disabled=false; btn.textContent='Add Member';
 });
 
-/* ── ATTENDANCE ── */
+/* ══════════════════════════════════════════════════════
+   ATTENDANCE — MongoDB primary, localStorage offline cache
+   ══════════════════════════════════════════════════════ */
+
+// In-memory attendance cache keyed by date: { date → { memberId → status } }
+const _attCache = {};
+
 function attKey(date) {
-  try { const u=JSON.parse(localStorage.getItem('user')||'{}'); return `att_${u._id||u.email||'x'}_${date}`; }
+  try { const u = JSON.parse(localStorage.getItem('user') || '{}'); return `att_${u._id||u.email||'x'}_${date}`; }
   catch(e) { return `att_${date}`; }
+}
+
+/* Fetch ALL attendance from MongoDB once per session and cache in memory */
+let _attFetched = false;
+let _attFetchPromise = null;
+
+async function _ensureAttLoaded() {
+  if (_attFetched) return;
+  if (_attFetchPromise) return _attFetchPromise;
+  _attFetchPromise = (async () => {
+    try {
+      const res = await fetch(`${BASE}/attendance`, { headers: hdrs() });
+      if (!res.ok) throw new Error('fetch failed');
+      const all = await res.json();
+      // Populate in-memory cache
+      all.forEach(a => {
+        const mid = typeof a.memberId === 'object' ? (a.memberId?._id || '') : (a.memberId || '');
+        if (!mid || !a.date) return;
+        if (!_attCache[a.date]) _attCache[a.date] = {};
+        _attCache[a.date][mid] = a.status;
+      });
+      // Also write to localStorage for offline
+      Object.keys(_attCache).forEach(d => {
+        localStorage.setItem(attKey(d), JSON.stringify(_attCache[d]));
+      });
+      _attFetched = true;
+    } catch(e) {
+      // Offline: load from localStorage
+      console.warn('Offline — loading attendance from localStorage');
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('att_')) {
+          const datePart = k.split('_').pop(); // YYYY-MM-DD
+          try {
+            const obj = JSON.parse(localStorage.getItem(k) || '{}');
+            if (datePart && datePart.match(/^\d{4}-\d{2}-\d{2}$/)) {
+              _attCache[datePart] = obj;
+            }
+          } catch(_) {}
+        }
+      }
+      _attFetched = true;
+    }
+    _attFetchPromise = null;
+  })();
+  return _attFetchPromise;
+}
+
+/* Invalidate cache so next load re-fetches */
+function _invalidateAttCache() {
+  _attFetched = false;
+  _attFetchPromise = null;
 }
 
 async function loadAttendance() {
@@ -863,224 +921,224 @@ async function loadAttendance() {
   const date   = dateEl.value || getLocalTodayStr();
   dateEl.value = date;
   const tbody  = document.getElementById('attBody');
-  tbody.innerHTML = '<tr><td colspan="5"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr>';
+  tbody.innerHTML = '<tr><td colspan="2"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr>';
 
   try {
-    // Step 1: Fetch all active members
-    const mRes = await fetch(API, {headers:hdrs()});
-    if (mRes.status===401) { logout(); return; }
+    // Step 1: Load members + attendance in parallel
+    const [mRes] = await Promise.all([
+      fetch(API, { headers: hdrs() }),
+      _ensureAttLoaded()
+    ]);
+    if (mRes.status === 401) { logout(); return; }
     const members = await mRes.json();
-    const active  = members.filter(m => m.status==='Active'||m.status==='Trial');
+    const active  = members.filter(m => m.status === 'Active' || m.status === 'Trial');
 
-    // Step 2: Load attendance FROM MONGODB for this date (primary source)
-    let dbSaved = {};
-    try {
-      const aRes = await fetch(`${BASE}/attendance`, {headers:hdrs()});
-      if (aRes.ok) {
-        const allAtt = await aRes.json();
-        // Filter records matching today's date
-        allAtt.forEach(a => {
-          const mid = a.memberId?._id || a.memberId;
-          if (a.date === date && mid) dbSaved[mid] = a.status;
-        });
-        // Sync DB data back to localStorage as cache
-        localStorage.setItem(attKey(date), JSON.stringify(dbSaved));
-      }
-    } catch(_) {
-      // Offline fallback: use localStorage
-      try { dbSaved = JSON.parse(localStorage.getItem(attKey(date))||'{}'); } catch(e) {}
-    }
+    // Step 2: Get today's attendance from in-memory cache
+    const todayAtt = _attCache[date] || {};
 
     // Step 3: Render stats
-    const pCount = Object.values(dbSaved).filter(s=>s==='Present').length;
+    const pCount = Object.values(todayAtt).filter(s => s === 'Present').length;
     document.getElementById('attTotal').textContent   = active.length;
     document.getElementById('attPresent').textContent = pCount;
     document.getElementById('attPct').textContent     = active.length
-      ? `${Math.min(100,Math.round(pCount/active.length*100))}%` : '0%';
+      ? `${Math.min(100, Math.round(pCount / active.length * 100))}%` : '0%';
 
     if (!active.length) {
-      tbody.innerHTML = '<tr><td colspan="5"><div class="empty"><p>No active members</p></div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="2"><div class="empty"><p>No active members</p></div></td></tr>';
       return;
     }
 
-    // Step 4: Render attendance rows — mobile-optimised 2-col layout
-    // Col 1: Photo + Name + Phone + Plan  |  Col 2: Status badge + P/A buttons
+    // Step 4: Render rows — 2-column mobile-optimised layout
     tbody.innerHTML = active.map(m => {
-      const st    = dbSaved[m._id] || 'Absent';
-      const isP   = st === 'Present';
-      const rowBg = isP ? '#F5FFFB' : '#fff';
-      return `<tr style="background:${rowBg};border-bottom:1px solid #F0F5F5">
+      const st  = todayAtt[m._id] || 'Absent';
+      const isP = st === 'Present';
+      return `<tr style="background:${isP ? '#F5FFFB' : '#fff'};border-bottom:1px solid #F0F5F5">
         <td style="padding:10px 6px 10px 12px;vertical-align:middle">
           <div style="display:flex;align-items:center;gap:10px">
             ${avImg(m)}
             <div style="min-width:0">
-              <div style="font-weight:800;font-size:.88rem;color:#1A2E2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px">${esc(m.name)}</div>
-              <div style="font-size:.7rem;color:#8AABAB;margin-top:1px">${esc(m.phone||'')}</div>
-              <div style="font-size:.68rem;color:#4A6464;margin-top:2px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px">${esc(m.plan||'')}</div>
+              <div style="font-weight:800;font-size:.9rem;color:#1A2E2E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.name)}</div>
+              <div style="font-size:.72rem;color:#8AABAB;margin-top:1px">${esc(m.phone || '')}</div>
+              <div style="font-size:.7rem;color:#4A6464;margin-top:2px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.plan || '')}</div>
             </div>
           </div>
         </td>
-        <td style="padding:10px 12px 10px 6px;vertical-align:middle;text-align:right;white-space:nowrap">
-          <span id="ab-${m._id}" style="
-            display:inline-block;padding:4px 12px;border-radius:20px;
-            font-size:.72rem;font-weight:800;margin-bottom:6px;
-            background:${isP?'#E8F8EF':'#FEECEB'};
-            color:${isP?'#27AE60':'#E74C3C'};
-          ">${st}</span>
-          <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:2px">
-            <button onclick="markAtt('${m._id}','${date}','Present')"
-              style="padding:5px 13px;border-radius:20px;border:none;background:#E8F8EF;color:#27AE60;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;min-height:34px">✓ P</button>
-            <button onclick="markAtt('${m._id}','${date}','Absent')"
-              style="padding:5px 13px;border-radius:20px;border:none;background:#FEECEB;color:#E74C3C;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;min-height:34px">✗ A</button>
+        <td style="padding:10px 12px 10px 4px;vertical-align:middle;text-align:right">
+          <div id="ab-${m._id}" style="display:inline-block;padding:4px 11px;border-radius:20px;font-size:.72rem;font-weight:800;margin-bottom:6px;background:${isP?'#E8F8EF':'#FEECEB'};color:${isP?'#27AE60':'#E74C3C'}">${st}</div>
+          <div style="display:flex;gap:5px;justify-content:flex-end">
+            <button onclick="markAtt('${m._id}','${date}','Present')" style="padding:6px 12px;border-radius:20px;border:none;background:#E8F8EF;color:#27AE60;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;min-height:36px;-webkit-tap-highlight-color:transparent">✓ P</button>
+            <button onclick="markAtt('${m._id}','${date}','Absent')"  style="padding:6px 12px;border-radius:20px;border:none;background:#FEECEB;color:#E74C3C;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;min-height:36px;-webkit-tap-highlight-color:transparent">✗ A</button>
           </div>
         </td>
       </tr>`;
     }).join('');
 
   } catch(e) {
-    tbody.innerHTML = '<tr><td colspan="5"><div class="empty"><p style="color:var(--gr)">Error loading. Check connection.</p></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="2"><div class="empty"><p style="color:#E74C3C">Error loading. Check connection.</p></div></td></tr>';
     console.error('loadAttendance error:', e);
   }
 }
 
-/* ── SAVING ATTENDANCE TO MONGODB ── */
+/* ── MARK SINGLE ATTENDANCE — saves to MongoDB + cache ── */
 async function markAtt(memberId, date, status) {
-  // 1. Immediately update the UI badge
-  const b = document.getElementById(`ab-${memberId}`);
-  if (b) {
-    b.textContent = status;
-    b.style.background = status === 'Present' ? '#E8F8EF' : '#FEECEB';
-    b.style.color       = status === 'Present' ? '#27AE60' : '#E74C3C';
-    const row = b.closest('tr');
-    if (row) row.style.background = status === 'Present' ? 'rgba(39,174,96,.04)' : '';
+  // 1. Update UI instantly
+  const badge = document.getElementById(`ab-${memberId}`);
+  if (badge) {
+    badge.textContent = status;
+    badge.style.background = status === 'Present' ? '#E8F8EF' : '#FEECEB';
+    badge.style.color       = status === 'Present' ? '#27AE60' : '#E74C3C';
+    const row = badge.closest('tr');
+    if (row) row.style.background = status === 'Present' ? '#F5FFFB' : '#fff';
   }
 
-  // 2. Save to localStorage as offline cache
-  let saved = {};
-  try { saved = JSON.parse(localStorage.getItem(attKey(date))||'{}'); } catch(e) {}
-  saved[memberId] = status;
-  localStorage.setItem(attKey(date), JSON.stringify(saved));
+  // 2. Update in-memory cache
+  if (!_attCache[date]) _attCache[date] = {};
+  _attCache[date][memberId] = status;
 
-  // Update counters
-  const total   = parseInt(document.getElementById('attTotal').textContent)||0;
-  const present = Object.values(saved).filter(s=>s==='Present').length;
+  // 3. Write to localStorage for offline use
+  localStorage.setItem(attKey(date), JSON.stringify(_attCache[date]));
+
+  // 4. Update counters from cache
+  const activeTotal = parseInt(document.getElementById('attTotal').textContent) || 0;
+  const present = Object.values(_attCache[date]).filter(s => s === 'Present').length;
   document.getElementById('attPresent').textContent = present;
-  document.getElementById('attPct').textContent = total ? `${Math.min(100,Math.round(present/total*100))}%` : '0%';
+  document.getElementById('attPct').textContent = activeTotal
+    ? `${Math.min(100, Math.round(present / activeTotal * 100))}%` : '0%';
 
-  // 3. Persist to MongoDB (primary storage)
+  // 5. Persist to MongoDB
   try {
     const res = await fetch(`${BASE}/attendance`, {
       method: 'POST',
       headers: hdrs(),
       body: JSON.stringify({ memberId, date, status })
     });
-    if (!res.ok) throw new Error('DB save failed');
-  } catch (error) {
-    console.error('Attendance Sync Error:', error);
-    toast('Saved locally — will sync when online', 'error');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'DB save failed');
+    }
+  } catch (err) {
+    console.error('Attendance DB Error:', err.message);
+    // Keep UI green — data is in cache, will retry on reload
+    toast('⚠️ Saved locally — sync pending', 'error');
   }
 }
 
+/* ── MARK ALL PRESENT ── */
 async function markAllPresent() {
   const date = document.getElementById('attDate').value || getLocalTodayStr();
   if (!confirm(`Mark ALL active members Present for ${fmt(date)}?`)) return;
   try {
-    const members = await fetch(API,{headers:hdrs()}).then(r=>r.json());
-    const active  = members.filter(m=>m.status==='Active'||m.status==='Trial');
-    let saved = {};
-    try { saved=JSON.parse(localStorage.getItem(attKey(date))||'{}'); } catch(e){}
-    
-    // Mark UI & Save to DB for each member
+    const members = await fetch(API, { headers: hdrs() }).then(r => r.json());
+    const active  = members.filter(m => m.status === 'Active' || m.status === 'Trial');
+    // Sequential to avoid rate-limiting
     for (const m of active) {
-      saved[m._id] = 'Present';
-      await markAtt(m._id, date, 'Present'); // Reusing the individual function to ensure DB saving
+      await markAtt(m._id, date, 'Present');
     }
-    
-    localStorage.setItem(attKey(date),JSON.stringify(saved));
-    toast(`${active.length} members marked Present`,'success'); loadAttendance();
-  } catch(e) { toast('Error','error'); }
+    toast(`✅ ${active.length} members marked Present`, 'success');
+    loadAttendance();
+  } catch(e) { toast('Error marking attendance', 'error'); }
 }
-/* ── MEMBER ATTENDANCE ANALYTICS ── */
+/* ══════════════════════════════════════════════════════
+   MEMBER ATTENDANCE ANALYTICS — uses in-memory _attCache
+   Shows monthly bars + overall streak for performance
+   ══════════════════════════════════════════════════════ */
 async function renderMemberAttendanceStats(memberId) {
   const container = document.getElementById('eAttStats');
-  if(!container) return;
-  
-  // Show loading state while fetching
-  container.innerHTML = '<div class="sync-note" style="text-align:center;">⏳ Analyzing attendance data...</div>';
-  
-  try {
-    // Fetch all attendance records
-    const res = await fetch(`${BASE}/attendance`, {headers:hdrs()});
-    if (!res.ok) throw new Error('fetch failed');
-    const allAtt = await res.json();
+  if (!container) return;
+  container.innerHTML = '<div style="text-align:center;padding:16px;color:#8AABAB;font-size:.84rem;font-weight:600">⏳ Loading attendance data…</div>';
 
-    // Filter only this member's "Present" days
-    const memberAtt = allAtt.filter(a => ((a.memberId && a.memberId._id === memberId) || a.memberId === memberId) && a.status === 'Present');
-    
-    // Group attendance by Month and Year (YYYY-MM)
-    const monthlyStats = {};
-    memberAtt.forEach(record => {
-      const [y, m, d] = record.date.split('-');
-      const monthKey = `${y}-${m}`;
-      if(!monthlyStats[monthKey]) monthlyStats[monthKey] = 0;
-      monthlyStats[monthKey]++;
+  try {
+    // Ensure attendance is loaded from MongoDB
+    await _ensureAttLoaded();
+
+    // Build per-month counts from in-memory cache
+    const monthlyStats = {}; // { 'YYYY-MM': count }
+    let totalPresent = 0;
+
+    Object.keys(_attCache).forEach(date => {
+      const dayData = _attCache[date];
+      if (!dayData) return;
+      const status = dayData[memberId];
+      if (status === 'Present') {
+        const [y, m] = date.split('-');
+        const key = `${y}-${m}`;
+        monthlyStats[key] = (monthlyStats[key] || 0) + 1;
+        totalPresent++;
+      }
     });
 
-    // Identify the current running month
-    const today = new Date();
-    const curY = today.getFullYear();
-    const curM = String(today.getMonth() + 1).padStart(2, '0');
-    const curMonthKey = `${curY}-${curM}`;
+    const today  = new Date();
+    const curY   = today.getFullYear();
+    const curM   = String(today.getMonth() + 1).padStart(2, '0');
+    const curKey = `${curY}-${curM}`;
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const daysInMonth = (y, m) => new Date(y, m, 0).getDate();
 
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    // JS Trick: Day 0 of next month = Last day of current month
-    const getDaysInMonth = (year, month) => new Date(year, month, 0).getDate();
+    const keys = Object.keys(monthlyStats).sort().reverse();
 
-    // Sort so newest months show at the top
-    const keys = Object.keys(monthlyStats).sort().reverse(); 
-    
-    if(keys.length === 0) {
-       container.innerHTML = '<div class="sync-note" style="text-align:center;">No attendance records found yet. Mark them present to see stats!</div>';
-       return;
+    if (keys.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:20px;background:#F0F5F5;border-radius:14px">
+          <div style="font-size:2rem;margin-bottom:8px">📅</div>
+          <div style="font-size:.85rem;font-weight:700;color:#8AABAB">No attendance records yet</div>
+          <div style="font-size:.75rem;color:#8AABAB;margin-top:4px">Mark them present in the Attendance page to track performance</div>
+        </div>`;
+      return;
     }
 
-    let html = '<div style="display:flex; flex-direction:column; gap:10px;">';
+    // Summary card
+    let html = `
+      <div style="background:#1A8C8C;border-radius:14px;padding:14px 16px;margin-bottom:12px;color:#fff">
+        <div style="font-size:.72rem;font-weight:700;opacity:.75;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Total Attendance</div>
+        <div style="font-size:1.6rem;font-weight:800;line-height:1">${totalPresent} <span style="font-size:.85rem;opacity:.75">days present</span></div>
+        <div style="font-size:.75rem;opacity:.65;margin-top:4px">Across ${keys.length} month${keys.length>1?'s':''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">`;
 
     keys.forEach(key => {
-      const [y, m] = key.split('-');
-      const monthName = `${monthNames[parseInt(m)-1]} ${y}`;
-      const presentDays = monthlyStats[key];
+      const [y, m]    = key.split('-');
+      const label     = `${monthNames[parseInt(m)-1]} ${y}`;
+      const present   = monthlyStats[key];
+      const isCurrent = key === curKey;
 
-      if (key === curMonthKey) {
-        // CURRENT MONTH: Show exact days attended
+      if (isCurrent) {
+        // Current month — show actual days, no percentage (month not over)
+        const daysInCur = today.getDate(); // days elapsed
+        const pct = daysInCur > 0 ? Math.round(present / daysInCur * 100) : 0;
+        const clr = pct >= 70 ? '#27AE60' : pct >= 40 ? '#F39C12' : '#E74C3C';
         html += `
-          <div style="background:var(--pl2); padding:12px 16px; border-radius:14px; display:flex; justify-content:space-between; align-items:center; border: 1.5px solid var(--pl);">
-            <span style="font-size:.9rem; font-weight:800; color:var(--p);">${monthName} (Current)</span>
-            <span style="background:var(--p); color:#fff; padding:6px 12px; border-radius:20px; font-size:.8rem; font-weight:800;">${presentDays} Days Attended</span>
-          </div>
-        `;
+          <div style="background:#E8F7F7;border:1.5px solid #C8DEDE;border-radius:14px;padding:12px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <span style="font-size:.85rem;font-weight:800;color:#1A8C8C">${label} <span style="font-size:.7rem;background:#1A8C8C;color:#fff;padding:2px 8px;border-radius:12px;margin-left:4px">Current</span></span>
+              <span style="font-size:.82rem;font-weight:800;color:${clr}">${pct}%</span>
+            </div>
+            <div style="height:8px;background:#C8DEDE;border-radius:10px;overflow:hidden">
+              <div style="height:100%;width:${pct}%;background:${clr};border-radius:10px;transition:width .5s ease"></div>
+            </div>
+            <div style="font-size:.7rem;color:#4A6464;margin-top:6px;display:flex;justify-content:space-between">
+              <span>${present} days present (of ${daysInCur} elapsed)</span>
+              <span style="font-weight:700;color:${clr}">${pct>=70?'🟢 Great':pct>=40?'🟡 Average':'🔴 Needs Work'}</span>
+            </div>
+          </div>`;
       } else {
-        // PAST MONTHS: Show Percentage Progress Bar
-        const totalDays = getDaysInMonth(parseInt(y), parseInt(m));
-        const pct = Math.round((presentDays / totalDays) * 100);
-        
-        // Change color based on performance (Red < 40%, Yellow < 70%, Green > 70%)
-        let barClr = 'var(--g)';
-        if(pct < 40) barClr = 'var(--gr)';
-        else if(pct < 70) barClr = 'var(--am)';
-
+        // Past month — full percentage
+        const total = daysInMonth(parseInt(y), parseInt(m));
+        const pct   = Math.round(present / total * 100);
+        const clr   = pct >= 70 ? '#27AE60' : pct >= 40 ? '#F39C12' : '#E74C3C';
         html += `
-          <div style="background:var(--bg); padding:12px 16px; border-radius:14px; border: 1px solid var(--border2);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <span style="font-size:.85rem; font-weight:700; color:var(--tx2);">${monthName}</span>
-              <span style="font-size:.85rem; font-weight:800; color:${barClr};">${pct}% Attended</span>
+          <div style="background:#F0F5F5;border:1px solid #E0ECEC;border-radius:14px;padding:12px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <span style="font-size:.82rem;font-weight:700;color:#4A6464">${label}</span>
+              <span style="font-size:.82rem;font-weight:800;color:${clr}">${pct}%</span>
             </div>
-            <div style="height:8px; background:var(--border2); border-radius:10px; overflow:hidden;">
-              <div style="height:100%; width:${pct}%; background:${barClr}; border-radius:10px; transition: width 0.5s ease;"></div>
+            <div style="height:7px;background:#E0ECEC;border-radius:10px;overflow:hidden">
+              <div style="height:100%;width:${pct}%;background:${clr};border-radius:10px;transition:width .5s ease"></div>
             </div>
-            <div style="font-size:.7rem; color:var(--tx3); margin-top:6px; text-align:right;">${presentDays} out of ${totalDays} days</div>
-          </div>
-        `;
+            <div style="font-size:.68rem;color:#8AABAB;margin-top:5px;display:flex;justify-content:space-between">
+              <span>${present} of ${total} days</span>
+              <span style="font-weight:700;color:${clr}">${pct>=70?'🟢 Great':pct>=40?'🟡 Average':'🔴 Needs Work'}</span>
+            </div>
+          </div>`;
       }
     });
 
@@ -1088,7 +1146,8 @@ async function renderMemberAttendanceStats(memberId) {
     container.innerHTML = html;
 
   } catch(e) {
-    container.innerHTML = '<div class="sync-note" style="color:var(--gr); text-align:center;">Failed to load stats. Check connection.</div>';
+    container.innerHTML = '<div style="text-align:center;padding:16px;color:#E74C3C;font-size:.84rem;font-weight:600">Failed to load stats. Check connection.</div>';
+    console.error('renderMemberAttendanceStats error:', e);
   }
 }
 /* ── TRAINERS ── */
