@@ -567,7 +567,7 @@ function _renderMemberCard(m, idx) {
         <span style="font-size:1rem">💬</span>
         <span style="font-size:.52rem;font-weight:700;color:#8AABAB">Whatsapp</span>
       </button>
-      <button onclick="showPage('attendance',document.querySelector('[data-page=attendance]'));updateBNav('attendance')"
+      <button onclick="openMemberAttendance('${safeId}','${safeName}')"
         style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:58px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0">
         <span style="font-size:1rem">📅</span>
         <span style="font-size:.52rem;font-weight:700;color:#8AABAB">Attendance</span>
@@ -1038,6 +1038,142 @@ async function markAllPresent() {
     loadAttendance();
   } catch(e) { toast('Error marking attendance', 'error'); }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   MEMBER ATTENDANCE MODAL — opens from member card "Attendance" button
+   Shows full calendar + monthly analysis for that specific member
+   ═══════════════════════════════════════════════════════════ */
+async function openMemberAttendance(memberId, memberName) {
+  // Set modal title
+  document.getElementById('memberAttTitle').textContent = '📅 ' + memberName;
+  document.getElementById('memberAttSubtitle').textContent = 'Attendance Records & Analysis';
+  openModal('memberAttModal');
+
+  const calWrap  = document.getElementById('memberAttCal');
+  const statWrap = document.getElementById('memberAttStat');
+  calWrap.innerHTML  = '<div style="text-align:center;padding:20px;color:#8AABAB;font-size:.84rem">⏳ Loading…</div>';
+  statWrap.innerHTML = '';
+
+  await _ensureAttLoaded();
+
+  // ── Collect all dates this member was present/absent ──
+  const records = {}; // date → status
+  Object.keys(_attCache).forEach(date => {
+    const dayData = _attCache[date];
+    if (dayData && dayData[memberId]) {
+      records[date] = dayData[memberId];
+    }
+  });
+
+  const allDates = Object.keys(records).sort();
+  const totalPresent = allDates.filter(d => records[d] === 'Present').length;
+  const totalMarked  = allDates.length;
+
+  // ── Build month groups for calendar view ──
+  const months = {}; // 'YYYY-MM' → [dates]
+  allDates.forEach(d => {
+    const key = d.slice(0,7);
+    if (!months[key]) months[key] = [];
+    months[key].push(d);
+  });
+
+  const monthKeys = Object.keys(months).sort().reverse();
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayStr = today.toISOString().split('T')[0];
+  const daysInMonth = (y,m) => new Date(y, m, 0).getDate();
+
+  if (monthKeys.length === 0) {
+    calWrap.innerHTML = `
+      <div style="text-align:center;padding:28px 16px;background:#F0F5F5;border-radius:16px">
+        <div style="font-size:2.5rem;margin-bottom:10px">📅</div>
+        <div style="font-size:.92rem;font-weight:800;color:#4A6464">No records yet</div>
+        <div style="font-size:.78rem;color:#8AABAB;margin-top:6px">Go to Attendance page → mark this member</div>
+      </div>`;
+    return;
+  }
+
+  // ── Summary banner ──
+  const overallPct = totalMarked > 0 ? Math.round(totalPresent/totalMarked*100) : 0;
+  const summClr = overallPct >= 70 ? '#27AE60' : overallPct >= 40 ? '#F39C12' : '#E74C3C';
+  calWrap.innerHTML = `
+    <div style="background:#1A8C8C;border-radius:16px;padding:16px;margin-bottom:16px;color:#fff;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:.7rem;opacity:.75;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Overall Attendance</div>
+        <div style="font-size:1.8rem;font-weight:800;line-height:1">${totalPresent}<span style="font-size:.9rem;opacity:.7"> days</span></div>
+        <div style="font-size:.75rem;opacity:.65;margin-top:4px">${monthKeys.length} month${monthKeys.length>1?'s':''} tracked</div>
+      </div>
+      <div style="text-align:center">
+        <div style="width:64px;height:64px;border-radius:50%;border:4px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;flex-direction:column;background:rgba(255,255,255,.12)">
+          <div style="font-size:1.1rem;font-weight:800">${overallPct}%</div>
+          <div style="font-size:.55rem;opacity:.7">RATE</div>
+        </div>
+      </div>
+    </div>`;
+
+  // ── Per-month calendar blocks ──
+  let calHTML = calWrap.innerHTML;
+  monthKeys.forEach(key => {
+    const [y, m] = key.split('-');
+    const label  = monthNames[parseInt(m)-1] + ' ' + y;
+    const total  = daysInMonth(parseInt(y), parseInt(m));
+    const presentDays = months[key].filter(d => records[d]==='Present').length;
+    const absentDays  = months[key].filter(d => records[d]==='Absent').length;
+    const isCurrent = key === todayStr.slice(0,7);
+    const elapsed = isCurrent ? today.getDate() : total;
+    const pct  = elapsed > 0 ? Math.round(presentDays/elapsed*100) : 0;
+    const clr  = pct >= 70 ? '#27AE60' : pct >= 40 ? '#F39C12' : '#E74C3C';
+
+    // Build mini calendar grid (7 cols = Mon–Sun)
+    const firstDay = new Date(parseInt(y), parseInt(m)-1, 1).getDay(); // 0=Sun
+    const startOffset = firstDay === 0 ? 6 : firstDay - 1; // Mon-start
+
+    let cells = '';
+    // Day headers
+    ['M','T','W','T','F','S','S'].forEach(d => {
+      cells += `<div style="font-size:.58rem;font-weight:800;color:#8AABAB;text-align:center;padding:2px 0">${d}</div>`;
+    });
+    // Empty offset cells
+    for (let i = 0; i < startOffset; i++) cells += '<div></div>';
+    // Day cells
+    for (let day = 1; day <= total; day++) {
+      const dStr = y+'-'+m+'-'+String(day).padStart(2,'0');
+      const st   = records[dStr];
+      let bg = '#F0F5F5', clrD = '#C0C0C0';
+      if (st === 'Present')  { bg = '#D4EDDA'; clrD = '#27AE60'; }
+      else if (st === 'Absent') { bg = '#FEECEB'; clrD = '#E74C3C'; }
+      const isToday = dStr === todayStr;
+      cells += `<div style="aspect-ratio:1;border-radius:50%;background:${bg};
+        display:flex;align-items:center;justify-content:center;
+        font-size:.62rem;font-weight:${isToday?'800':'600'};color:${clrD};
+        border:${isToday?'2px solid #1A8C8C':'1px solid transparent'};
+        cursor:default">${day}</div>`;
+    }
+
+    calHTML += `
+      <div style="background:#fff;border:1px solid #E0ECEC;border-radius:16px;padding:14px;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div>
+            <span style="font-size:.9rem;font-weight:800;color:#1A2E2E">${label}</span>
+            ${isCurrent?'<span style="font-size:.65rem;background:#1A8C8C;color:#fff;padding:2px 7px;border-radius:10px;margin-left:6px">Current</span>':''}
+          </div>
+          <span style="font-size:.82rem;font-weight:800;color:${clr}">${pct}%</span>
+        </div>
+        <div style="height:6px;background:#E0ECEC;border-radius:10px;overflow:hidden;margin-bottom:10px">
+          <div style="height:100%;width:${pct}%;background:${clr};border-radius:10px;transition:width .5s ease"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:10px">${cells}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span style="font-size:.7rem;font-weight:700;color:#27AE60;background:#E8F8EF;padding:3px 10px;border-radius:20px">✓ ${presentDays} Present</span>
+          <span style="font-size:.7rem;font-weight:700;color:#E74C3C;background:#FEECEB;padding:3px 10px;border-radius:20px">✗ ${absentDays} Absent</span>
+          <span style="font-size:.7rem;font-weight:700;color:#8AABAB;background:#F0F5F5;padding:3px 10px;border-radius:20px">○ ${total-presentDays-absentDays} Unmarked</span>
+        </div>
+      </div>`;
+  });
+
+  calWrap.innerHTML = calHTML;
+}
+
 /* ══════════════════════════════════════════════════════
    MEMBER ATTENDANCE ANALYTICS — uses in-memory _attCache
    Shows monthly bars + overall streak for performance
