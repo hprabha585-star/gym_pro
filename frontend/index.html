@@ -100,109 +100,136 @@
   <!-- ──────────────── DASHBOARD ──────────────── -->
   <div id="page-dashboard" class="page active">
 
-    <!-- Alert Banner -->
     <div id="alertBanner" class="banner green">
-      <div class="banner-text"><h3>✅ All Good!</h3><p>No payments due this week</p></div>
+      <div class="banner-text">
+        <h3>✅ All Good!</h3>
+        <p>No payments due this week</p>
+      </div>
     </div>
 
-    <!-- TODAY heading -->
-    <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding:0 2px" id="dashTodayLabel">Today</div>
-
-    <!-- Primary 2-col hero tiles (Today) -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-      <!-- Attendance -->
-      <div style="background:#1A8C8C;border-radius:18px;padding:16px 14px;cursor:pointer;position:relative;overflow:hidden"
+    <!-- Today stats -->
+    <p class="dash-section-label" id="dashTodayLabel">Today</p>
+    <div class="dash-grid">
+      <div class="dash-tile"
         onclick="showPage('attendance',document.querySelector('[data-page=attendance]'));updateBNav('attendance')">
-        <div style="position:absolute;top:-12px;right:-12px;width:60px;height:60px;background:rgba(255,255,255,.1);border-radius:50%"></div>
-        <div style="font-size:1.8rem;margin-bottom:6px">📅</div>
-        <div style="font-size:1.7rem;font-weight:800;color:#fff;line-height:1" id="statActive">—</div>
-        <div style="font-size:.72rem;color:rgba(255,255,255,.75);font-weight:600;margin-top:4px">Today's Attendance</div>
-        <div style="font-size:.62rem;color:rgba(255,255,255,.5);margin-top:2px">Tap to mark ›</div>
+        <div class="dt-top">
+          <div class="dt-num teal" id="statActive">—</div>
+          <span class="dt-icon">📅</span>
+        </div>
+        <div class="dt-label">Attendance</div>
+        <span class="dt-arrow">›</span>
       </div>
-      <!-- Total Members -->
-      <div style="background:#fff;border:1px solid #E0ECEC;border-radius:18px;padding:16px 14px;cursor:pointer;position:relative;overflow:hidden">
-        <div style="position:absolute;top:-12px;right:-12px;width:60px;height:60px;background:#F0FAFA;border-radius:50%"></div>
-        <div style="font-size:1.8rem;margin-bottom:6px">👥</div>
-        <div style="font-size:1.7rem;font-weight:800;color:#1A2E2E;line-height:1" id="statTotal">—</div>
-        <div style="font-size:.72rem;color:#8AABAB;font-weight:600;margin-top:4px">Total Members</div>
-        <div style="font-size:.62rem;color:#B0C4C4;margin-top:2px">All status</div>
+      <div class="dash-tile"
+        onclick="showPage('payments',document.querySelector('[data-page=payments]'));updateBNav('none')">
+        <div class="dt-top">
+          <div class="dt-num teal" id="statRev">—</div>
+          <span class="dt-icon">💰</span>
+        </div>
+        <div class="dt-label">Revenue</div>
+        <span class="dt-arrow">›</span>
+      </div>
+      <div class="dash-tile">
+        <div class="dt-top">
+          <div class="dt-num" id="statTotal">—</div>
+          <span class="dt-icon">👥</span>
+        </div>
+        <div class="dt-label">Total Members</div>
+        <span class="dt-arrow">›</span>
+      </div>
+      <div class="dash-tile"
+        onclick="showPage('payments',document.querySelector('[data-page=payments]'));updateBNav('none')">
+        <div class="dt-top">
+          <div class="dt-num red" id="statExpToday">0</div>
+          <span class="dt-icon">⚠️</span>
+        </div>
+        <div class="dt-label">Expires Today</div>
+        <span class="dt-arrow">›</span>
       </div>
     </div>
 
-    <!-- Financial Summary card -->
-    <div style="background:#fff;border:1px solid #E0ECEC;border-radius:18px;padding:16px;margin-bottom:10px">
-      <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">Financial Summary</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-        <div style="text-align:center">
-          <div style="font-size:.6rem;color:#8AABAB;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">📅 Monthly</div>
-          <div style="font-size:1rem;font-weight:800;color:#1A8C8C" id="revM">—</div>
+    <!-- This month stats -->
+    <p class="dash-section-label">This Month</p>
+    <div class="dash-grid">
+      <div class="dash-tile">
+        <div class="dt-top">
+          <div class="dt-num amber" id="statExp3">0</div>
+          <span class="dt-icon">🔔</span>
         </div>
-        <div style="text-align:center;border-left:1px solid #F0F5F5;border-right:1px solid #F0F5F5">
-          <div style="font-size:.6rem;color:#8AABAB;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">🎟️ Admission</div>
-          <div style="font-size:1rem;font-weight:800;color:#27AE60" id="revA">—</div>
-        </div>
-        <div style="text-align:center">
-          <div style="font-size:.6rem;color:#8AABAB;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">💪 Training</div>
-          <div style="font-size:1rem;font-weight:800;color:#F39C12" id="revPT">—</div>
-        </div>
+        <div class="dt-label">Expiring (1–3d)</div>
+        <span class="dt-arrow">›</span>
       </div>
-      <div style="margin-top:12px;padding-top:12px;border-top:1px solid #F0F5F5;display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:.78rem;font-weight:700;color:#4A6464">Total Revenue</span>
-        <span style="font-size:1.05rem;font-weight:800;color:#1A8C8C" id="statRev">—</span>
+      <div class="dash-tile">
+        <div class="dt-top">
+          <div class="dt-num amber" id="statExp7">0</div>
+          <span class="dt-icon">🔔</span>
+        </div>
+        <div class="dt-label">Expiring (4–7d)</div>
+        <span class="dt-arrow">›</span>
+      </div>
+      <div class="dash-tile">
+        <div class="dt-top">
+          <div class="dt-num" id="statExp15">0</div>
+          <span class="dt-icon">📊</span>
+        </div>
+        <div class="dt-label">Expiring (8–15d)</div>
+        <span class="dt-arrow">›</span>
+      </div>
+      <div class="dash-tile">
+        <div class="dt-top">
+          <div class="dt-num green" id="statCollThisMonth">—</div>
+          <span class="dt-icon">💵</span>
+        </div>
+        <div class="dt-label">Collection This Month</div>
+        <span class="dt-arrow">›</span>
       </div>
     </div>
 
-    <!-- Expiry alert tiles row -->
-    <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding:0 2px">Membership Alerts</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">
-      <div style="background:#fff;border:1px solid #FECDD5;border-radius:14px;padding:10px 6px;text-align:center"
-        onclick="filterDash(0)">
-        <div style="font-size:1.2rem;font-weight:800;color:#E74C3C" id="statExpToday">0</div>
-        <div style="font-size:.55rem;color:#8AABAB;font-weight:700;margin-top:3px;line-height:1.3">Expires<br>Today</div>
+    <!-- Financial summary -->
+    <p class="dash-section-label">Financial Summary</p>
+    <div class="fin-row">
+      <div class="fin-tile">
+        <div class="ft-label">📅 Monthly</div>
+        <div class="ft-num ft-teal" id="revM">—</div>
       </div>
-      <div style="background:#fff;border:1px solid #FED7AA;border-radius:14px;padding:10px 6px;text-align:center"
-        onclick="filterDash(3)">
-        <div style="font-size:1.2rem;font-weight:800;color:#F39C12" id="statExp3">0</div>
-        <div style="font-size:.55rem;color:#8AABAB;font-weight:700;margin-top:3px;line-height:1.3">In<br>1–3d</div>
+      <div class="fin-tile">
+        <div class="ft-label">🎟️ Admission</div>
+        <div class="ft-num ft-green" id="revA">—</div>
       </div>
-      <div style="background:#fff;border:1px solid #FED7AA;border-radius:14px;padding:10px 6px;text-align:center"
-        onclick="filterDash(7)">
-        <div style="font-size:1.2rem;font-weight:800;color:#F39C12" id="statExp7">0</div>
-        <div style="font-size:.55rem;color:#8AABAB;font-weight:700;margin-top:3px;line-height:1.3">In<br>4–7d</div>
-      </div>
-      <div style="background:#fff;border:1px solid #E0ECEC;border-radius:14px;padding:10px 6px;text-align:center"
-        onclick="filterDash(15)">
-        <div style="font-size:1.2rem;font-weight:800;color:#4A6464" id="statExp15">0</div>
-        <div style="font-size:.55rem;color:#8AABAB;font-weight:700;margin-top:3px;line-height:1.3">In<br>8–15d</div>
+      <div class="fin-tile">
+        <div class="ft-label">💪 Training</div>
+        <div class="ft-num ft-amber" id="revPT">—</div>
       </div>
     </div>
 
-    <!-- Expiring Soon table -->
-    <div style="background:#fff;border:1px solid #E0ECEC;border-radius:18px;overflow:hidden;margin-bottom:8px">
-      <div style="padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <div style="width:4px;height:20px;background:#1A8C8C;border-radius:4px"></div>
-          <span style="font-size:.95rem;font-weight:800;color:#1A2E2E">Expiring Soon</span>
+    <!-- Expiring table -->
+    <div class="card">
+      <!-- Teal left-border accent matching screenshots -->
+      <div style="padding:14px 16px 10px;border-bottom:1px solid #F0F5F5;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:4px;height:22px;background:#1A8C8C;border-radius:4px;flex-shrink:0"></div>
+          <span style="font-size:1rem;font-weight:800;color:#1A2E2E">Expiring Soon</span>
         </div>
-        <div style="display:flex;gap:5px">
-          <button style="padding:5px 11px;border-radius:20px;border:1.5px solid #D5D5DF;background:#fff;font-family:inherit;font-size:.72rem;font-weight:700;cursor:pointer;color:#4A6464;min-height:32px" onclick="filterDash(3)">3d</button>
-          <button style="padding:5px 11px;border-radius:20px;border:1.5px solid #D5D5DF;background:#fff;font-family:inherit;font-size:.72rem;font-weight:700;cursor:pointer;color:#4A6464;min-height:32px" onclick="filterDash(5)">5d</button>
-          <button style="padding:5px 11px;border-radius:20px;border:1.5px solid #D5D5DF;background:#fff;font-family:inherit;font-size:.72rem;font-weight:700;cursor:pointer;color:#4A6464;min-height:32px" onclick="filterDash(7)">7d</button>
-          <button style="padding:5px 11px;border-radius:20px;border:1.5px solid #D5D5DF;background:#fff;font-family:inherit;font-size:.72rem;font-weight:700;cursor:pointer;color:#4A6464;min-height:32px" onclick="filterDash('all')">All</button>
-          <button style="padding:5px 13px;border-radius:20px;border:none;background:#1A8C8C;color:#fff;font-family:inherit;font-size:.72rem;font-weight:800;cursor:pointer;min-height:32px" onclick="openModal('addMemberModal')">+ Add</button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" style="border-radius:20px;border:1.5px solid #D5D5DF" onclick="filterDash(3)">3d</button>
+          <button class="btn btn-ghost btn-sm" style="border-radius:20px;border:1.5px solid #D5D5DF" onclick="filterDash(5)">5d</button>
+          <button class="btn btn-ghost btn-sm" style="border-radius:20px;border:1.5px solid #D5D5DF" onclick="filterDash(7)">7d</button>
+          <button class="btn btn-ghost btn-sm" style="border-radius:20px;border:1.5px solid #D5D5DF" onclick="filterDash('all')">All</button>
+          <button class="btn btn-primary btn-sm" style="border-radius:20px" onclick="openModal('addMemberModal')">+ Add</button>
         </div>
       </div>
-      <table style="width:100%;border-collapse:collapse">
-        <thead>
-          <tr style="background:#F5FBFB">
-            <th style="padding:7px 8px 7px 14px;text-align:left;font-size:.62rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.7px">Member</th>
-            <th style="padding:7px 14px 7px 6px;text-align:right;font-size:.62rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.7px">Expires / Status</th>
-          </tr>
-        </thead>
-        <tbody id="dashBody">
-          <tr><td colspan="2"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr>
-        </tbody>
-      </table>
+      <div style="overflow:hidden">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="background:#F5FBFB">
+              <th style="padding:8px 8px 8px 12px;text-align:left;font-size:.65rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.7px">Member</th>
+              <th style="padding:8px 12px 8px 6px;text-align:right;font-size:.65rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.7px">Expires / Status</th>
+            </tr>
+          </thead>
+          <tbody id="dashBody">
+            <tr><td colspan="2"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -339,49 +366,46 @@
 
   <!-- ──────────────── TRAINERS ──────────────── -->
   <div id="page-trainers" class="page">
-    <div class="card">
-      <div class="card-head">
-        <span class="card-title">Trainers</span>
-        <button class="btn btn-primary btn-sm" onclick="openModal('addTrainerModal')">+ Add</button>
+    <div style="background:#1A8C8C;border-radius:16px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:.65rem;font-weight:700;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.7px;margin-bottom:2px">Manage</div>
+        <div style="font-size:1rem;font-weight:800;color:#fff">Trainers</div>
       </div>
-      <div class="tbl-wrap">
-        <table>
-          <thead>
-            <tr><th>Name</th><th>Specialty</th><th>Phone</th><th>Status</th><th></th></tr>
-          </thead>
-          <tbody id="trainersBody">
-            <tr><td colspan="5">
-              <div class="empty"><div class="ei">⏳</div><p>Loading…</p></div>
-            </td></tr>
-          </tbody>
-        </table>
-      </div>
+      <button onclick="openModal('addTrainerModal')" style="height:40px;padding:0 16px;background:rgba(255,255,255,.2);color:#fff;border:1.5px solid rgba(255,255,255,.3);border-radius:20px;font-family:inherit;font-size:.82rem;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent">+ Add Trainer</button>
     </div>
+    <div id="trainersCardWrap">
+      <div class="empty"><div class="ei">⏳</div><p>Loading trainers…</p></div>
+    </div>
+    <div style="display:none"><table><tbody id="trainersBody"></tbody></table></div>
   </div>
 
   <!-- ──────────────── PLANS ──────────────── -->
   <div id="page-plans" class="page">
-    <div class="card">
-      <div class="card-head">
-        <span class="card-title">Plans</span>
-        <button class="btn btn-primary btn-sm" onclick="openModal('addPlanModal')">+ Add</button>
+    <div style="background:#1A8C8C;border-radius:16px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:.65rem;font-weight:700;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.7px;margin-bottom:2px">Manage</div>
+        <div style="font-size:1rem;font-weight:800;color:#fff">Membership Plans</div>
       </div>
-      <p class="sync-note" style="margin-bottom:.9rem">
-        💡 Plans sync to your account across all devices.
-      </p>
-      <div class="plans-grid" id="plansGrid"></div>
+      <button onclick="openModal('addPlanModal')" style="height:40px;padding:0 16px;background:rgba(255,255,255,.2);color:#fff;border:1.5px solid rgba(255,255,255,.3);border-radius:20px;font-family:inherit;font-size:.82rem;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent">+ Add Plan</button>
     </div>
+    <div style="background:#E8F7F7;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:.78rem;font-weight:600;color:#1A8C8C">
+      💡 Plans sync to your account across all devices.
+    </div>
+    <div id="plansGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px"></div>
   </div>
 
   <!-- ──────────────── DISCOUNTS ──────────────── -->
   <div id="page-discounts" class="page">
-    <div class="card">
-      <div class="card-head">
-        <span class="card-title">Discounts</span>
-        <button class="btn btn-primary btn-sm" onclick="openModal('addDiscountModal')">+ Add</button>
+    <div style="background:#1A8C8C;border-radius:16px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:.65rem;font-weight:700;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.7px;margin-bottom:2px">Manage</div>
+        <div style="font-size:1rem;font-weight:800;color:#fff">Discounts</div>
       </div>
-      <div id="discTable"></div>
+      <button onclick="openModal('addDiscountModal')" style="height:40px;padding:0 16px;background:rgba(255,255,255,.2);color:#fff;border:1.5px solid rgba(255,255,255,.3);border-radius:20px;font-family:inherit;font-size:.82rem;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent">+ Add Discount</button>
     </div>
+    <div id="discTable"></div>
+  </div>
+
   </div>
 
   <!-- ──────────────── PAYMENTS ──────────────── -->
@@ -429,26 +453,6 @@
       <button class="btn btn-primary btn-full" onclick="saveSettings()">Save Fee Settings</button>
     </div>
   </div>
-
-
-<!-- ════════════ MEMBER ATTENDANCE MODAL ════════════ -->
-<div class="modal" id="memberAttModal">
-  <div class="mbox" style="max-height:92vh">
-    <div class="mhdr">
-      <div>
-        <div class="mtitle" id="memberAttTitle">Attendance</div>
-        <div style="font-size:.72rem;color:#8AABAB;font-weight:600;margin-top:2px" id="memberAttSubtitle">Records & Analysis</div>
-      </div>
-      <button class="mclose" onclick="closeModal('memberAttModal')">✕</button>
-    </div>
-    <!-- Calendar + stats rendered here by openMemberAttendance() -->
-    <div id="memberAttCal"></div>
-    <div id="memberAttStat"></div>
-    <div style="margin-top:14px">
-      <button class="btn btn-primary btn-full" style="min-height:48px" onclick="closeModal('memberAttModal')">Close</button>
-    </div>
-  </div>
-</div>
 
 </main>
 
@@ -876,6 +880,22 @@
       <button class="btn btn-success btn-full" id="confirmPayBtn" onclick="confirmPayment()">✅ Confirm Payment</button>
       <button class="btn btn-ghost btn-full" onclick="closeModal('paymentModal')">Cancel</button>
     </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════ MEMBER ATTENDANCE MODAL ═══════════════════ -->
+<div class="modal" id="memberAttModal">
+  <div class="mbox" style="max-width:480px">
+    <div class="mhdr">
+      <div>
+        <div style="font-size:.65rem;font-weight:700;color:#8AABAB;text-transform:uppercase;letter-spacing:.7px;margin-bottom:2px">Attendance Records</div>
+        <span class="mtitle" id="mamMemberName">Member</span>
+      </div>
+      <button class="mclose" onclick="closeModal('memberAttModal')">✕</button>
+    </div>
+    <!-- Scrollable body -->
+    <div id="mamBody" style="max-height:68vh;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
   </div>
 </div>
 
