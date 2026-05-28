@@ -1038,142 +1038,6 @@ async function markAllPresent() {
     loadAttendance();
   } catch(e) { toast('Error marking attendance', 'error'); }
 }
-
-/* ═══════════════════════════════════════════════════════════
-   MEMBER ATTENDANCE MODAL — opens from member card "Attendance" button
-   Shows full calendar + monthly analysis for that specific member
-   ═══════════════════════════════════════════════════════════ */
-async function openMemberAttendance(memberId, memberName) {
-  // Set modal title
-  document.getElementById('memberAttTitle').textContent = '📅 ' + memberName;
-  document.getElementById('memberAttSubtitle').textContent = 'Attendance Records & Analysis';
-  openModal('memberAttModal');
-
-  const calWrap  = document.getElementById('memberAttCal');
-  const statWrap = document.getElementById('memberAttStat');
-  calWrap.innerHTML  = '<div style="text-align:center;padding:20px;color:#8AABAB;font-size:.84rem">⏳ Loading…</div>';
-  statWrap.innerHTML = '';
-
-  await _ensureAttLoaded();
-
-  // ── Collect all dates this member was present/absent ──
-  const records = {}; // date → status
-  Object.keys(_attCache).forEach(date => {
-    const dayData = _attCache[date];
-    if (dayData && dayData[memberId]) {
-      records[date] = dayData[memberId];
-    }
-  });
-
-  const allDates = Object.keys(records).sort();
-  const totalPresent = allDates.filter(d => records[d] === 'Present').length;
-  const totalMarked  = allDates.length;
-
-  // ── Build month groups for calendar view ──
-  const months = {}; // 'YYYY-MM' → [dates]
-  allDates.forEach(d => {
-    const key = d.slice(0,7);
-    if (!months[key]) months[key] = [];
-    months[key].push(d);
-  });
-
-  const monthKeys = Object.keys(months).sort().reverse();
-  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const today = new Date(); today.setHours(0,0,0,0);
-  const todayStr = today.toISOString().split('T')[0];
-  const daysInMonth = (y,m) => new Date(y, m, 0).getDate();
-
-  if (monthKeys.length === 0) {
-    calWrap.innerHTML = `
-      <div style="text-align:center;padding:28px 16px;background:#F0F5F5;border-radius:16px">
-        <div style="font-size:2.5rem;margin-bottom:10px">📅</div>
-        <div style="font-size:.92rem;font-weight:800;color:#4A6464">No records yet</div>
-        <div style="font-size:.78rem;color:#8AABAB;margin-top:6px">Go to Attendance page → mark this member</div>
-      </div>`;
-    return;
-  }
-
-  // ── Summary banner ──
-  const overallPct = totalMarked > 0 ? Math.round(totalPresent/totalMarked*100) : 0;
-  const summClr = overallPct >= 70 ? '#27AE60' : overallPct >= 40 ? '#F39C12' : '#E74C3C';
-  calWrap.innerHTML = `
-    <div style="background:#1A8C8C;border-radius:16px;padding:16px;margin-bottom:16px;color:#fff;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-size:.7rem;opacity:.75;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Overall Attendance</div>
-        <div style="font-size:1.8rem;font-weight:800;line-height:1">${totalPresent}<span style="font-size:.9rem;opacity:.7"> days</span></div>
-        <div style="font-size:.75rem;opacity:.65;margin-top:4px">${monthKeys.length} month${monthKeys.length>1?'s':''} tracked</div>
-      </div>
-      <div style="text-align:center">
-        <div style="width:64px;height:64px;border-radius:50%;border:4px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;flex-direction:column;background:rgba(255,255,255,.12)">
-          <div style="font-size:1.1rem;font-weight:800">${overallPct}%</div>
-          <div style="font-size:.55rem;opacity:.7">RATE</div>
-        </div>
-      </div>
-    </div>`;
-
-  // ── Per-month calendar blocks ──
-  let calHTML = calWrap.innerHTML;
-  monthKeys.forEach(key => {
-    const [y, m] = key.split('-');
-    const label  = monthNames[parseInt(m)-1] + ' ' + y;
-    const total  = daysInMonth(parseInt(y), parseInt(m));
-    const presentDays = months[key].filter(d => records[d]==='Present').length;
-    const absentDays  = months[key].filter(d => records[d]==='Absent').length;
-    const isCurrent = key === todayStr.slice(0,7);
-    const elapsed = isCurrent ? today.getDate() : total;
-    const pct  = elapsed > 0 ? Math.round(presentDays/elapsed*100) : 0;
-    const clr  = pct >= 70 ? '#27AE60' : pct >= 40 ? '#F39C12' : '#E74C3C';
-
-    // Build mini calendar grid (7 cols = Mon–Sun)
-    const firstDay = new Date(parseInt(y), parseInt(m)-1, 1).getDay(); // 0=Sun
-    const startOffset = firstDay === 0 ? 6 : firstDay - 1; // Mon-start
-
-    let cells = '';
-    // Day headers
-    ['M','T','W','T','F','S','S'].forEach(d => {
-      cells += `<div style="font-size:.58rem;font-weight:800;color:#8AABAB;text-align:center;padding:2px 0">${d}</div>`;
-    });
-    // Empty offset cells
-    for (let i = 0; i < startOffset; i++) cells += '<div></div>';
-    // Day cells
-    for (let day = 1; day <= total; day++) {
-      const dStr = y+'-'+m+'-'+String(day).padStart(2,'0');
-      const st   = records[dStr];
-      let bg = '#F0F5F5', clrD = '#C0C0C0';
-      if (st === 'Present')  { bg = '#D4EDDA'; clrD = '#27AE60'; }
-      else if (st === 'Absent') { bg = '#FEECEB'; clrD = '#E74C3C'; }
-      const isToday = dStr === todayStr;
-      cells += `<div style="aspect-ratio:1;border-radius:50%;background:${bg};
-        display:flex;align-items:center;justify-content:center;
-        font-size:.62rem;font-weight:${isToday?'800':'600'};color:${clrD};
-        border:${isToday?'2px solid #1A8C8C':'1px solid transparent'};
-        cursor:default">${day}</div>`;
-    }
-
-    calHTML += `
-      <div style="background:#fff;border:1px solid #E0ECEC;border-radius:16px;padding:14px;margin-bottom:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div>
-            <span style="font-size:.9rem;font-weight:800;color:#1A2E2E">${label}</span>
-            ${isCurrent?'<span style="font-size:.65rem;background:#1A8C8C;color:#fff;padding:2px 7px;border-radius:10px;margin-left:6px">Current</span>':''}
-          </div>
-          <span style="font-size:.82rem;font-weight:800;color:${clr}">${pct}%</span>
-        </div>
-        <div style="height:6px;background:#E0ECEC;border-radius:10px;overflow:hidden;margin-bottom:10px">
-          <div style="height:100%;width:${pct}%;background:${clr};border-radius:10px;transition:width .5s ease"></div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:10px">${cells}</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <span style="font-size:.7rem;font-weight:700;color:#27AE60;background:#E8F8EF;padding:3px 10px;border-radius:20px">✓ ${presentDays} Present</span>
-          <span style="font-size:.7rem;font-weight:700;color:#E74C3C;background:#FEECEB;padding:3px 10px;border-radius:20px">✗ ${absentDays} Absent</span>
-          <span style="font-size:.7rem;font-weight:700;color:#8AABAB;background:#F0F5F5;padding:3px 10px;border-radius:20px">○ ${total-presentDays-absentDays} Unmarked</span>
-        </div>
-      </div>`;
-  });
-
-  calWrap.innerHTML = calHTML;
-}
-
 /* ══════════════════════════════════════════════════════
    MEMBER ATTENDANCE ANALYTICS — uses in-memory _attCache
    Shows monthly bars + overall streak for performance
@@ -1288,30 +1152,54 @@ async function renderMemberAttendanceStats(memberId) {
 }
 /* ── TRAINERS ── */
 async function loadTrainers() {
-  const tbody = document.getElementById('trainersBody');
+  const target = document.getElementById('trainersCardWrap');
   try {
     const res = await fetch(TAPI,{headers:hdrs()});
     if (res.status===401){logout();return;}
     const trainers = await res.json();
     trainerMap = {};
     trainers.forEach(t => { trainerMap[t._id] = t.name; });
-    if (!trainers.length) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><div class="ei">💪</div><p>No trainers yet</p></div></td></tr>'; return; }
-    tbody.innerHTML = trainers.map(t=>`<tr>
-      <td><div style="display:flex;align-items:center;gap:7px">${av(t.name)}<span style="font-weight:700;font-size:.82rem">${esc(t.name)}</span></div></td>
-      <td style="font-size:.78rem;color:var(--tx2)">${esc(t.specialty)}</td>
-      <td style="font-size:.78rem">${esc(t.phone)}</td>
-      <td>${badge(t.status)}</td>
-      <td>
-        <button class="btn btn-ghost btn-sm" onclick="editTrainer('${esc(t._id)}')">Edit</button>
-        <button class="btn btn-danger btn-sm" onclick="delTrainer('${esc(t._id)}','${esc(t.name.replace(/'/g,"\\'"))}')">Del</button>
-      </td>
-    </tr>`).join('');
+
+    if (target) {
+      if (!trainers.length) {
+        target.innerHTML = '<div class="empty"><div class="ei">💪</div><p>No trainers yet. Add your first trainer!</p></div>';
+      } else {
+        target.innerHTML = trainers.map(t => `
+          <div style="background:#fff;border-radius:14px;padding:14px 15px;margin-bottom:10px;box-shadow:0 2px 10px rgba(26,140,140,.07);display:flex;align-items:center;gap:12px">
+            <div style="width:48px;height:48px;border-radius:50%;background:${avClr(t.name)};display:flex;align-items:center;justify-content:center;font-size:1.05rem;font-weight:800;color:#fff;flex-shrink:0">${esc((t.name||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2))}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.92rem;font-weight:800;color:#1A2E2E;margin-bottom:3px">${esc(t.name)}</div>
+              <div style="font-size:.75rem;color:#1A8C8C;font-weight:700;margin-bottom:2px">🏋️ ${esc(t.specialty)}</div>
+              <div style="font-size:.72rem;color:#8AABAB;font-weight:600">📞 ${esc(t.phone)}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:7px;flex-shrink:0">
+              <span class="badge ${t.status==='Active'?'b-active':'b-inactive'}">${esc(t.status)}</span>
+              <div style="display:flex;gap:6px">
+                <button onclick="editTrainer('${esc(t._id)}')" style="padding:6px 13px;border-radius:20px;border:none;background:#E8F7F7;color:#1A8C8C;font-family:inherit;font-size:.72rem;font-weight:800;cursor:pointer">Edit</button>
+                <button onclick="delTrainer('${esc(t._id)}','${esc(t.name.replace(/'/g,"\'"))}')" style="padding:6px 13px;border-radius:20px;border:none;background:#FEECEB;color:#E74C3C;font-family:inherit;font-size:.72rem;font-weight:800;cursor:pointer">Del</button>
+              </div>
+            </div>
+          </div>`).join('');
+      }
+    }
+
+    // Also update legacy tbody if present
+    const tbody = document.getElementById('trainersBody');
+    if (tbody) {
+      tbody.innerHTML = trainers.length
+        ? trainers.map(t=>`<tr><td>${esc(t.name)}</td><td>${esc(t.specialty)}</td><td>${esc(t.phone)}</td><td>${badge(t.status)}</td><td><button class="btn btn-ghost btn-sm" onclick="editTrainer('${esc(t._id)}')">Edit</button> <button class="btn btn-danger btn-sm" onclick="delTrainer('${esc(t._id)}','${esc(t.name.replace(/'/g,"\'"))}')">Del</button></td></tr>`).join('')
+        : '<tr><td colspan="5"><div class="empty"><div class="ei">💪</div><p>No trainers yet</p></div></td></tr>';
+    }
+
     const opts = '<option value="">Select Trainer</option>'+
       trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
     document.getElementById('mPtTrainer').innerHTML = opts;
     document.getElementById('ePtTrainer').innerHTML = opts;
     if(document.getElementById('payPtTrainer')) document.getElementById('payPtTrainer').innerHTML = opts;
-  } catch(e) { tbody.innerHTML='<tr><td colspan="5"><div class="empty"><p style="color:var(--gr)">Error loading</p></div></td></tr>'; }
+  } catch(e) {
+    const target2 = document.getElementById('trainersCardWrap');
+    if(target2) target2.innerHTML = '<div class="empty"><p style="color:#E74C3C">Error loading trainers</p></div>';
+  }
 }
 
 async function editTrainer(id) {
@@ -1352,31 +1240,37 @@ document.getElementById('addTrainerForm').addEventListener('submit', async e=>{
 /* ── PLANS ── */
 function loadPlans() {
   const grid = document.getElementById('plansGrid');
-  if (!gymPlans.length) { grid.innerHTML='<div class="empty"><div class="ei">💎</div><p>No plans yet</p></div>'; return; }
+  if (!grid) return;
+  if (!gymPlans.length) {
+    grid.innerHTML = '<div class="empty"><div class="ei">💎</div><p>No plans yet. Add your first plan!</p></div>';
+    return;
+  }
   const plans = gymPlans.map(p => {
-    let disc=p.price,discInfo=null;
-    for(const d of gymDisc){
-      if(!d.validUntil||new Date(d.validUntil)>=new Date()){
-        if(d.appliesTo==='all'||d.planName===p.name){
-          if(d.type==='percentage'){disc=p.price-p.price*d.value/100;discInfo=`${d.value}% OFF`;}
-          else{disc=Math.max(0,p.price-d.value);discInfo=`₹${d.value} OFF`;}
+    let disc = p.price, discInfo = null;
+    for (const d of gymDisc) {
+      if (!d.validUntil || new Date(d.validUntil) >= new Date()) {
+        if (d.appliesTo === 'all' || d.planName === p.name) {
+          if (d.type === 'percentage') { disc = p.price - p.price * d.value / 100; discInfo = `${d.value}% OFF`; }
+          else { disc = Math.max(0, p.price - d.value); discInfo = `₹${d.value} OFF`; }
           break;
         }
       }
     }
-    return{...p,disc:Math.round(disc),discInfo};
+    return { ...p, disc: Math.round(disc), discInfo };
   });
-  grid.innerHTML = plans.map(p=>`
-    <div class="plan-card">
-      ${p.discInfo?`<div class="plan-disc">${p.discInfo}</div>`:''}
-      <h3>${esc(p.name)}</h3>
-      <div class="plan-dur">${p.months} month${p.months>1?'s':''}</div>
-      ${p.discInfo?`<div class="plan-orig">₹${p.price.toLocaleString('en-IN')}</div>`:''}
-      <div class="plan-price">₹${p.disc.toLocaleString('en-IN')}</div>
-      <div style="display:flex;gap:5px;margin-top:.6rem">
-        <button class="btn btn-primary btn-sm" style="flex:1" onclick="selectPlan('${esc(p.name)}')">Select</button>
-        <button class="btn btn-edit btn-sm" onclick="openEditPlan('${esc(p.name)}')">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="removePlan('${esc(p.name)}')">🗑</button>
+  grid.innerHTML = plans.map(p => `
+    <div style="background:#fff;border-radius:16px;padding:16px 14px;box-shadow:0 2px 10px rgba(26,140,140,.07);position:relative;overflow:hidden;border:1.5px solid #E8F7F7;display:flex;flex-direction:column;gap:2px">
+      ${p.discInfo ? `<div style="position:absolute;top:10px;right:10px;background:#27AE60;color:#fff;padding:3px 9px;border-radius:20px;font-size:.62rem;font-weight:800">${p.discInfo}</div>` : ''}
+      <div style="font-size:.72rem;font-weight:700;color:#8AABAB;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">${p.months} month${p.months>1?'s':''}</div>
+      <div style="font-size:.88rem;font-weight:800;color:#1A2E2E;line-height:1.3;padding-right:${p.discInfo?'50px':'4px'}">${esc(p.name)}</div>
+      <div style="margin:10px 0 4px">
+        ${p.discInfo ? `<div style="font-size:.72rem;text-decoration:line-through;color:#8AABAB;font-weight:600;margin-bottom:2px">₹${p.price.toLocaleString('en-IN')}</div>` : ''}
+        <div style="font-size:1.45rem;font-weight:800;color:#1A8C8C;line-height:1">₹${p.disc.toLocaleString('en-IN')}</div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button onclick="selectPlan('${esc(p.name)}')" style="flex:1;height:36px;background:#1A8C8C;color:#fff;border:none;border-radius:20px;font-family:inherit;font-size:.76rem;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent">Select</button>
+        <button onclick="openEditPlan('${esc(p.name)}')" style="width:36px;height:36px;background:#E8F7F7;color:#1A8C8C;border:none;border-radius:50%;font-size:.9rem;cursor:pointer">✏️</button>
+        <button onclick="removePlan('${esc(p.name)}')" style="width:36px;height:36px;background:#FEECEB;color:#E74C3C;border:none;border-radius:50%;font-size:.9rem;cursor:pointer">🗑</button>
       </div>
     </div>`).join('');
 }
@@ -1722,4 +1616,168 @@ window.addEventListener('offline', () => {
 
 if (!navigator.onLine) {
   document.getElementById('offline-banner').style.display = 'block';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MEMBER ATTENDANCE MODAL — opens when clicking "Attendance"
+   on a member card. Shows full calendar view + monthly analytics.
+   ══════════════════════════════════════════════════════════════ */
+async function openMemberAttendance(memberId, memberName) {
+  const modal = document.getElementById('memberAttModal');
+  if (!modal) return;
+  document.getElementById('mamMemberName').textContent = memberName || 'Member';
+  const body = document.getElementById('mamBody');
+  body.innerHTML = '<div style="text-align:center;padding:40px 16px"><div style="font-size:2rem;margin-bottom:8px">⏳</div><div style="font-size:.88rem;font-weight:600;color:#8AABAB">Loading records…</div></div>';
+  modal.classList.add('open');
+
+  try {
+    await _ensureAttLoaded();
+
+    // Get last 3 months (including current)
+    const today = new Date();
+    const MONTHS = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
+    const daysInMonth = (y, m) => new Date(y, m, 0).getDate();
+    const todayStr = today.getFullYear() + '-' +
+      String(today.getMonth()+1).padStart(2,'0') + '-' +
+      String(today.getDate()).padStart(2,'0');
+
+    // Build last 3 months list
+    const monthsToShow = [];
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      monthsToShow.push({
+        y: d.getFullYear(),
+        m: String(d.getMonth()+1).padStart(2,'0'),
+        mIdx: d.getMonth(),
+        isCurrent: i === 0
+      });
+    }
+
+    // Count present days per month for this member
+    let totalPresent = 0;
+    const monthStats = monthsToShow.map(mo => {
+      const key = `${mo.y}-${mo.m}`;
+      const allDays = daysInMonth(mo.y, mo.mIdx + 1);
+      const elapsed = mo.isCurrent ? today.getDate() : allDays;
+      let present = 0;
+      const presentDates = [];
+
+      // Check each day
+      for (let d = 1; d <= allDays; d++) {
+        const ds = `${mo.y}-${mo.m}-${String(d).padStart(2,'0')}`;
+        const dayData = _attCache[ds];
+        if (dayData && dayData[memberId] === 'Present') {
+          present++;
+          presentDates.push(d);
+        }
+      }
+      totalPresent += present;
+      const pct = elapsed > 0 ? Math.round(present / elapsed * 100) : 0;
+      return { ...mo, present, elapsed, allDays, pct, presentDates };
+    });
+
+    if (totalPresent === 0 && Object.keys(_attCache).length > 0) {
+      body.innerHTML = `
+        <div style="text-align:center;padding:36px 16px;background:#F5FBFB;border-radius:16px">
+          <div style="font-size:2.5rem;margin-bottom:10px">📅</div>
+          <div style="font-size:.95rem;font-weight:800;color:#1A2E2E;margin-bottom:6px">No Attendance Yet</div>
+          <div style="font-size:.8rem;color:#8AABAB;line-height:1.6">Start marking this member present in<br>the Attendance page to see analysis here.</div>
+        </div>`;
+      return;
+    }
+
+    // ── Summary banner ──
+    const curMonth = monthStats[0];
+    let html = `
+      <div style="background:linear-gradient(135deg,#1A8C8C 0%,#0d6e6e 100%);border-radius:16px;padding:16px 18px;margin-bottom:14px;color:#fff">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div>
+            <div style="font-size:.65rem;font-weight:700;opacity:.7;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">This Month</div>
+            <div style="font-size:2.2rem;font-weight:800;line-height:1">${curMonth.present} <span style="font-size:1rem;opacity:.7">days</span></div>
+            <div style="font-size:.72rem;opacity:.65;margin-top:3px">${curMonth.pct}% of ${curMonth.elapsed} days elapsed</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:.65rem;font-weight:700;opacity:.7;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">3-Month Total</div>
+            <div style="font-size:1.6rem;font-weight:800">${totalPresent}</div>
+            <div style="font-size:.72rem;opacity:.65">days present</div>
+          </div>
+        </div>
+        <!-- Progress bar current month -->
+        <div style="height:8px;background:rgba(255,255,255,.25);border-radius:8px;overflow:hidden">
+          <div style="height:100%;width:${curMonth.pct}%;background:#fff;border-radius:8px;transition:width .7s ease"></div>
+        </div>
+      </div>
+
+      <!-- 3-month breakdown -->
+      <div style="display:flex;flex-direction:column;gap:12px">`;
+
+    const DAYS_LABEL = ['S','M','T','W','T','F','S'];
+
+    monthStats.forEach(mo => {
+      const label = `${MONTHS[mo.mIdx]} ${mo.y}`;
+      const clr   = mo.pct >= 70 ? '#27AE60' : mo.pct >= 40 ? '#F39C12' : '#E74C3C';
+      const bg    = mo.isCurrent ? '#E8F7F7' : '#F8FAFA';
+      const border = mo.isCurrent ? '1.5px solid #C8DEDE' : '1px solid #E0ECEC';
+      const perf  = mo.pct >= 70 ? '🟢 Great' : mo.pct >= 40 ? '🟡 Average' : '🔴 Needs Work';
+
+      // Calendar grid
+      const firstDay = new Date(mo.y, mo.mIdx, 1).getDay();
+      let cells = [];
+      for (let i = 0; i < firstDay; i++) cells.push('<div></div>');
+      for (let d = 1; d <= mo.allDays; d++) {
+        const ds = `${mo.y}-${mo.m}-${String(d).padStart(2,'0')}`;
+        const isP = mo.presentDates.includes(d);
+        const isToday = ds === todayStr;
+        const isFuture = new Date(mo.y, mo.mIdx, d) > today;
+        let bg2 = '#F0F5F5', clr2 = '#8AABAB', fw = '500', brd = 'none';
+        if (isP)          { bg2 = '#27AE60'; clr2 = '#fff'; fw = '800'; }
+        else if (isToday) { bg2 = '#1A8C8C'; clr2 = '#fff'; fw = '800'; }
+        else if (isFuture){ bg2 = 'transparent'; clr2 = '#D0D8E0'; }
+        cells.push(`<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;background:${bg2};color:${clr2};font-size:.68rem;font-weight:${fw};min-width:0">${d}</div>`);
+      }
+      while (cells.length % 7 !== 0) cells.push('<div></div>');
+      const rows = [];
+      for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i+7));
+
+      html += `
+        <div style="background:${bg};border:${border};border-radius:14px;padding:14px">
+          <!-- Header -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div style="display:flex;align-items:center;gap:7px">
+              <span style="font-size:.9rem;font-weight:800;color:#1A2E2E">${label}</span>
+              ${mo.isCurrent ? '<span style="font-size:.62rem;background:#1A8C8C;color:#fff;padding:2px 8px;border-radius:10px;font-weight:700">Current</span>' : ''}
+            </div>
+            <span style="font-size:.75rem;font-weight:800;color:${clr}">${perf}</span>
+          </div>
+          <!-- Days count pill -->
+          <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+            <div style="background:#fff;border:1px solid #E0ECEC;border-radius:20px;padding:5px 14px;display:flex;align-items:center;gap:5px">
+              <span style="font-size:1.05rem;font-weight:800;color:${clr}">${mo.present}</span>
+              <span style="font-size:.7rem;color:#8AABAB;font-weight:600">days attended</span>
+            </div>
+            <div style="background:#fff;border:1px solid #E0ECEC;border-radius:20px;padding:5px 14px;display:flex;align-items:center;gap:5px">
+              <span style="font-size:1.05rem;font-weight:800;color:#1A2E2E">${mo.elapsed}</span>
+              <span style="font-size:.7rem;color:#8AABAB;font-weight:600">days elapsed</span>
+            </div>
+          </div>
+          <!-- Progress bar -->
+          <div style="height:7px;background:#E0ECEC;border-radius:8px;overflow:hidden;margin-bottom:10px">
+            <div style="height:100%;width:${mo.pct}%;background:${clr};border-radius:8px"></div>
+          </div>
+          <!-- Calendar -->
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:3px">
+            ${DAYS_LABEL.map(d=>`<div style="text-align:center;font-size:.58rem;font-weight:700;color:#8AABAB">${d}</div>`).join('')}
+          </div>
+          ${rows.map(r=>`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px">${r.join('')}</div>`).join('')}
+        </div>`;
+    });
+
+    html += '</div>';
+    body.innerHTML = html;
+
+  } catch(e) {
+    body.innerHTML = '<div style="text-align:center;padding:30px;color:#E74C3C;font-size:.88rem;font-weight:700">Failed to load. Check connection.</div>';
+    console.error('openMemberAttendance error:', e);
+  }
 }
