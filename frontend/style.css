@@ -87,17 +87,23 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .sidebar {
   position: fixed; top: 0; left: 0;
   width: min(280px, 80vw);
-  height: 100%; height: -webkit-fill-available;
+  /* Use 100dvh if supported, fallback to 100% */
+  height: 100dvh;
+  height: 100%;
   background: var(--teal-dark);
   display: flex; flex-direction: column;
-  z-index: 2000;
+  z-index: 9000;   /* above everything including modals */
   transform: translateX(-100%);
   transition: transform .3s cubic-bezier(.22,1,.36,1);
   padding-top: env(safe-area-inset-top, 0px);
+  /* Force own layer — prevents blur/composite issues */
+  -webkit-transform: translateX(-100%) translateZ(0);
+  will-change: transform;
 }
 .sidebar.open {
-  transform: translateX(0);
-  box-shadow: 4px 0 24px rgba(0,0,0,.25);
+  transform: translateX(0) translateZ(0);
+  -webkit-transform: translateX(0) translateZ(0);
+  box-shadow: 4px 0 32px rgba(0,0,0,.4);
 }
 .sb-top {
   display: flex; align-items: center; justify-content: space-between;
@@ -148,11 +154,13 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
   font-weight: 700; cursor: pointer; width: 100%; min-height: 44px;
 }
 
-/* ── OVERLAY ── */
+/* ── OVERLAY ── Android WebView: NO backdrop-filter (causes blur bug) ── */
 .overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,.55); z-index: 1500;
-  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  display: none; position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,.6);
+  z-index: 8999;  /* just below sidebar (9000), above modal (2500) */
+  /* NO backdrop-filter — causes content blur in Android WebView */
 }
 .overlay.show { display: block; animation: fadeIn .2s; }
 @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
@@ -165,7 +173,7 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
   background: var(--teal);
   display: flex; align-items: center;
   padding-left: 14px; padding-right: 14px;
-  gap: 10px; z-index: 100;
+  gap: 10px; z-index: 200;  /* above main content, below overlay/sidebar */
   box-shadow: 0 2px 10px rgba(26,140,140,.25);
 }
 .menu-btn {
@@ -395,22 +403,72 @@ tbody td { padding: .6rem .75rem; font-size: .82rem; color: var(--tx); vertical-
 .toggle-sw input:checked + .toggle-track { background: var(--teal); }
 .toggle-sw input:checked + .toggle-track::before { transform: translateX(21px); }
 
-/* ── MODAL (bottom sheet) ── */
-.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 2500; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
-.modal.open { display: flex; }
-.mbox {
-  background: var(--card); border-radius: 22px 22px 0 0;
-  padding: 18px 15px calc(16px + env(safe-area-inset-bottom, 0px));
-  width: 100%; max-height: 93vh;
-  overflow-y: auto; -webkit-overflow-scrolling: touch;
-  box-shadow: 0 -8px 40px rgba(0,0,0,.18);
-  animation: slideUp .3s cubic-bezier(.22,1,.36,1); position: relative;
+/* ── MODAL (bottom sheet) ──
+   Android WebView fixes:
+   1. No backdrop-filter (causes page blur)
+   2. height set via JS (vh units broken in WebView)
+   3. overflow-y: scroll not auto (Android scroll fix)
+   4. Explicit -webkit-overflow-scrolling: touch
+   ────────────────────────────────────────────── */
+.modal {
+  display: none; position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 2500;
+  align-items: flex-end;
+  justify-content: center;
+  /* NO backdrop-filter — Android WebView bug */
 }
-@keyframes slideUp { from { transform: translateY(100%) } to { transform: translateY(0) } }
-.mbox::before { content: ''; position: absolute; top: 9px; left: calc(50% - 20px); width: 40px; height: 4px; background: var(--border2); border-radius: 5px; }
-.mhdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; margin-top: .15rem; }
+.modal.open { display: flex; }
+
+.mbox {
+  background: var(--card);
+  border-radius: 22px 22px 0 0;
+  padding: 18px 15px 24px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  width: 100%;
+  /* height set dynamically by JS — DO NOT use max-height:vh */
+  max-height: 90%;
+  overflow-y: scroll;              /* scroll not auto — Android fix */
+  -webkit-overflow-scrolling: touch;
+  overflow-x: hidden;
+  box-shadow: 0 -8px 40px rgba(0,0,0,.18);
+  animation: slideUp .28s cubic-bezier(.22,1,.36,1);
+  position: relative;
+  /* Force GPU layer for smooth scroll on Android */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%) translateZ(0); }
+  to   { transform: translateY(0)    translateZ(0); }
+}
+.mbox::before {
+  content: ''; position: sticky; top: 0;
+  display: block; width: 40px; height: 4px;
+  background: var(--border2); border-radius: 5px;
+  margin: 0 auto 14px;
+}
+.mhdr {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem; margin-top: 0;
+  position: sticky; top: 18px;
+  background: var(--card);
+  z-index: 1;
+  padding: 2px 0 8px;
+  border-bottom: 1px solid var(--border);
+}
 .mtitle { font-size: 1rem; font-weight: 800; color: var(--tx); }
-.mclose { width: 32px; height: 32px; background: var(--bg); border: none; border-radius: 50%; font-size: .88rem; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--tx2); min-height: 32px; }
+.mclose {
+  width: 36px; height: 36px; min-width: 36px;
+  background: var(--bg); border: none; border-radius: 50%;
+  font-size: .88rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--tx2);
+  -webkit-tap-highlight-color: transparent;
+}
 
 /* ── QR ── */
 .qr-box { background: var(--bg); border-radius: var(--r2); padding: 1rem; text-align: center; margin: .75rem 0; border: 1px solid var(--border2); }
@@ -602,4 +660,71 @@ tbody td { padding: .6rem .75rem; font-size: .82rem; color: var(--tx); vertical-
   .fin-row { grid-template-columns: repeat(3, 1fr); }
   .dt-num { font-size: 1.7rem; }
   .card-title { font-size: 1rem; }
+}
+
+/* ══════════════════════════════════════════════════════
+   ANDROID WEBVIEW / APK SPECIFIC FIXES
+   These fix issues specific to Android WebView (not browser)
+   ══════════════════════════════════════════════════════ */
+
+/* Prevent rubber-band scroll that breaks modal in Android */
+html, body {
+  overscroll-behavior: none;
+  -webkit-overscroll-behavior: none;
+}
+
+/* Fix Android WebView text rendering */
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Prevent 300ms tap delay on Android */
+a, button, input, select, textarea, label, [onclick] {
+  touch-action: manipulation;
+}
+
+/* Fix Android scroll inside modal - must use scroll not auto */
+.mbox, .sb-body {
+  overflow-y: scroll !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain;
+}
+
+/* Make sure modal is always on top in Android WebView */
+.modal.open {
+  /* Use display:block with flex child for Android compat */
+  display: -webkit-box !important;
+  display: -ms-flexbox !important;
+  display: flex !important;
+}
+
+/* Fix form inputs in Android WebView */
+.form-group input,
+.form-group select,
+.form-group textarea {
+  font-size: 16px !important; /* prevents zoom on focus in Android */
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 10px; /* Android rounds inputs oddly without this */
+}
+
+/* Fix select arrow in Android */
+.form-group select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238AABAB' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+/* Android bottom nav safe zone */
+.bottom-nav {
+  /* Ensure it stays above Android gesture bar */
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+}
+
+/* Sticky modal header must not flicker on Android */
+.mhdr {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
