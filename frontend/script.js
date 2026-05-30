@@ -139,6 +139,41 @@ function sortByExpiry(members) {
   });
 }
 
+/* ═══════════════════════════════════════════════════════
+   ANDROID WEBVIEW — External App Launchers
+   window.open() fails in WebView for tel: whatsapp: etc.
+   Must use location.href OR Android Intent URLs
+   ═══════════════════════════════════════════════════════ */
+
+function dialPhone(phone) {
+  // Try Android intent first, fall back to tel:
+  try {
+    // This works in Android WebView when shouldOverrideUrlLoading is set
+    window.location.href = 'tel:' + phone;
+  } catch(e) {
+    console.log('Phone dial error:', e);
+  }
+}
+
+function openWhatsApp(phone) {
+  // Clean phone — remove spaces, dashes
+  const clean = String(phone).replace(/\D/g, '');
+  const num   = clean.startsWith('91') ? clean : '91' + clean;
+  // Try WhatsApp intent URL (works in Android WebView)
+  const intentUrl = 'intent://send/?phone=' + num +
+    '&text=&type=phone_number#Intent;scheme=whatsapp;package=com.whatsapp;end';
+  const fallbackUrl = 'https://wa.me/' + num;
+  try {
+    window.location.href = intentUrl;
+    // Fallback after 500ms if intent didn't launch
+    setTimeout(() => {
+      window.location.href = fallbackUrl;
+    }, 500);
+  } catch(e) {
+    window.location.href = fallbackUrl;
+  }
+}
+
 /* ── SIDEBAR & NAV ── */
 function toggleSidebar() {
   const sb = document.getElementById('sidebar');
@@ -240,12 +275,29 @@ function setupCamera() {
         clr  = document.getElementById('clearPhotoBtn');
 
   document.getElementById('openCamBtn').onclick = async () => {
-    try { 
-      curStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}); 
-      vid.srcObject = curStream; 
-      openModal('cameraModal'); 
+    // Android WebView: navigator.mediaDevices often unavailable
+    // Detect WebView and use file input with capture attribute instead
+    const isAndroidWebView = /wv/.test(navigator.userAgent) || 
+      (/Android/.test(navigator.userAgent) && /Version\//.test(navigator.userAgent));
+    
+    if (isAndroidWebView || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      // Use native camera via file input capture
+      const camInput = document.getElementById('photoFile');
+      camInput.setAttribute('capture', 'environment');
+      camInput.setAttribute('accept', 'image/*');
+      camInput.click();
+      return;
     }
-    catch(e) { toast('Camera unavailable — use Upload','error'); }
+    try {
+      curStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+      vid.srcObject = curStream;
+      openModal('cameraModal');
+    } catch(e) {
+      // Fall back to file input with camera capture
+      const camInput = document.getElementById('photoFile');
+      camInput.setAttribute('capture', 'environment');
+      camInput.click();
+    }
   };
   document.getElementById('captureBtn').onclick = () => {
     can.width = vid.videoWidth; can.height = vid.videoHeight;
@@ -604,12 +656,12 @@ function _renderMemberCard(m, idx) {
         <span style="font-size:1rem">🪪</span>
         <span style="font-size:.52rem;font-weight:700;color:#8AABAB">ID Card</span>
       </button>
-      <button onclick="window.open('tel:${esc(m.phone)}')"
+      <button onclick="dialPhone('${esc(m.phone)}')"
         style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:54px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0">
         <span style="font-size:1rem">📞</span>
         <span style="font-size:.52rem;font-weight:700;color:#8AABAB">Call</span>
       </button>
-      <button onclick="window.open('https://wa.me/91${esc(m.phone)}')"
+      <button onclick="openWhatsApp('${esc(m.phone)}')"
         style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:54px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0">
         <span style="font-size:1rem">💬</span>
         <span style="font-size:.52rem;font-weight:700;color:#8AABAB">Whatsapp</span>
@@ -1391,7 +1443,7 @@ async function loadTrainers() {
               font-size:.78rem;font-weight:700;color:#1A8C8C;cursor:pointer;
               display:flex;align-items:center;justify-content:center;gap:5px;
               border-right:1px solid #F0F5F5;min-height:42px">✏️ Edit</button>
-          <button onclick="window.open('tel:${esc(t.phone)}')"
+          <button onclick="dialPhone('${esc(t.phone)}')"
             style="flex:1;padding:10px;border:none;background:transparent;font-family:inherit;
               font-size:.78rem;font-weight:700;color:#27AE60;cursor:pointer;
               display:flex;align-items:center;justify-content:center;gap:5px;
@@ -1404,7 +1456,15 @@ async function loadTrainers() {
       </div>`;
     }).join('');
   } catch(e) {
-    wrap.innerHTML = '<div class="empty"><p style="color:#E74C3C">Error loading trainers</p></div>';
+    console.error('loadTrainers error:', e);
+    wrap.innerHTML = `<div class="empty">
+      <div class="ei">⚠️</div>
+      <p style="color:#E74C3C;font-size:.82rem">Error loading trainers</p>
+      <p style="color:#8AABAB;font-size:.72rem;margin-top:6px">${e.message||'Check connection'}</p>
+      <button onclick="loadTrainers()" style="margin-top:12px;padding:10px 20px;background:#1A8C8C;
+        color:#fff;border:none;border-radius:12px;font-family:inherit;font-size:.82rem;
+        font-weight:700;cursor:pointer">🔄 Retry</button>
+    </div>`;
   }
 }
 
