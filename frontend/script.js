@@ -147,24 +147,14 @@ function toggleSidebar() {
   if (isOpen) {
     sb.classList.remove('open');
     ov.classList.remove('show');
-    document.body.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.width    = '';
-  } else {
+        } else {
     sb.classList.add('open');
     ov.classList.add('show');
-    // Lock scroll behind sidebar
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.width    = '100%';
-  }
+        }
 }
 function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('overlay').classList.remove('show');
-  document.body.style.overflow = '';
-  document.body.style.position = '';
-  document.body.style.width    = '';
 }
 function updateBNav(id) {
   document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
@@ -211,10 +201,6 @@ const openModal = id => {
   el.classList.add('open');
   _setModalHeight(el);
 
-  // Lock body scroll (Android WebView needs this)
-  document.body.style.overflow = 'hidden';
-  document.body.style.position = 'fixed';
-  document.body.style.width    = '100%';
 
   if (id === 'addMemberModal') {
     const startInput = document.getElementById('mStart');
@@ -230,10 +216,6 @@ const closeModal = id => {
   const el = document.getElementById(id);
   if (!el) return;
   el.classList.remove('open');
-  // Restore body scroll
-  document.body.style.overflow = '';
-  document.body.style.position = '';
-  document.body.style.width    = '';
 };
 
 // Re-calc on resize/orientation change
