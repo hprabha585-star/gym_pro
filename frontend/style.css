@@ -667,10 +667,13 @@ tbody td { padding: .6rem .75rem; font-size: .82rem; color: var(--tx); vertical-
    These fix issues specific to Android WebView (not browser)
    ══════════════════════════════════════════════════════ */
 
-/* Prevent rubber-band scroll that breaks modal in Android */
-html, body {
+/* Android WebView scroll behavior */
+html {
   overscroll-behavior: none;
-  -webkit-overscroll-behavior: none;
+}
+body {
+  /* Do NOT set overflow:hidden or position:fixed on body in Android WebView */
+  overscroll-behavior-y: none;
 }
 
 /* Fix Android WebView text rendering */
