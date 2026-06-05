@@ -773,7 +773,27 @@
   </div>
 </div>
 
-<!-- ═══════════════════ EDIT TRAINER MODAL ═══════════════════ -->
+<div class="modal" id="addTrainerModal">
+  <div class="mbox" style="max-width:380px">
+    <div class="mhdr">
+      <span class="mtitle">Add Trainer</span>
+      <button class="mclose" onclick="closeModal('addTrainerModal')">✕</button>
+    </div>
+    <form id="addTrainerForm">
+      <div class="form-group"><label>Full Name *</label><input type="text" id="tName" required placeholder="Trainer name"></div>
+      <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="tPhone" required placeholder="9876543210" maxlength="10"></div>
+      <div class="form-group"><label>Specialty *</label><input type="text" id="tSpecialty" required placeholder="e.g. Yoga, HIIT"></div>
+      <div class="form-group"><label>Status</label>
+        <select id="tStatus"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:9px;margin-top:1.1rem">
+        <button type="submit" class="btn btn-primary btn-full">Add Trainer</button>
+        <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('addTrainerModal')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div class="modal" id="editTrainerModal">
   <div class="mbox" style="max-width:380px">
     <div class="mhdr">
