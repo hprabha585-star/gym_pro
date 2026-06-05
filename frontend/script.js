@@ -41,13 +41,17 @@ async function loadServerProfile() {
     const res = await fetch(`${BASE}/auth/me`, { headers: hdrs() });
     if (!res.ok) return;
     const user = await res.json();
-    if (user.gymData) {
+    if (user.gymData && user.gymData !== '{}') {
       const d = typeof user.gymData === 'string' ? JSON.parse(user.gymData) : user.gymData;
       if (d.plans && d.plans.length) gymPlans = d.plans;
       if (d.cfg)  gymCfg  = d.cfg;
       if (d.disc) gymDisc = d.disc;
     }
     localStorage.setItem('gymProfile_cache', JSON.stringify({ plans: gymPlans, cfg: gymCfg, disc: gymDisc }));
+    // Refresh plans/discounts UI if visible
+    populatePlanSelect(); populatePlanSelect('ePlan');
+    if (document.getElementById('page-plans')?.classList.contains('active')) loadPlans();
+    if (document.getElementById('page-discounts')?.classList.contains('active')) renderDiscounts();
   } catch(e) {
     const cached = localStorage.getItem('gymProfile_cache');
     if (cached) {
@@ -146,31 +150,23 @@ function sortByExpiry(members) {
    ═══════════════════════════════════════════════════════ */
 
 function dialPhone(phone) {
-  // Try Android intent first, fall back to tel:
-  try {
-    // This works in Android WebView when shouldOverrideUrlLoading is set
-    window.location.href = 'tel:' + phone;
-  } catch(e) {
-    console.log('Phone dial error:', e);
-  }
+  // In Android WebView: location.href triggers shouldOverrideUrlLoading
+  // In browser: window.location.href also works for tel: links
+  window.location.href = 'tel:' + String(phone).replace(/[^0-9+]/g,'');
 }
 
 function openWhatsApp(phone) {
-  // Clean phone — remove spaces, dashes
-  const clean = String(phone).replace(/\D/g, '');
+  const clean = String(phone).replace(/[^0-9]/g, '');
   const num   = clean.startsWith('91') ? clean : '91' + clean;
-  // Try WhatsApp intent URL (works in Android WebView)
-  const intentUrl = 'intent://send/?phone=' + num +
-    '&text=&type=phone_number#Intent;scheme=whatsapp;package=com.whatsapp;end';
-  const fallbackUrl = 'https://wa.me/' + num;
-  try {
-    window.location.href = intentUrl;
-    // Fallback after 500ms if intent didn't launch
-    setTimeout(() => {
-      window.location.href = fallbackUrl;
-    }, 500);
-  } catch(e) {
-    window.location.href = fallbackUrl;
+  const url   = 'https://wa.me/' + num;
+  // In Android WebView: use location.href (MainActivity intercepts it)
+  // In browser: use window.open (opens WhatsApp web in new tab)
+  const isAndroidWebView = /wv/.test(navigator.userAgent) ||
+    (/Android/i.test(navigator.userAgent) && /Version\//.test(navigator.userAgent));
+  if (isAndroidWebView) {
+    window.location.href = url;
+  } else {
+    window.open(url, '_blank');
   }
 }
 
@@ -275,16 +271,17 @@ function setupCamera() {
         clr  = document.getElementById('clearPhotoBtn');
 
   document.getElementById('openCamBtn').onclick = async () => {
-    // Android WebView: navigator.mediaDevices often unavailable
-    // Detect WebView and use file input with capture attribute instead
-    const isAndroidWebView = /wv/.test(navigator.userAgent) || 
-      (/Android/.test(navigator.userAgent) && /Version\//.test(navigator.userAgent));
-    
-    if (isAndroidWebView || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      // Use native camera via file input capture
-      const camInput = document.getElementById('photoFile');
-      camInput.setAttribute('capture', 'environment');
-      camInput.setAttribute('accept', 'image/*');
+    const camInput = document.getElementById('photoFile');
+    camInput.setAttribute('capture', 'environment');
+    camInput.setAttribute('accept', 'image/*');
+
+    // Save the currently open modal ID before camera launches
+    const openModalEl = document.querySelector('.modal.open');
+    window._presCamModalId = openModalEl ? openModalEl.id : null;
+
+    // Always use file input on Android (getUserMedia blocked in WebView)
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    if (isAndroid || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       camInput.click();
       return;
     }
@@ -293,9 +290,6 @@ function setupCamera() {
       vid.srcObject = curStream;
       openModal('cameraModal');
     } catch(e) {
-      // Fall back to file input with camera capture
-      const camInput = document.getElementById('photoFile');
-      camInput.setAttribute('capture', 'environment');
       camInput.click();
     }
   };
@@ -313,10 +307,34 @@ function setupCamera() {
   };
   document.getElementById('uploadBtn').onclick = () => document.getElementById('photoFile').click();
   document.getElementById('photoFile').onchange = e => {
-    const f = e.target.files[0]; if (!f) return;
+    const f = e.target.files[0];
+    if (!f) return;
+    prev.style.opacity = '0.5';
     const r = new FileReader();
-    r.onload = ev => { prev.src = ev.target.result; pd.value = ev.target.result; clr.style.display = 'inline-flex'; };
+    r.onload = ev => {
+      const result = ev.target.result;
+      if (!result) { prev.style.opacity='1'; return; }
+      prev.src     = result;
+      prev.style.opacity = '1';
+      pd.value     = result;
+      clr.style.display = 'inline-flex';
+      // Restore the modal that was open before camera launched
+      const modalId = window._presCamModalId ||
+        (document.getElementById('editMemberModal') ? 'editMemberModal' : 'addMemberModal');
+      const modal = document.getElementById(modalId);
+      if (modal && !modal.classList.contains('open')) {
+        modal.classList.add('open');
+        _setModalHeight(modal);
+        // Scroll to top of modal so user sees the photo
+        const mbox = modal.querySelector('.mbox');
+        if (mbox) setTimeout(() => { mbox.scrollTop = 0; }, 50);
+      }
+      window._presCamModalId = null;
+    };
+    r.onerror = () => { prev.style.opacity = '1'; toast('Photo error — try Upload', 'error'); };
     r.readAsDataURL(f);
+    // Reset so same photo can be re-selected
+    setTimeout(() => { e.target.value = ''; }, 400);
   };
   clr.onclick = resetPhoto;
 }
@@ -1401,7 +1419,11 @@ async function loadTrainers() {
   if (!wrap) return;
   wrap.innerHTML = '<div class="empty"><div class="ei">⏳</div><p>Loading trainers…</p></div>';
   try {
-    const res = await fetch(TAPI, {headers:hdrs()});
+    // Add timeout so it doesn't hang forever on Render cold start
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 15000); // 15s timeout
+    const res = await fetch(TAPI, {headers:hdrs(), signal: controller.signal});
+    clearTimeout(tid);
     if (res.status===401) { logout(); return; }
     const trainers = await res.json();
     trainerMap = {};
@@ -1933,19 +1955,37 @@ window.addEventListener('DOMContentLoaded', async () => {
       `<div class="u-name">👤 ${esc(u.name)}</div><div class="u-role">${u.role==='admin'?'Administrator':'Staff Member'}</div>`;
   } catch(e){}
 
+  // populatePlanSelect AFTER server profile loaded (gymPlans now has custom plans)
   populatePlanSelect();
+  populatePlanSelect('ePlan');
   recalcPrice();
   loadDashboard();
+  // If user lands directly on plans/discounts page (rare), refresh them
+  loadPlans();
 
-  fetch(TAPI,{headers:hdrs()}).then(r=>r.json()).then(trainers=>{
-    trainerMap = {};
-    trainers.forEach(t=>{trainerMap[t._id]=t.name;});
-    const opts = '<option value="">Select Trainer</option>'+
-      trainers.filter(t=>t.status==='Active').map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
-    document.getElementById('mPtTrainer').innerHTML = opts;
-    document.getElementById('ePtTrainer').innerHTML = opts;
-    if(document.getElementById('payPtTrainer')) document.getElementById('payPtTrainer').innerHTML = opts;
-  }).catch(()=>{});
+  // Warm up the Render server (free tier sleeps after 15 min)
+  // Do a lightweight health-check ping first so Render wakes up
+  fetch(`${BASE}/health`, {headers:hdrs()}).catch(()=>{});
+
+  // Pre-load trainers into dropdowns (with timeout)
+  (async () => {
+    try {
+      const ctrl = new AbortController();
+      const tid  = setTimeout(() => ctrl.abort(), 20000);
+      const res  = await fetch(TAPI, {headers:hdrs(), signal:ctrl.signal});
+      clearTimeout(tid);
+      if (!res.ok) return;
+      const trainers = await res.json();
+      trainerMap = {};
+      trainers.forEach(t => { trainerMap[t._id] = t.name; });
+      const opts = '<option value="">Select Trainer</option>' +
+        trainers.filter(t=>t.status==='Active')
+          .map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
+      ['mPtTrainer','ePtTrainer','payPtTrainer'].forEach(id=>{
+        const el=document.getElementById(id); if(el) el.innerHTML=opts;
+      });
+    } catch(e) { console.log('Trainer pre-load:', e.message); }
+  })();
   
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
