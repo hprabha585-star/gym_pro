@@ -889,13 +889,15 @@
   <div class="mbox" style="max-width:480px">
     <div class="mhdr">
       <div>
-        <div style="font-size:.65rem;font-weight:700;color:#8AABAB;text-transform:uppercase;letter-spacing:.7px;margin-bottom:2px">Attendance Records</div>
-        <span class="mtitle" id="mamMemberName">Member</span>
+        <div id="memberAttSubtitle" style="font-size:.65rem;font-weight:700;color:#8AABAB;text-transform:uppercase;letter-spacing:.7px;margin-bottom:2px">Attendance Records</div>
+        <span class="mtitle" id="memberAttTitle">Member</span>
       </div>
       <button class="mclose" onclick="closeModal('memberAttModal')">✕</button>
     </div>
-    <!-- Scrollable body -->
-    <div id="mamBody" style="max-height:68vh;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
+    <div id="mamBody" style="max-height:68vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+        <div id="memberAttCal"></div>
+        <div id="memberAttStat"></div>
+    </div>
   </div>
 </div>
 
