@@ -19,7 +19,7 @@ const requireSub     = require('./middleware/subscriptionMiddleware');
 app.use('/api/auth', authRoutes.router);
 
 // Subscription routes (NO gate — needed to check/renew)
-app.use('/api/subscription', require('./routes/subscription').router);
+app.use('/api/subscription', require('./routes/Subscription').router);
 
 // ── GATED ROUTES — blocked if subscription expired ──
 app.use('/api/members',   requireSub, require('./routes/members'));
