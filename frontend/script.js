@@ -5,10 +5,11 @@ document.addEventListener('wheel', () => {
 }, { passive: true });
 
 /* ── CONFIG ── */
-const BASE = 'https://gym-pro-mvyv.onrender.com/api';
-const API  = `${BASE}/members`;
-const TAPI = `${BASE}/trainers`;
+const BASE        = 'https://gym-pro-mvyv.onrender.com/api';
+const API         = `${BASE}/members`;
+const TAPI        = `${BASE}/trainers`;
 const PROFILE_API = `${BASE}/auth/profile`;
+const SAPI        = `${BASE}/subscription`;   // Subscription API
 
 const DEFAULT_PLANS = [
   {name:'1 Month Strength',price:1000,months:1},
@@ -34,6 +35,20 @@ let curStream    = null;
 const hdrs = () => ({ 'Content-Type':'application/json', 'Authorization':`Bearer ${localStorage.getItem('token')}` });
 const checkAuth = () => { if (!localStorage.getItem('token')) { location.href='/login.html'; return false; } return true; };
 function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); location.href='/login.html'; }
+
+/* ── Global 402 intercept: subscription expired ── */
+(function() {
+  const _orig = window.fetch;
+  window.fetch = async function(...args) {
+    const res = await _orig(...args);
+    if (res.status === 402) {
+      res.clone().json().then(d => {
+        if (d.error === 'subscription_expired') showSubscriptionWall(d);
+      }).catch(()=>{});
+    }
+    return res;
+  };
+})();
 
 /* ── PROFILE SYNC ── */
 async function loadServerProfile() {
@@ -196,10 +211,10 @@ function showPage(page, btn) {
   document.querySelectorAll('.nav-btn').forEach(l => l.classList.remove('active'));
   document.getElementById(`page-${page}`).classList.add('active');
   if (btn) btn.classList.add('active');
-  const titles = {dashboard:'Dashboard',members:'Members',attendance:'Attendance',trainers:'Trainers',plans:'Plans',discounts:'Discounts',payments:'Payments',settings:'Settings'};
+  const titles = {dashboard:'Dashboard',members:'Members',attendance:'Attendance',trainers:'Trainers',plans:'Plans',discounts:'Discounts',payments:'Payments',settings:'Settings',subscription:'Subscription'};
   document.getElementById('pageTitle').textContent = titles[page] || page;
   closeSidebar();
-  const loaders = {dashboard:loadDashboard,members:loadAllMembers,attendance:loadAttendance,trainers:loadTrainers,plans:loadPlans,discounts:renderDiscounts,payments:loadPayments,settings:loadSettings};
+  const loaders = {dashboard:loadDashboard,members:loadAllMembers,attendance:loadAttendance,trainers:loadTrainers,plans:loadPlans,discounts:renderDiscounts,payments:loadPayments,settings:loadSettings,subscription:loadSubscriptionPage};
   if (loaders[page]) loaders[page]();
 }
 
@@ -1922,6 +1937,346 @@ async function saveSettings() {
   toast('Settings saved & synced!','success');
 }
 
+/* ════════════════════════════════════════════════════════
+   SUBSCRIPTION SYSTEM
+   ════════════════════════════════════════════════════════ */
+
+let _subStatus = null; // cached subscription status
+
+async function checkSubscription() {
+  try {
+    const res = await fetch(`${SAPI}/status`, { headers: hdrs() });
+    if (res.status === 401) { logout(); return null; }
+    if (!res.ok) return null;
+    const data = await res.json();
+    _subStatus = data;
+
+    // If expired/pending — show subscription wall
+    if (!data.isActive) {
+      showSubscriptionWall(data);
+      return null;
+    }
+
+    // Show warning banner if trial or expiring soon
+    if (data.plan === 'trial' || data.daysLeft <= 7) {
+      showSubWarningBanner(data);
+    }
+
+    return data;
+  } catch(e) {
+    console.error('Subscription check error:', e);
+    return null; // Don't block on network error
+  }
+}
+
+function showSubWarningBanner(sub) {
+  const banner = document.getElementById('subWarningBanner');
+  if (!banner) return;
+  const isTrial = sub.plan === 'trial';
+  banner.style.display = 'flex';
+  banner.innerHTML = `
+    <div style="flex:1">
+      <strong>${isTrial ? '🎁 Free Trial' : '⚠️ Expiring Soon'}</strong>
+      — ${sub.daysLeft} day${sub.daysLeft!==1?'s':''} left
+      ${isTrial ? '(Trial)' : ''}
+    </div>
+    <button onclick="showPage('subscription',document.querySelector('[data-page=subscription]'));updateBNav('none')"
+      style="background:#fff;color:#1A8C8C;border:none;border-radius:8px;
+        padding:5px 12px;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer">
+      Renew →
+    </button>`;
+}
+
+function showSubscriptionWall(sub) {
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  // Show subscription wall
+  const wall = document.getElementById('subscriptionWall');
+  if (!wall) return;
+  wall.style.display = 'flex';
+
+  const isPending = sub.status === 'pending';
+  document.getElementById('wallTitle').textContent = isPending ? '⏳ Payment Under Review' : '🔒 Subscription Expired';
+  document.getElementById('wallMsg').textContent   = isPending
+    ? 'Your payment is being verified. This usually takes a few hours. Contact admin if urgent.'
+    : 'Your subscription has expired. Renew to continue using GymPro.';
+  document.getElementById('wallStatus').textContent = isPending ? 'Pending Verification' : 'Expired';
+  document.getElementById('wallStatus').style.color = isPending ? '#F39C12' : '#E74C3C';
+
+  if (!isPending) {
+    document.getElementById('wallRenewBtn').style.display = 'block';
+  } else {
+    document.getElementById('wallRenewBtn').style.display = 'none';
+  }
+}
+
+async function loadSubscriptionPage() {
+  const wrap = document.getElementById('subPageWrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="empty"><div class="ei">⏳</div><p>Loading…</p></div>';
+
+  try {
+    const res = await fetch(`${SAPI}/status`, { headers: hdrs() });
+    const sub = await res.json();
+    _subStatus = sub;
+
+    const plans     = sub.plans     || {};
+    const bank      = sub.bankDetails || {};
+    const daysLeft  = sub.daysLeft  || 0;
+    const isActive  = sub.isActive;
+    const isTrial   = sub.plan === 'trial';
+    const isPending = sub.status === 'pending';
+
+    // Status colour
+    const stClr = isActive ? '#27AE60' : isPending ? '#F39C12' : '#E74C3C';
+    const stBg  = isActive ? '#E8F8EF' : isPending ? '#FEF9E7' : '#FEECEB';
+    const stTxt = isActive ? (isTrial ? 'Trial Active' : 'Active') : isPending ? 'Pending Verification' : 'Expired';
+
+    wrap.innerHTML = `
+      <!-- Status Card -->
+      <div style="background:#1A8C8C;border-radius:18px;padding:20px;margin-bottom:16px;color:#fff">
+        <div style="font-size:.7rem;opacity:.7;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Current Plan</div>
+        <div style="font-size:1.6rem;font-weight:800;text-transform:capitalize;margin-bottom:4px">${sub.plan}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div>
+            <span style="background:${stBg};color:${stClr};padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:800">${stTxt}</span>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:1.3rem;font-weight:800">${daysLeft} <span style="font-size:.75rem;opacity:.75">days left</span></div>
+            <div style="font-size:.7rem;opacity:.65">Expires: ${sub.endDate ? new Date(sub.endDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</div>
+          </div>
+        </div>
+      </div>
+
+      ${isPending ? `
+      <!-- Pending verification notice -->
+      <div style="background:#FEF9E7;border:1.5px solid #F5D88A;border-radius:16px;padding:16px;margin-bottom:16px">
+        <div style="font-size:.9rem;font-weight:800;color:#B7500A;margin-bottom:6px">⏳ Payment Under Review</div>
+        <div style="font-size:.8rem;color:#4A6464">UTR: <strong>${sub.pendingPayment?.utrNumber||'—'}</strong></div>
+        <div style="font-size:.8rem;color:#4A6464">Amount: <strong>₹${sub.pendingPayment?.amount||'—'}</strong></div>
+        <div style="font-size:.75rem;color:#8AABAB;margin-top:4px">Submitted: ${sub.pendingPayment?.submittedAt ? new Date(sub.pendingPayment.submittedAt).toLocaleDateString('en-IN') : '—'}</div>
+        <div style="font-size:.75rem;color:#8AABAB;margin-top:4px">Admin will verify within 24 hours.</div>
+      </div>` : ''}
+
+      <!-- Plans -->
+      <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Choose a Plan</div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+        <!-- Monthly Plan -->
+        <div id="planCard_monthly" onclick="selectSubPlan('monthly')" style="
+          background:#fff;border-radius:16px;padding:16px;cursor:pointer;
+          border:2px solid #E0ECEC;transition:all .15s;
+          box-shadow:0 2px 8px rgba(0,0,0,.06)">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:.95rem;font-weight:800;color:#1A2E2E">Monthly Plan</div>
+              <div style="font-size:.75rem;color:#8AABAB;margin-top:2px">30 days • Full access</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:1.4rem;font-weight:800;color:#1A8C8C">₹${plans.monthly?.price || 299}</div>
+              <div style="font-size:.65rem;color:#8AABAB">per month</div>
+            </div>
+          </div>
+        </div>
+        <!-- Yearly Plan -->
+        <div id="planCard_yearly" onclick="selectSubPlan('yearly')" style="
+          background:#fff;border-radius:16px;padding:16px;cursor:pointer;
+          border:2px solid #E0ECEC;transition:all .15s;
+          box-shadow:0 2px 8px rgba(0,0,0,.06);position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;right:0;background:#27AE60;color:#fff;
+            font-size:.62rem;font-weight:800;padding:4px 12px;border-radius:0 0 0 12px">BEST VALUE</div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:.95rem;font-weight:800;color:#1A2E2E">Yearly Plan</div>
+              <div style="font-size:.75rem;color:#8AABAB;margin-top:2px">365 days • Save 30%</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:1.4rem;font-weight:800;color:#27AE60">₹${plans.yearly?.price || 2499}</div>
+              <div style="font-size:.65rem;color:#8AABAB">per year</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bank Details -->
+      <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Bank Transfer Details</div>
+      <div style="background:#fff;border-radius:16px;padding:16px;margin-bottom:16px;border:1px solid #E0ECEC">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div>
+            <div style="font-size:.65rem;color:#8AABAB;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Account Name</div>
+            <div style="font-size:.85rem;font-weight:700;color:#1A2E2E">${bank.accountName||'—'}</div>
+          </div>
+          <div>
+            <div style="font-size:.65rem;color:#8AABAB;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Account No.</div>
+            <div style="font-size:.85rem;font-weight:700;color:#1A2E2E">${bank.accountNumber||'—'}</div>
+          </div>
+          <div>
+            <div style="font-size:.65rem;color:#8AABAB;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">IFSC Code</div>
+            <div style="font-size:.85rem;font-weight:700;color:#1A2E2E">${bank.ifsc||'—'}</div>
+          </div>
+          <div>
+            <div style="font-size:.65rem;color:#8AABAB;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Bank</div>
+            <div style="font-size:.85rem;font-weight:700;color:#1A2E2E">${bank.bank||'—'}</div>
+          </div>
+        </div>
+        <!-- UPI -->
+        <div style="background:#F0FAFA;border-radius:12px;padding:12px;text-align:center;border:1px solid #C8DEDE">
+          <div style="font-size:.65rem;color:#8AABAB;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">UPI ID</div>
+          <div style="font-size:1rem;font-weight:800;color:#1A8C8C">${bank.upi||'—'}</div>
+          <button onclick="copyToClipboard('${bank.upi||''}')"
+            style="margin-top:8px;padding:6px 16px;background:#1A8C8C;color:#fff;border:none;
+              border-radius:10px;font-family:inherit;font-size:.75rem;font-weight:700;cursor:pointer">
+            📋 Copy UPI
+          </button>
+        </div>
+      </div>
+
+      <!-- Submit Payment Form -->
+      <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Submit Payment Proof</div>
+      <div style="background:#fff;border-radius:16px;padding:16px;margin-bottom:16px;border:1px solid #E0ECEC">
+        <div style="margin-bottom:12px">
+          <label style="display:block;font-size:.68rem;font-weight:800;color:#4A6464;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Selected Plan *</label>
+          <div id="selectedPlanDisplay"
+            style="background:#F0FAFA;border:1.5px solid #C8DEDE;border-radius:12px;padding:12px;
+              font-size:.9rem;font-weight:700;color:#1A8C8C;min-height:48px;
+              display:flex;align-items:center">
+            Tap a plan above to select
+          </div>
+        </div>
+        <div style="margin-bottom:12px">
+          <label style="display:block;font-size:.68rem;font-weight:800;color:#4A6464;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">UTR / Transaction Number *</label>
+          <input type="text" id="subUTR" placeholder="e.g. 123456789012"
+            style="width:100%;padding:13px 14px;border:1.5px solid #D5D5DF;border-radius:12px;
+              font-family:inherit;font-size:.95rem;color:#1A2E2E;background:#F0F5F5;
+              min-height:48px;-webkit-appearance:none;font-size:16px">
+        </div>
+        <div style="margin-bottom:12px">
+          <label style="display:block;font-size:.68rem;font-weight:800;color:#4A6464;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Amount Paid (₹) *</label>
+          <input type="number" id="subAmount" placeholder="e.g. 299"
+            inputmode="decimal"
+            style="width:100%;padding:13px 14px;border:1.5px solid #D5D5DF;border-radius:12px;
+              font-family:inherit;font-size:.95rem;color:#1A2E2E;background:#F0F5F5;
+              min-height:48px;-webkit-appearance:none;font-size:16px">
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="display:block;font-size:.68rem;font-weight:800;color:#4A6464;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Screenshot (optional)</label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <img id="subScreenPreview" src=""
+              style="width:60px;height:60px;border-radius:10px;object-fit:cover;
+                border:1.5px solid #E0ECEC;display:none">
+            <button onclick="document.getElementById('subScreenFile').click()"
+              style="padding:10px 16px;border:1.5px dashed #C8DEDE;border-radius:12px;
+                background:#F0FAFA;font-family:inherit;font-size:.82rem;font-weight:700;
+                color:#1A8C8C;cursor:pointer">
+              📎 Attach Screenshot
+            </button>
+          </div>
+          <input type="file" id="subScreenFile" accept="image/*" style="display:none"
+            onchange="previewSubScreen(this)">
+          <input type="hidden" id="subScreenData">
+        </div>
+        <button onclick="submitPaymentProof()"
+          style="width:100%;padding:15px;background:#1A8C8C;color:#fff;border:none;
+            border-radius:14px;font-family:inherit;font-size:.96rem;font-weight:800;
+            cursor:pointer;box-shadow:0 4px 14px rgba(26,140,140,.35);min-height:52px">
+          ✅ Submit Payment
+        </button>
+        <div style="font-size:.72rem;color:#8AABAB;text-align:center;margin-top:10px">
+          We verify payments within 24 hours. Your access continues until then.
+        </div>
+      </div>`;
+
+  } catch(e) {
+    wrap.innerHTML = '<div class="empty"><p style="color:#E74C3C">Error loading subscription</p></div>';
+  }
+}
+
+let _selectedSubPlan = null;
+
+function selectSubPlan(plan) {
+  _selectedSubPlan = plan;
+  // Highlight selected plan card
+  ['monthly','yearly'].forEach(p => {
+    const card = document.getElementById('planCard_' + p);
+    if (!card) return;
+    card.style.border = p === plan ? '2px solid #1A8C8C' : '2px solid #E0ECEC';
+    card.style.background = p === plan ? '#F0FAFA' : '#fff';
+  });
+  const prices = { monthly: 299, yearly: 2499 };
+  const labels = { monthly: 'Monthly — ₹299/month', yearly: 'Yearly — ₹2499/year (Save 30%)' };
+  const el = document.getElementById('selectedPlanDisplay');
+  if (el) {
+    el.textContent = labels[plan] || plan;
+    el.style.color = '#1A8C8C';
+  }
+  const amtEl = document.getElementById('subAmount');
+  if (amtEl && !amtEl.value) amtEl.value = prices[plan] || '';
+}
+
+function previewSubScreen(input) {
+  const f = input.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    document.getElementById('subScreenData').value = ev.target.result;
+    const prev = document.getElementById('subScreenPreview');
+    prev.src = ev.target.result;
+    prev.style.display = 'block';
+  };
+  r.readAsDataURL(f);
+}
+
+function copyToClipboard(text) {
+  if (!text) return;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => toast('UPI ID copied!', 'success'));
+  } else {
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    toast('UPI ID copied!', 'success');
+  }
+}
+
+async function submitPaymentProof() {
+  if (!_selectedSubPlan) { toast('Please select a plan first', 'error'); return; }
+  const utr    = document.getElementById('subUTR').value.trim();
+  const amount = document.getElementById('subAmount').value;
+  const screen = document.getElementById('subScreenData').value;
+
+  if (!utr)    { toast('Enter UTR / transaction number', 'error'); return; }
+  if (!amount) { toast('Enter the amount paid', 'error'); return; }
+
+  const btn = document.querySelector('[onclick="submitPaymentProof()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
+
+  try {
+    const res = await fetch(`${SAPI}/submit-payment`, {
+      method: 'POST',
+      headers: hdrs(),
+      body: JSON.stringify({
+        plan:       _selectedSubPlan,
+        utrNumber:  utr,
+        amount:     parseFloat(amount),
+        screenshot: screen
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      toast('✅ Payment submitted! Admin will verify within 24 hours.', 'success');
+      setTimeout(() => loadSubscriptionPage(), 1500);
+    } else {
+      toast(data.error || 'Submission failed', 'error');
+    }
+  } catch(e) {
+    toast('Network error', 'error');
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '✅ Submit Payment'; }
+}
+
 /* ── INIT & OFFLINE LOGIC ── */
 window.addEventListener('DOMContentLoaded', async () => {
   if (!checkAuth()) return;
@@ -1946,6 +2301,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 
   await loadServerProfile();
+
+  // ── Check subscription BEFORE loading any data ──
+  const subOk = await checkSubscription();
+  if (!subOk) return; // blocked — subscription wall is shown
 
   if (gymCfg.admissionFee) document.getElementById('mAdmFee').value = gymCfg.admissionFee;
 
