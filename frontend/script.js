@@ -1945,9 +1945,18 @@ let _subStatus = null; // cached subscription status
 
 async function checkSubscription() {
   try {
+    // ── Admin always gets full access — never blocked ──
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const u = JSON.parse(userStr);
+        if (u.role === 'admin') return { isActive: true, plan: 'admin', daysLeft: 9999 };
+      } catch(e) {}
+    }
+
     const res = await fetch(`${SAPI}/status`, { headers: hdrs() });
     if (res.status === 401) { logout(); return null; }
-    if (!res.ok) return null;
+    if (!res.ok) return { isActive: true }; // Don't block on server error
     const data = await res.json();
     _subStatus = data;
 
@@ -1965,7 +1974,7 @@ async function checkSubscription() {
     return data;
   } catch(e) {
     console.error('Subscription check error:', e);
-    return null; // Don't block on network error
+    return { isActive: true }; // Don't block on network error
   }
 }
 
@@ -1988,6 +1997,12 @@ function showSubWarningBanner(sub) {
 }
 
 function showSubscriptionWall(sub) {
+  // ── Admin is NEVER blocked by the wall ──
+  try {
+    const u = JSON.parse(localStorage.getItem('user') || '{}');
+    if (u.role === 'admin') return;
+  } catch(e) {}
+
   // Hide all pages
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   // Show subscription wall
@@ -2014,6 +2029,15 @@ async function loadSubscriptionPage() {
   const wrap = document.getElementById('subPageWrap');
   if (!wrap) return;
   wrap.innerHTML = '<div class="empty"><div class="ei">⏳</div><p>Loading…</p></div>';
+
+  // ── Admin sees management panel instead ──
+  try {
+    const u = JSON.parse(localStorage.getItem('user') || '{}');
+    if (u.role === 'admin') {
+      await loadAdminSubPanel(wrap);
+      return;
+    }
+  } catch(e) {}
 
   try {
     const res = await fetch(`${SAPI}/status`, { headers: hdrs() });
@@ -2224,6 +2248,226 @@ function previewSubScreen(input) {
     prev.style.display = 'block';
   };
   r.readAsDataURL(f);
+}
+
+/* ════════════════════════════════════════════════════════
+   ADMIN SUBSCRIPTION MANAGEMENT PANEL
+   ════════════════════════════════════════════════════════ */
+
+async function loadAdminSubPanel(wrap) {
+  wrap.innerHTML = '<div class="empty"><div class="ei">⏳</div><p>Loading subscriptions…</p></div>';
+  try {
+    const res = await fetch(`${SAPI}/all`, { headers: hdrs() });
+    if (!res.ok) throw new Error('Failed to load');
+    const subs = await res.json();
+
+    const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+
+    // Separate pending vs others
+    const pending = subs.filter(s => s.status === 'pending');
+    const others  = subs.filter(s => s.status !== 'pending');
+
+    let html = `
+      <!-- Admin Header -->
+      <div style="background:#1A8C8C;border-radius:18px;padding:16px;margin-bottom:14px;color:#fff;
+        display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:.7rem;opacity:.7;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Admin Panel</div>
+          <div style="font-size:1.1rem;font-weight:800">💳 Subscription Manager</div>
+          <div style="font-size:.75rem;opacity:.7;margin-top:3px">${subs.length} total users · ${pending.length} pending</div>
+        </div>
+        <button onclick="loadAdminSubPanel(document.getElementById('subPageWrap'))"
+          style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);
+            color:#fff;border-radius:12px;padding:8px 14px;font-family:inherit;
+            font-size:.78rem;font-weight:700;cursor:pointer">🔄 Refresh</button>
+      </div>`;
+
+    // ── Pending Payments (need action) ──
+    if (pending.length > 0) {
+      html += `<div style="font-size:.7rem;font-weight:800;color:#E74C3C;text-transform:uppercase;
+        letter-spacing:1px;margin-bottom:10px">
+        🔴 Pending Verification (${pending.length})
+      </div>`;
+
+      html += pending.map(sub => {
+        const user = sub.userId || {};
+        const proof = sub.paymentProof || {};
+        const planLabel = proof.notes || '—';
+        return `
+        <div style="background:#fff;border-radius:16px;margin-bottom:10px;
+          box-shadow:0 2px 10px rgba(0,0,0,.07);overflow:hidden;
+          border-left:4px solid #F39C12">
+          <!-- User info row -->
+          <div style="padding:14px 14px 10px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <div>
+                <div style="font-size:.9rem;font-weight:800;color:#1A2E2E">${esc(user.name||'Unknown')}</div>
+                <div style="font-size:.72rem;color:#8AABAB">${esc(user.email||'')}</div>
+              </div>
+              <span style="background:#FEF9E7;color:#F39C12;padding:3px 10px;
+                border-radius:20px;font-size:.65rem;font-weight:800">⏳ PENDING</span>
+            </div>
+            <!-- Payment details -->
+            <div style="background:#FEF9E7;border-radius:12px;padding:10px 12px;margin-bottom:10px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div>
+                  <div style="font-size:.6rem;color:#8AABAB;font-weight:700;text-transform:uppercase;margin-bottom:2px">Plan Requested</div>
+                  <div style="font-size:.82rem;font-weight:800;color:#B7500A;text-transform:capitalize">${planLabel}</div>
+                </div>
+                <div>
+                  <div style="font-size:.6rem;color:#8AABAB;font-weight:700;text-transform:uppercase;margin-bottom:2px">Amount Paid</div>
+                  <div style="font-size:.82rem;font-weight:800;color:#1A2E2E">₹${proof.amount||'—'}</div>
+                </div>
+                <div>
+                  <div style="font-size:.6rem;color:#8AABAB;font-weight:700;text-transform:uppercase;margin-bottom:2px">UTR Number</div>
+                  <div style="font-size:.8rem;font-weight:700;color:#1A2E2E;word-break:break-all">${esc(proof.utrNumber||'—')}</div>
+                </div>
+                <div>
+                  <div style="font-size:.6rem;color:#8AABAB;font-weight:700;text-transform:uppercase;margin-bottom:2px">Submitted</div>
+                  <div style="font-size:.75rem;font-weight:600;color:#4A6464">${fmtDate(proof.submittedAt)}</div>
+                </div>
+              </div>
+              ${proof.screenshot ? `
+              <div style="margin-top:8px">
+                <div style="font-size:.6rem;color:#8AABAB;font-weight:700;text-transform:uppercase;margin-bottom:4px">Payment Screenshot</div>
+                <img src="${proof.screenshot}" style="width:100%;max-height:180px;object-fit:contain;
+                  border-radius:8px;border:1px solid #E0ECEC;cursor:pointer"
+                  onclick="this.style.maxHeight=this.style.maxHeight==='none'?'180px':'none'">
+              </div>` : ''}
+            </div>
+            <!-- Plan selector for activation -->
+            <div style="margin-bottom:10px">
+              <div style="font-size:.65rem;font-weight:800;color:#4A6464;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Activate Plan</div>
+              <select id="activatePlan_${sub._id}"
+                style="width:100%;padding:11px 13px;border:1.5px solid #D5D5DF;border-radius:12px;
+                  font-family:inherit;font-size:.9rem;color:#1A2E2E;background:#F0F5F5;
+                  -webkit-appearance:none;appearance:none;min-height:46px;font-size:16px">
+                <option value="monthly" ${planLabel==='monthly'?'selected':''}>Monthly — 30 days (₹299)</option>
+                <option value="yearly"  ${planLabel==='yearly'?'selected':''}>Yearly — 365 days (₹2499)</option>
+                <option value="trial">Trial — 14 days (Free)</option>
+              </select>
+            </div>
+          </div>
+          <!-- Action buttons -->
+          <div style="display:flex;border-top:1px solid #F0F5F5">
+            <button onclick="activateSubscription('${sub._id}','${esc(user._id||'')}','${esc(user.name||'')}',true)"
+              style="flex:1;padding:12px;border:none;background:#27AE60;color:#fff;
+                font-family:inherit;font-size:.82rem;font-weight:800;cursor:pointer;
+                border-radius:0 0 0 12px;min-height:46px">
+              ✅ Approve & Activate
+            </button>
+            <button onclick="rejectSubscription('${sub._id}','${esc(user.name||'')}','${esc(user._id||'')}')"
+              style="flex:1;padding:12px;border:none;background:#E74C3C;color:#fff;
+                font-family:inherit;font-size:.82rem;font-weight:800;cursor:pointer;
+                border-radius:0 0 12px 0;min-height:46px;border-left:1px solid rgba(255,255,255,.2)">
+              ❌ Reject
+            </button>
+          </div>
+        </div>`;
+      }).join('');
+    } else {
+      html += `<div style="background:#E8F8EF;border-radius:16px;padding:14px;margin-bottom:14px;
+        text-align:center;border:1px solid #A8E6C0">
+        <div style="font-size:1.2rem;margin-bottom:4px">✅</div>
+        <div style="font-size:.85rem;font-weight:700;color:#27AE60">No pending payments</div>
+      </div>`;
+    }
+
+    // ── All Subscriptions list ──
+    if (others.length > 0) {
+      html += `<div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;
+        letter-spacing:1px;margin-bottom:10px;margin-top:6px">All Users (${others.length})</div>`;
+
+      html += others.map(sub => {
+        const user = sub.userId || {};
+        const stClr = sub.status==='active'?'#27AE60':sub.status==='expired'?'#E74C3C':'#F39C12';
+        const stBg  = sub.status==='active'?'#E8F8EF':sub.status==='expired'?'#FEECEB':'#FEF9E7';
+        const daysLeft = sub.endDate ? Math.max(0, Math.ceil((new Date(sub.endDate)-new Date())/86400000)) : 0;
+        return `
+        <div style="background:#fff;border-radius:14px;margin-bottom:8px;
+          box-shadow:0 1px 6px rgba(0,0,0,.06);overflow:hidden;
+          border-left:3px solid ${stClr}">
+          <div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.85rem;font-weight:800;color:#1A2E2E;
+                overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(user.name||'Unknown')}</div>
+              <div style="font-size:.7rem;color:#8AABAB;margin-top:1px;
+                overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(user.email||'')}</div>
+              <div style="font-size:.7rem;color:#4A6464;margin-top:3px">
+                <span style="text-transform:capitalize">${sub.plan}</span>
+                · ${daysLeft} days left
+                · Expires ${fmtDate(sub.endDate)}
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+              <span style="background:${stBg};color:${stClr};padding:3px 9px;
+                border-radius:20px;font-size:.62rem;font-weight:800;text-transform:capitalize">
+                ${sub.status}
+              </span>
+              <button onclick="showAdminExtendModal('${sub._id}','${esc(user._id||'')}','${esc(user.name||'')}')"
+                style="padding:5px 11px;background:#E8F7F7;color:#1A8C8C;border:none;
+                  border-radius:8px;font-family:inherit;font-size:.7rem;font-weight:700;
+                  cursor:pointer;min-height:30px">
+                ✏️ Extend
+              </button>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    wrap.innerHTML = html;
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty"><p style="color:#E74C3C">Error: ${e.message}</p>
+      <button onclick="loadAdminSubPanel(document.getElementById('subPageWrap'))"
+        class="btn btn-primary" style="margin-top:12px">🔄 Retry</button></div>`;
+  }
+}
+
+async function activateSubscription(subId, userId, userName, isPending) {
+  const planEl = document.getElementById('activatePlan_' + subId);
+  const plan   = planEl ? planEl.value : 'monthly';
+  if (!confirm(`Activate ${plan} plan for ${userName}?`)) return;
+  try {
+    const res = await fetch(`${SAPI}/activate`, {
+      method: 'POST',
+      headers: hdrs(),
+      body: JSON.stringify({ userId, plan })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      toast(`✅ ${userName} — ${plan} plan activated!`, 'success');
+      setTimeout(() => loadAdminSubPanel(document.getElementById('subPageWrap')), 800);
+    } else {
+      toast(data.error || 'Activation failed', 'error');
+    }
+  } catch(e) {
+    toast('Network error', 'error');
+  }
+}
+
+async function rejectSubscription(subId, userName, userId) {
+  if (!confirm(`Reject payment from ${userName}? This will reset their status to expired.`)) return;
+  try {
+    const res = await fetch(`${SAPI}/reject`, {
+      method: 'POST',
+      headers: hdrs(),
+      body: JSON.stringify({ userId })
+    });
+    if (res.ok) {
+      toast(`❌ ${userName} — payment rejected`, 'success');
+      setTimeout(() => loadAdminSubPanel(document.getElementById('subPageWrap')), 800);
+    } else {
+      const d = await res.json();
+      toast(d.error || 'Failed', 'error');
+    }
+  } catch(e) { toast('Network error','error'); }
+}
+
+function showAdminExtendModal(subId, userId, userName) {
+  // Simple extend via prompt for now
+  const plan = confirm(`Click OK for Monthly (30d), Cancel for Yearly (365d)`) ? 'monthly' : 'yearly';
+  activateSubscription(subId, userId, userName, false);
 }
 
 function copyToClipboard(text) {
