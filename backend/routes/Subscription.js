@@ -161,4 +161,23 @@ router.get('/all', verifyToken, async (req, res) => {
   }
 });
 
+// ── POST: Admin rejects a pending payment ──
+router.post('/reject', verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin only' });
+    }
+    const { userId } = req.body;
+    const sub = await Subscription.findOne({ userId });
+    if (!sub) return res.status(404).json({ error: 'Subscription not found' });
+
+    sub.status = 'expired';
+    sub.paymentProof = { utrNumber:'', amount:0, screenshot:'', notes:'rejected' };
+    await sub.save();
+    res.json({ message: 'Payment rejected. User status set to expired.' });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = { router, PLANS };
