@@ -17,7 +17,10 @@ const requireSub = require('./middleware/subscriptionMiddleware');
 
 // ── Public routes (no subscription check) ──
 app.use('/api/auth', authRouter);
-app.use('/api/subscription', require('./routes/subscription').router);
+app.use('/api/subscription', require('./routes/Subscription'));  // FIXED: removed .router
+
+// ── Plans route (should be public or gated? making public for now)
+app.use('/api/plans', require('./routes/plans'));
 
 // ── Health check (public) ──
 app.get('/api/health', (req, res) => {
@@ -33,7 +36,11 @@ app.use('/api/attendance', requireSub, require('./routes/attendance'));
 const frontendPath = path.join(__dirname, '..', 'frontend');
 app.use(express.static(frontendPath));
 app.get('/', (req, res) => res.sendFile(path.join(frontendPath, 'index.html')));
-app.get('*', (req, res) => res.sendFile(path.join(frontendPath, 'index.html')));
+app.get('*', (req, res) => {
+  if (!req.path.startsWith('/api')) {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  }
+});
 
 // ── Database ──
 const PORT      = process.env.PORT      || 5000;
@@ -47,6 +54,7 @@ app.listen(PORT, () => {
   console.log(`\n🚀 GymPro Server running on port ${PORT}`);
   console.log(`🔐 Auth:         /api/auth`);
   console.log(`💳 Subscription: /api/subscription`);
+  console.log(`💎 Plans:        /api/plans`);
   console.log(`📁 Members:      /api/members  [subscription gated]`);
   console.log(`📁 Trainers:     /api/trainers [subscription gated]`);
   console.log(`📅 Attendance:   /api/attendance [subscription gated]\n`);
