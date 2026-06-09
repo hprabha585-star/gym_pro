@@ -43,7 +43,10 @@ function logout() { localStorage.removeItem('token'); localStorage.removeItem('u
     const res = await _orig(...args);
     if (res.status === 402) {
       res.clone().json().then(d => {
-        if (d.error === 'subscription_expired') showSubscriptionWall(d);
+        if (d && d.error === 'subscription_expired') {
+          // Only show wall, NEVER logout
+          showSubscriptionWall(d);
+        }
       }).catch(()=>{});
     }
     return res;
@@ -1944,37 +1947,63 @@ async function saveSettings() {
 let _subStatus = null; // cached subscription status
 
 async function checkSubscription() {
+  // ── Admin always bypasses — check localStorage role ──
   try {
-    // ── Admin always gets full access — never blocked ──
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const u = JSON.parse(userStr);
-        if (u.role === 'admin') return { isActive: true, plan: 'admin', daysLeft: 9999 };
-      } catch(e) {}
+    const u = JSON.parse(localStorage.getItem('user') || '{}');
+    if (u.role === 'admin' || u.email === 'hprabha585@gmail.com') {
+      return { isActive: true, plan: 'admin', daysLeft: 9999 };
+    }
+  } catch(e) {}
+
+  // ── Try to get subscription status from server ──
+  // If ANYTHING fails — don't block the user (graceful degradation)
+  try {
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 8000); // 8s timeout
+
+    const res = await fetch(`${SAPI}/status`, {
+      headers: hdrs(),
+      signal: ctrl.signal
+    });
+
+    // 401 means token expired — but don't auto-logout, just skip sub check
+    if (res.status === 401) {
+      console.warn('Subscription: 401 — token may be expired');
+      return { isActive: true }; // Let auth middleware handle it
     }
 
-    const res = await fetch(`${SAPI}/status`, { headers: hdrs() });
-    if (res.status === 401) { logout(); return null; }
-    if (!res.ok) return { isActive: true }; // Don't block on server error
+    // Any other server error — don't block
+    if (!res.ok) {
+      console.warn('Subscription server error:', res.status);
+      return { isActive: true };
+    }
+
     const data = await res.json();
     _subStatus = data;
 
-    // If expired/pending — show subscription wall
-    if (!data.isActive) {
+    // Only show wall if clearly expired AND server confirmed it
+    if (data.isActive === false && data.status === 'expired') {
       showSubscriptionWall(data);
       return null;
     }
 
-    // Show warning banner if trial or expiring soon
-    if (data.plan === 'trial' || data.daysLeft <= 7) {
+    // Pending — show wall with pending message
+    if (data.isActive === false && data.status === 'pending') {
+      showSubscriptionWall(data);
+      return null;
+    }
+
+    // Show warning banner if trial or expiring soon (≤7 days)
+    if (data.isActive && (data.plan === 'trial' || data.daysLeft <= 7)) {
       showSubWarningBanner(data);
     }
 
     return data;
+
   } catch(e) {
-    console.error('Subscription check error:', e);
-    return { isActive: true }; // Don't block on network error
+    // Network error, timeout, route not found — NEVER block
+    console.warn('Subscription check skipped:', e.message);
+    return { isActive: true };
   }
 }
 
@@ -2546,9 +2575,10 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   await loadServerProfile();
 
-  // ── Check subscription BEFORE loading any data ──
+  // ── Check subscription (non-blocking) ──
+  // Only stops init if subscription is CONFIRMED expired by server
   const subOk = await checkSubscription();
-  if (!subOk) return; // blocked — subscription wall is shown
+  if (subOk === null) return; // null = confirmed expired/pending, show wall
 
   if (gymCfg.admissionFee) document.getElementById('mAdmFee').value = gymCfg.admissionFee;
 
