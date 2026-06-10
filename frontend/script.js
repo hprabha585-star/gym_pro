@@ -50,10 +50,14 @@ async function loadServerProfile() {
       if (d.disc) gymDisc = d.disc;
     }
     localStorage.setItem('gymProfile_cache', JSON.stringify({ plans: gymPlans, cfg: gymCfg, disc: gymDisc }));
-    // Refresh plans/discounts UI if visible
-    populatePlanSelect(); populatePlanSelect('ePlan');
+    
+    // Refresh UI elements after data loads
+    populatePlanSelect();
+    populatePlanSelect('ePlan');
+    populatePlanSelect('payPlan');
     if (document.getElementById('page-plans')?.classList.contains('active')) loadPlans();
     if (document.getElementById('page-discounts')?.classList.contains('active')) renderDiscounts();
+    if (document.getElementById('page-settings')?.classList.contains('active')) loadSettings();
   } catch(e) {
     const cached = localStorage.getItem('gymProfile_cache');
     if (cached) {
@@ -62,6 +66,10 @@ async function loadServerProfile() {
         if (d.plans && d.plans.length) gymPlans = d.plans;
         if (d.cfg)  gymCfg  = d.cfg;
         if (d.disc) gymDisc = d.disc;
+        populatePlanSelect();
+        populatePlanSelect('ePlan');
+        if (document.getElementById('page-plans')?.classList.contains('active')) loadPlans();
+        if (document.getElementById('page-discounts')?.classList.contains('active')) renderDiscounts();
       } catch(_) {}
     }
   }
@@ -193,6 +201,14 @@ function updateBNav(id) {
   document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
   if (id !== 'none') document.getElementById(`bn-${id}`)?.classList.add('active');
 }
+
+/* ── FIX: Add missing loadSubscriptionPage function ── */
+function loadSubscriptionPage() {
+  // Subscription page not implemented in UI, just redirect or show message
+  console.log('Subscription page not implemented');
+  toast('Subscription features coming soon', 'info');
+}
+
 function showPage(page, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(l => l.classList.remove('active'));
@@ -492,15 +508,15 @@ function renderDashTable(membersList) {
             </div>
           </div>
         </div>
-      </td>
+       </td>
       <td style="padding:10px 12px 10px 6px;vertical-align:middle;text-align:right;white-space:nowrap">
         <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end;margin-bottom:5px">
           <span style="width:8px;height:8px;border-radius:50%;background:${expColor};flex-shrink:0"></span>
           <span style="font-size:.78rem;font-weight:700;color:#1A2E2E">${expLabel}</span>
         </div>
         <span style="background:${sb};color:${sc};padding:3px 10px;border-radius:20px;font-size:.65rem;font-weight:800">${esc(m.status||'')}</span>
-      </td>
-    </tr>`;
+       </td>
+     </tr>`;
   }).join('');
 }
 
@@ -1040,7 +1056,7 @@ async function loadAttendance() {
   const date   = dateEl.value || getLocalTodayStr();
   dateEl.value = date;
   const tbody  = document.getElementById('attBody');
-  tbody.innerHTML = '<tr><td colspan="2"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr>';
+  tbody.innerHTML = '<tr><td colspan="2"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div><tr></tr>';
 
   try {
     // Step 1: Load members + attendance in parallel
@@ -1081,15 +1097,15 @@ async function loadAttendance() {
               <div style="font-size:.7rem;color:#4A6464;margin-top:2px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.plan || '')}</div>
             </div>
           </div>
-        </td>
+         </td>
         <td style="padding:10px 12px 10px 4px;vertical-align:middle;text-align:right">
           <div id="ab-${m._id}" style="display:inline-block;padding:4px 11px;border-radius:20px;font-size:.72rem;font-weight:800;margin-bottom:6px;background:${isP?'#E8F8EF':'#FEECEB'};color:${isP?'#27AE60':'#E74C3C'}">${st}</div>
           <div style="display:flex;gap:5px;justify-content:flex-end">
             <button onclick="markAtt('${m._id}','${date}','Present')" style="padding:6px 12px;border-radius:20px;border:none;background:#E8F8EF;color:#27AE60;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;min-height:36px;-webkit-tap-highlight-color:transparent">✓ P</button>
             <button onclick="markAtt('${m._id}','${date}','Absent')"  style="padding:6px 12px;border-radius:20px;border:none;background:#FEECEB;color:#E74C3C;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;min-height:36px;-webkit-tap-highlight-color:transparent">✗ A</button>
           </div>
-        </td>
-      </tr>`;
+         </td>
+       </tr>`;
     }).join('');
 
   } catch(e) {
@@ -1549,34 +1565,44 @@ document.getElementById('addTrainerForm').addEventListener('submit', async e=>{
 function loadPlans() {
   const wrap = document.getElementById('plansListWrap');
   if (!wrap) return;
+  
+  // Ensure we have plans (fallback to default if empty)
+  if (!gymPlans.length) {
+    gymPlans = [...DEFAULT_PLANS];
+  }
+  
   if (!gymPlans.length) {
     wrap.innerHTML = '<div class="empty"><div class="ei">💎</div><p>No plans yet. Add your first plan!</p></div>';
     return;
   }
+  
   const plans = gymPlans.map(p => {
-    let disc=p.price, discInfo=null;
+    let disc = p.price, discInfo = null;
     for (const d of gymDisc) {
       if (!d.validUntil || new Date(d.validUntil) >= new Date()) {
-        if (d.appliesTo==='all' || d.planName===p.name) {
-          if (d.type==='percentage') { disc=p.price-p.price*d.value/100; discInfo=`${d.value}% OFF`; }
-          else { disc=Math.max(0,p.price-d.value); discInfo=`₹${d.value} OFF`; }
+        if (d.appliesTo === 'all' || d.planName === p.name) {
+          if (d.type === 'percentage') {
+            disc = p.price - p.price * d.value / 100;
+            discInfo = `${d.value}% OFF`;
+          } else {
+            disc = Math.max(0, p.price - d.value);
+            discInfo = `₹${d.value} OFF`;
+          }
           break;
         }
       }
     }
-    return {...p, disc:Math.round(disc), discInfo};
+    return { ...p, disc: Math.round(disc), discInfo };
   });
-
-  // Duration colour map
-  const durClr = m => m<=1?'#1A8C8C':m<=3?'#27AE60':m<=6?'#F39C12':'#8E44AD';
-
+  
+  const durClr = m => m <= 1 ? '#1A8C8C' : m <= 3 ? '#27AE60' : m <= 6 ? '#F39C12' : '#8E44AD';
+  
   wrap.innerHTML = plans.map((p, idx) => `
     <div style="background:#fff;border-radius:16px;margin-bottom:10px;
       box-shadow:0 2px 10px rgba(0,0,0,.06);overflow:hidden;
       border-left:4px solid ${durClr(p.months)};
       animation:pageIn .2s ${idx*0.05}s both">
       <div style="padding:14px 14px 12px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
-        <!-- Left: Name + duration -->
         <div style="flex:1;min-width:0">
           <div style="font-size:.88rem;font-weight:800;color:#1A2E2E;margin-bottom:5px;
             overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</div>
@@ -1590,7 +1616,6 @@ function loadPlans() {
               🏷️ ${p.discInfo}</span>` : ''}
           </div>
         </div>
-        <!-- Right: Price -->
         <div style="text-align:right;flex-shrink:0">
           ${p.discInfo ? `<div style="font-size:.72rem;text-decoration:line-through;color:#8AABAB;font-weight:600">₹${p.price.toLocaleString('en-IN')}</div>` : ''}
           <div style="font-size:1.4rem;font-weight:800;color:${durClr(p.months)};line-height:1">
@@ -1599,7 +1624,6 @@ function loadPlans() {
           <div style="font-size:.6rem;color:#8AABAB;margin-top:2px">per plan</div>
         </div>
       </div>
-      <!-- Action strip -->
       <div style="display:flex;border-top:1px solid #F0F5F5;background:#FAFFFE">
         <button onclick="selectPlan('${esc(p.name)}')"
           style="flex:1;padding:10px;border:none;background:transparent;
@@ -1681,17 +1705,20 @@ function removePlan(name) {
    ══════════════════════════════════════════════ */
 function renderDiscounts() {
   const wrap = document.getElementById('discTable');
+  if (!wrap) return;
+  
   if (!gymDisc.length) {
     wrap.innerHTML = '<div class="empty"><div class="ei">🏷️</div><p>No discounts yet. Add one!</p></div>';
     return;
   }
+  
   wrap.innerHTML = gymDisc.map((d, i) => {
     const expired = d.validUntil && new Date(d.validUntil) < new Date();
-    const valStr  = d.type==='percentage' ? `${d.value}% OFF` : `₹${d.value.toLocaleString('en-IN')} OFF`;
+    const valStr  = d.type === 'percentage' ? `${d.value}% OFF` : `₹${d.value.toLocaleString('en-IN')} OFF`;
     return `
     <div style="background:#fff;border-radius:16px;margin-bottom:10px;
       box-shadow:0 2px 10px rgba(0,0,0,.06);overflow:hidden;
-      border-left:4px solid ${expired?'#95A5A6':'#F39C12'}">
+      border-left:4px solid ${expired ? '#95A5A6' : '#F39C12'}">
       <div style="padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div style="flex:1;min-width:0">
           <div style="font-size:.88rem;font-weight:800;color:#1A2E2E;margin-bottom:5px">${esc(d.name)}</div>
@@ -1700,11 +1727,11 @@ function renderDiscounts() {
               border-radius:20px;font-size:.7rem;font-weight:800">${valStr}</span>
             <span style="background:#F0F5F5;color:#4A6464;padding:3px 10px;
               border-radius:20px;font-size:.68rem;font-weight:700">
-              ${d.appliesTo==='all'?'All Plans':esc(d.planName||'')}
+              ${d.appliesTo === 'all' ? 'All Plans' : esc(d.planName || '')}
             </span>
-            ${d.validUntil?`<span style="background:${expired?'#FEECEB':'#E8F8EF'};color:${expired?'#E74C3C':'#27AE60'};
+            ${d.validUntil ? `<span style="background:${expired ? '#FEECEB' : '#E8F8EF'};color:${expired ? '#E74C3C' : '#27AE60'};
               padding:3px 10px;border-radius:20px;font-size:.68rem;font-weight:700">
-              ${expired?'Expired':'Until'}: ${fmt(d.validUntil)}</span>`:''}
+              ${expired ? 'Expired' : 'Until'}: ${fmt(d.validUntil)}</span>` : ''}
           </div>
         </div>
         <button onclick="removeDiscount(${i})"
@@ -1909,19 +1936,30 @@ async function confirmPayment() {
 
 /* ── SETTINGS ── */
 function loadSettings() {
-  document.getElementById('sUpiId').value   = gymCfg.upiId    || '';
-  document.getElementById('sUpiName').value = gymCfg.upiName  || '';
-  document.getElementById('sAdmFee').value  = gymCfg.admissionFee != null ? gymCfg.admissionFee : '';
-  document.getElementById('sPtFee').value   = gymCfg.ptFee    != null ? gymCfg.ptFee    : '';
+  const upiIdEl = document.getElementById('sUpiId');
+  const upiNameEl = document.getElementById('sUpiName');
+  const admFeeEl = document.getElementById('sAdmFee');
+  const ptFeeEl = document.getElementById('sPtFee');
+  
+  if (upiIdEl) upiIdEl.value = gymCfg.upiId || '';
+  if (upiNameEl) upiNameEl.value = gymCfg.upiName || '';
+  if (admFeeEl) admFeeEl.value = gymCfg.admissionFee != null ? gymCfg.admissionFee : '';
+  if (ptFeeEl) ptFeeEl.value = gymCfg.ptFee != null ? gymCfg.ptFee : '';
 }
 
 async function saveSettings() {
-  gymCfg.upiId        = document.getElementById('sUpiId').value.trim();
-  gymCfg.upiName      = document.getElementById('sUpiName').value.trim();
-  gymCfg.admissionFee = parseFloat(document.getElementById('sAdmFee').value)||0;
-  gymCfg.ptFee        = parseFloat(document.getElementById('sPtFee').value)||0;
+  const upiId = document.getElementById('sUpiId')?.value.trim() || '';
+  const upiName = document.getElementById('sUpiName')?.value.trim() || '';
+  const admissionFee = parseFloat(document.getElementById('sAdmFee')?.value) || 0;
+  const ptFee = parseFloat(document.getElementById('sPtFee')?.value) || 0;
+  
+  gymCfg.upiId = upiId;
+  gymCfg.upiName = upiName;
+  gymCfg.admissionFee = admissionFee;
+  gymCfg.ptFee = ptFee;
+  
   await saveServerProfile();
-  toast('Settings saved & synced!','success');
+  toast('Settings saved & synced!', 'success');
 }
 
 /* ── INIT & OFFLINE LOGIC ── */
