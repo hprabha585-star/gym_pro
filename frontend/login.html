@@ -142,6 +142,7 @@
     }
     .message.error   { background: #FFF0F0; color: var(--red); border: 1px solid #FECDD5; display: block; }
     .message.success { background: #EDFBF3; color: #1A6B3C; border: 1px solid #A7F3D0; display: block; }
+    .message.info    { background: #E3F2FD; color: #1565C0; border: 1px solid #BBDEFB; display: block; }
 
     /* Form */
     .form-group { margin-bottom: .9rem; }
@@ -251,12 +252,12 @@
     </div>
 
     <div class="demo-hint">
-      💡 First time? <strong>Register an Admin account</strong> to get started.
+      💡 First time? <strong>Register an Admin account</strong> to get started.<br>
+      ℹ️ New registrations require admin approval.
     </div>
   </div>
 
   <script>
-    /* ── Identical logic to original login.html — zero changes ── */
     const API_URL = 'https://gym-pro-mvyv.onrender.com/api/auth';
     let isLogin = true;
 
@@ -268,7 +269,7 @@
         b.classList.toggle('active', (i === 0) === isLogin));
       document.getElementById('name-field').classList.toggle('hidden-field', isLogin);
       document.getElementById('role-field').classList.toggle('hidden-field', isLogin);
-      document.getElementById('submit-btn').textContent = isLogin ? 'Login' : 'Create Account';
+      document.getElementById('submit-btn').textContent = isLogin ? 'Login' : 'Request Access';
       document.getElementById('msg').className = 'message';
     }
 
@@ -290,7 +291,7 @@
       if (!email || !password) {
         showMsg('Please fill all required fields.', 'error');
         btn.disabled = false;
-        btn.textContent = isLogin ? 'Login' : 'Create Account';
+        btn.textContent = isLogin ? 'Login' : 'Request Access';
         return;
       }
 
@@ -306,7 +307,7 @@
       if (!isLogin && !body.name) {
         showMsg('Please enter your name.', 'error');
         btn.disabled = false;
-        btn.textContent = 'Create Account';
+        btn.textContent = 'Request Access';
         return;
       }
 
@@ -319,19 +320,25 @@
         const data = await res.json();
 
         if (res.ok) {
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('user',  JSON.stringify(data.user));
-          showMsg(isLogin ? 'Login successful! Redirecting…' : 'Account created! Redirecting…', 'success');
-          setTimeout(() => window.location.href = '/', 1000);
+          if (data.pendingApproval) {
+            showMsg('✅ Registration request submitted! Waiting for admin approval. You will be notified when approved.', 'success');
+            document.getElementById('auth-form').reset();
+            setMode('login');
+          } else {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user',  JSON.stringify(data.user));
+            showMsg(isLogin ? 'Login successful! Redirecting…' : 'Account created! Redirecting…', 'success');
+            setTimeout(() => window.location.href = '/', 1000);
+          }
         } else {
           showMsg(data.error || data.message || 'Authentication failed. Try again.', 'error');
           btn.disabled = false;
-          btn.textContent = isLogin ? 'Login' : 'Create Account';
+          btn.textContent = isLogin ? 'Login' : 'Request Access';
         }
       } catch (err) {
         showMsg('Network error. Check your connection.', 'error');
         btn.disabled = false;
-        btn.textContent = isLogin ? 'Login' : 'Create Account';
+        btn.textContent = isLogin ? 'Login' : 'Request Access';
       }
     });
   </script>
