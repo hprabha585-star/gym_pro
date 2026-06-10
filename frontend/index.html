@@ -57,9 +57,7 @@
     <button class="nav-btn" onclick="showPage('settings',this);updateBNav('none')" data-page="settings">
       <span class="ni">⚙️</span>Settings
     </button>
-    <button class="nav-btn" onclick="showPage('subscription',this);updateBNav('none')" data-page="subscription">
-      <span class="ni">💳</span>Subscription
-    </button>
+
   </div>
 
   <div class="sb-foot">
@@ -78,12 +76,6 @@
 
 <div id="offline-banner">⚠️ You are offline — viewing saved data.</div>
 
-<!-- Subscription warning banner -->
-<div id="subWarningBanner" style="display:none;background:#F39C12;color:#fff;
-  padding:9px 14px;font-size:.78rem;font-weight:800;
-  position:fixed;top:calc(56px + env(safe-area-inset-top,0px));
-  left:0;right:0;z-index:999;
-  display:none;align-items:center;gap:8px;justify-content:space-between"></div>
 
 <!-- ═══════════════════════════════ BOTTOM NAV ═══════════════════════════════ -->
 <nav class="bottom-nav">
@@ -445,46 +437,7 @@
     </div>
   </div>
 
-  <!-- ─────────────── SUBSCRIPTION PAGE ─────────────── -->
-  <div id="page-subscription" class="page">
-    <div id="subPageWrap">
-      <div class="empty"><div class="ei">⏳</div><p>Loading subscription…</p></div>
-    </div>
-  </div>
-
 </main>
-
-<!-- ════════════ SUBSCRIPTION WALL (blocks access when expired) ════════════ -->
-<div id="subscriptionWall" style="display:none;position:fixed;inset:0;
-  background:#F0F5F5;z-index:9999;flex-direction:column;
-  align-items:center;justify-content:center;padding:2rem 1.5rem;
-  text-align:center">
-  <div style="font-size:3rem;margin-bottom:1rem">🔒</div>
-  <div style="font-size:1.2rem;font-weight:800;color:#1A2E2E;margin-bottom:.5rem" id="wallTitle">Subscription Expired</div>
-  <div style="font-size:.85rem;color:#4A6464;max-width:320px;line-height:1.6;margin-bottom:.5rem" id="wallMsg">
-    Your subscription has expired. Renew to continue using GymPro.
-  </div>
-  <div style="font-size:.78rem;font-weight:800;padding:4px 14px;border-radius:20px;
-    background:#FEECEB;margin-bottom:1.5rem" id="wallStatus">Expired</div>
-  <button id="wallRenewBtn" onclick="
-    document.getElementById('subscriptionWall').style.display='none';
-    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-    document.getElementById('page-subscription').classList.add('active');
-    document.getElementById('pageTitle').textContent='Subscription';
-    loadSubscriptionPage();"
-    style="width:100%;max-width:320px;padding:15px;background:#1A8C8C;color:#fff;
-      border:none;border-radius:14px;font-family:inherit;font-size:.96rem;
-      font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(26,140,140,.35);
-      margin-bottom:.75rem;min-height:52px">
-    💳 Renew Subscription
-  </button>
-  <button onclick="logout()"
-    style="width:100%;max-width:320px;padding:13px;background:transparent;
-      color:#8AABAB;border:1.5px solid #D5D5DF;border-radius:14px;
-      font-family:inherit;font-size:.88rem;font-weight:700;cursor:pointer">
-    🚪 Logout
-  </button>
-</div>
 
 <!-- ════════════ EDIT TRAINER MODAL ════════════ -->
 <div class="modal" id="editTrainerModal">
