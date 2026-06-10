@@ -29,12 +29,35 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  isApproved: {
+    type: Boolean,
+    default: false
+  },
+  approvedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  approvedByName: {
+    type: String,
+    default: ''
+  },
+  approvedAt: {
+    type: Date
+  },
   lastLogin: {
     type: Date
   },
   gymData: {
     type: String,
     default: '{}'
+  },
+  pendingApproval: {
+    type: Boolean,
+    default: true
+  },
+  rejectionReason: {
+    type: String,
+    default: ''
   }
 }, {
   timestamps: true
