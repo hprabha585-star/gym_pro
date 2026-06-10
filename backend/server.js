@@ -19,6 +19,7 @@ app.use('/api/auth',       authRoutes.router);
 app.use('/api/members',    require('./routes/members'));
 app.use('/api/trainers',   require('./routes/trainers'));
 app.use('/api/attendance', require('./routes/attendance'));
+app.use('/api/admin',      require('./routes/admin'));
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -44,5 +45,6 @@ app.listen(PORT, () => {
   console.log(`🔐 Auth:       /api/auth`);
   console.log(`📁 Members:    /api/members`);
   console.log(`📁 Trainers:   /api/trainers`);
-  console.log(`📅 Attendance: /api/attendance\n`);
+  console.log(`📅 Attendance: /api/attendance`);
+  console.log(`👑 Admin:      /api/admin\n`);
 });
