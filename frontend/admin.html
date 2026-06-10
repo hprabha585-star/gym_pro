@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1A8C8C">
+  <title>Admin Panel - GymPro</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'DM Sans', -apple-system, 'Helvetica Neue', sans-serif;
+      background: #F0F5F5;
+      color: #1A2E2E;
+      padding: 20px;
+      padding-bottom: 40px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .container { max-width: 800px; margin: 0 auto; }
+    .header {
+      background: linear-gradient(135deg, #1A8C8C, #156F6F);
+      color: #fff;
+      padding: 24px 20px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(26,140,140,.25);
+    }
+    .header h1 { font-size: 1.6rem; margin-bottom: 6px; font-weight: 800; letter-spacing: -0.3px; }
+    .header p { font-size: .85rem; opacity: 0.85; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: #fff;
+      padding: 18px 16px;
+      border-radius: 16px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,.05);
+      border: 1px solid #E0ECEC;
+    }
+    .stat-number { font-size: 2rem; font-weight: 800; color: #1A8C8C; line-height: 1; }
+    .stat-label { font-size: .72rem; color: #8AABAB; margin-top: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .section {
+      background: #fff;
+      border-radius: 20px;
+      margin-bottom: 20px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,.04);
+      border: 1px solid #E0ECEC;
+    }
+    .section-title {
+      padding: 16px 18px;
+      background: #F8FFFE;
+      border-bottom: 1.5px solid #E0ECEC;
+      font-weight: 800;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .user-item {
+      padding: 16px 18px;
+      border-bottom: 1px solid #E0ECEC;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .user-item:last-child { border-bottom: none; }
+    .user-info h4 { font-size: .92rem; font-weight: 800; margin-bottom: 5px; color: #1A2E2E; }
+    .user-info p { font-size: .74rem; color: #8AABAB; margin-top: 2px; }
+    .badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: .68rem;
+      font-weight: 700;
+      display: inline-block;
+    }
+    .badge-pending { background: #FEF9E7; color: #F39C12; }
+    .badge-approved { background: #E8F8EF; color: #27AE60; }
+    .badge-rejected { background: #FEECEB; color: #E74C3C; }
+    .badge-active { background: #E8F8EF; color: #27AE60; }
+    .badge-inactive { background: #F3F4F6; color: #6B7280; }
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 12px;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: .78rem;
+      cursor: pointer;
+      transition: all .2s;
+      min-height: 36px;
+    }
+    .btn:active { transform: scale(.96); }
+    .btn-approve { background: #27AE60; color: #fff; }
+    .btn-reject { background: #E74C3C; color: #fff; }
+    .btn-ghost { background: #F0F5F5; color: #4A6464; border: 1px solid #E0ECEC; }
+    .btn-sm { padding: 6px 12px; font-size: .72rem; }
+    .empty { text-align: center; padding: 50px 20px; color: #8AABAB; }
+    .empty .ei { font-size: 2.5rem; margin-bottom: 10px; }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 16px;
+      color: #1A8C8C;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: .88rem;
+      padding: 8px 0;
+    }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      background: #1A2E2E;
+      color: #fff;
+      padding: 14px 18px;
+      border-radius: 14px;
+      text-align: center;
+      font-weight: 700;
+      font-size: .85rem;
+      transform: translateY(120px);
+      transition: transform .3s cubic-bezier(.22,1,.36,1);
+      z-index: 1000;
+      box-shadow: 0 4px 20px rgba(0,0,0,.2);
+    }
+    .toast.show { transform: translateY(0); }
+    .toast.success { background: #27AE60; }
+    .toast.error { background: #E74C3C; }
+    .role-badge {
+      font-size: .65rem;
+      padding: 3px 8px;
+      border-radius: 12px;
+      background: #1A8C8C;
+      color: #fff;
+      display: inline-block;
+      margin-left: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back-link">← Back to Dashboard</a>
+    
+    <div class="header">
+      <h1>👑 Admin Control Panel</h1>
+      <p>Manage staff approvals, roles, and user accounts</p>
+    </div>
+    
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-number" id="pendingCount">0</div>
+        <div class="stat-label">Pending Approvals</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="staffCount">0</div>
+        <div class="stat-label">Total Staff</div>
+      </div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">
+        <span>⏳</span> Pending Approvals
+      </div>
+      <div id="pendingList"></div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">
+        <span>👥</span> All Staff Members
+      </div>
+      <div id="staffList"></div>
+    </div>
+  </div>
+  
+  <div id="toast" class="toast"></div>
+  
+  <script>
+    const BASE = 'https://gym-pro-mvyv.onrender.com/api';
+    const hdrs = () => ({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
+    });
+    
+    function toast(msg, type = '') {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = `toast show ${type}`;
+      setTimeout(() => el.className = 'toast', 3000);
+    }
+    
+    async function checkAdmin() {
+      try {
+        const res = await fetch(`${BASE}/auth/me`, { headers: hdrs() });
+        if (!res.ok) throw new Error();
+        const user = await res.json();
+        if (user.role !== 'admin') {
+          toast('Admin access only', 'error');
+          setTimeout(() => window.location.href = '/', 1500);
+          return false;
+        }
+        return true;
+      } catch(e) {
+        window.location.href = '/login.html';
+        return false;
+      }
+    }
+    
+    async function loadPending() {
+      try {
+        const res = await fetch(`${BASE}/auth/pending-approvals`, { headers: hdrs() });
+        if (!res.ok) throw new Error();
+        const users = await res.json();
+        document.getElementById('pendingCount').textContent = users.length;
+        
+        const container = document.getElementById('pendingList');
+        if (!users.length) {
+          container.innerHTML = '<div class="empty"><div class="ei">✨</div><p>No pending approvals</p></div>';
+          return;
+        }
+        
+        container.innerHTML = users.map(user => `
+          <div class="user-item">
+            <div class="user-info">
+              <h4>${escapeHtml(user.name)}</h4>
+              <p>${escapeHtml(user.email)}</p>
+              <p>Role: <strong>${user.role}</strong> | Requested: ${new Date(user.createdAt).toLocaleDateString('en-IN')}</p>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-approve btn-sm" onclick="approveUser('${user._id}')">✓ Approve</button>
+              <button class="btn btn-reject btn-sm" onclick="rejectUser('${user._id}')">✗ Reject</button>
+            </div>
+          </div>
+        `).join('');
+      } catch(e) {
+        console.error(e);
+        document.getElementById('pendingList').innerHTML = '<div class="empty"><p>Error loading pending users</p></div>';
+      }
+    }
+    
+    async function loadStaff() {
+      try {
+        const res = await fetch(`${BASE}/admin/staff`, { headers: hdrs() });
+        if (!res.ok) throw new Error();
+        const users = await res.json();
+        document.getElementById('staffCount').textContent = users.length;
+        
+        const container = document.getElementById('staffList');
+        if (!users.length) {
+          container.innerHTML = '<div class="empty"><div class="ei">👥</div><p>No staff members yet</p></div>';
+          return;
+        }
+        
+        container.innerHTML = users.map(user => `
+          <div class="user-item">
+            <div class="user-info">
+              <h4>${escapeHtml(user.name)}</h4>
+              <p>${escapeHtml(user.email)}</p>
+              <p>
+                Role: <strong>${user.role}</strong>
+                <span class="badge ${user.isActive ? 'badge-active' : 'badge-inactive'}">${user.isActive ? 'Active' : 'Inactive'}</span>
+              </p>
+              ${user.approvedByName ? `<p>✅ Approved by: ${escapeHtml(user.approvedByName)}</p>` : ''}
+              ${user.lastLogin ? `<p>Last login: ${new Date(user.lastLogin).toLocaleDateString('en-IN')}</p>` : ''}
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-ghost btn-sm" onclick="toggleUserStatus('${user._id}')">
+                ${user.isActive ? '🔴 Deactivate' : '🟢 Activate'}
+              </button>
+              <button class="btn btn-ghost btn-sm" onclick="changeRole('${user._id}', '${user.role === 'admin' ? 'staff' : 'admin'}')">
+                Make ${user.role === 'admin' ? 'Staff' : 'Admin'}
+              </button>
+              <button class="btn btn-reject btn-sm" onclick="deleteUser('${user._id}', '${escapeHtml(user.name)}')">
+                🗑 Delete
+              </button>
+            </div>
+          </div>
+        `).join('');
+      } catch(e) {
+        console.error(e);
+        document.getElementById('staffList').innerHTML = '<div class="empty"><p>Error loading staff</p></div>';
+      }
+    }
+    
+    async function approveUser(userId) {
+      try {
+        const res = await fetch(`${BASE}/auth/approve/${userId}`, { method: 'POST', headers: hdrs() });
+        if (res.ok) {
+          toast('User approved successfully!', 'success');
+          loadPending();
+          loadStaff();
+        } else {
+          const err = await res.json();
+          toast(err.error || 'Approval failed', 'error');
+        }
+      } catch(e) {
+        toast('Network error', 'error');
+      }
+    }
+    
+    async function rejectUser(userId) {
+      const reason = prompt('Enter rejection reason (optional):');
+      try {
+        const res = await fetch(`${BASE}/auth/reject/${userId}`, { 
+          method: 'POST', 
+          headers: hdrs(),
+          body: JSON.stringify({ reason: reason || '' })
+        });
+        if (res.ok) {
+          toast('User rejected', 'success');
+          loadPending();
+        } else {
+          const err = await res.json();
+          toast(err.error || 'Rejection failed', 'error');
+        }
+      } catch(e) {
+        toast('Network error', 'error');
+      }
+    }
+    
+    async function toggleUserStatus(userId) {
+      try {
+        const res = await fetch(`${BASE}/admin/user/${userId}/toggle`, { method: 'PATCH', headers: hdrs() });
+        if (res.ok) {
+          const data = await res.json();
+          toast(data.message, 'success');
+          loadStaff();
+        } else {
+          toast('Failed to toggle status', 'error');
+        }
+      } catch(e) {
+        toast('Network error', 'error');
+      }
+    }
+    
+    async function changeRole(userId, newRole) {
+      if (!confirm(`Change user role to ${newRole.toUpperCase()}?`)) return;
+      try {
+        const res = await fetch(`${BASE}/admin/user/${userId}/role`, { 
+          method: 'PATCH', 
+          headers: hdrs(),
+          body: JSON.stringify({ role: newRole })
+        });
+        if (res.ok) {
+          toast(`Role changed to ${newRole}`, 'success');
+          loadStaff();
+        } else {
+          toast('Failed to change role', 'error');
+        }
+      } catch(e) {
+        toast('Network error', 'error');
+      }
+    }
+    
+    async function deleteUser(userId, userName) {
+      if (!confirm(`Delete user "${userName}"? This cannot be undone.`)) return;
+      try {
+        const res = await fetch(`${BASE}/admin/user/${userId}`, { method: 'DELETE', headers: hdrs() });
+        if (res.ok) {
+          toast(`${userName} deleted`, 'success');
+          loadStaff();
+          loadPending();
+        } else {
+          const err = await res.json();
+          toast(err.error || 'Delete failed', 'error');
+        }
+      } catch(e) {
+        toast('Network error', 'error');
+      }
+    }
+    
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+      });
+    }
+    
+    async function init() {
+      const isAdmin = await checkAdmin();
+      if (!isAdmin) return;
+      await loadPending();
+      await loadStaff();
+    }
+    
+    init();
+  </script>
+</body>
+</html>
