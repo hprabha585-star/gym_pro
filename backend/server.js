@@ -20,6 +20,8 @@ app.use('/api/members',    require('./routes/members'));
 app.use('/api/trainers',   require('./routes/trainers'));
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/admin',      require('./routes/admin'));
+// Add this line with the other app.use statements
+app.use('/api/qr', require('./routes/qr-attendance'));
 
 // Health check
 app.get('/api/health', (req, res) => {

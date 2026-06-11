@@ -23,6 +23,11 @@ const attendanceSchema = new mongoose.Schema({
   markedAt: { 
     type: Date, 
     default: Date.now 
+  },
+  checkinMethod: {  // NEW: track how attendance was marked
+    type: String,
+    enum: ['manual', 'qr_member', 'bulk'],
+    default: 'manual'
   }
 });
 
