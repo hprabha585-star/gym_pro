@@ -48,7 +48,7 @@
       border-bottom: 1px solid #E0ECEC;
     }
     .member-info h4 { font-size: 1rem; margin-bottom: 4px; }
-    .member-info p { font-size: .7rem; color: #8AABAB; }
+    .member-info p { font-size: .7rem; color: #8AABAB; margin-top: 2px; }
     .checkin-time {
       font-size: .7rem;
       color: #27AE60;
@@ -87,7 +87,18 @@
       border: none;
       font-size: 1.2rem;
       cursor: pointer;
+      padding: 8px;
     }
+    .method-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: .6rem;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+    .method-qr { background: #E8F8EF; color: #27AE60; }
+    .method-manual { background: #F0F5F5; color: #8AABAB; }
   </style>
 </head>
 <body>
@@ -153,7 +164,9 @@
             <div class="member-info">
               <h4>${escapeHtml(m.name)}</h4>
               <p>${escapeHtml(m.plan)} | 📱 ${m.phone}</p>
-              <p style="font-size:.65rem;margin-top:4px">Method: ${m.method === 'qr_member' ? 'QR Self Check-in' : 'Manual'}</p>
+              <span class="method-badge ${m.method === 'qr_member' ? 'method-qr' : 'method-manual'}">
+                ${m.method === 'qr_member' ? '📱 QR Self Check-in' : '✏️ Manual'}
+              </span>
             </div>
             <div class="checkin-time">
               ${new Date(m.checkinTime).toLocaleTimeString()}
@@ -162,6 +175,7 @@
         `).join('');
         
       } catch (err) {
+        console.error(err);
         document.getElementById('memberList').innerHTML = '<div class="empty">❌ Error loading check-ins</div>';
       }
     }
@@ -177,6 +191,7 @@
     }
     
     loadCheckins();
+    // Auto-refresh every 30 seconds
     setInterval(loadCheckins, 30000);
   </script>
 </body>
