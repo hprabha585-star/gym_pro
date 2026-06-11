@@ -5,7 +5,7 @@ const Attendance = require('../models/Attendance');
 const User = require('../models/User');
 const authMiddleware = require('../middleware/auth');
 
-// Generate GYM QR code (for the gym entrance)
+// Generate GYM QR code (for the gym entrance) - NOW WITH URL
 router.get('/gym-qr', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.userId || req.user.id;
@@ -23,12 +23,18 @@ router.get('/gym-qr', authMiddleware, async (req, res) => {
       timestamp: Date.now()
     };
     
-    const qrString = Buffer.from(JSON.stringify(qrData)).toString('base64');
+    // Encode the data as base64
+    const encodedData = Buffer.from(JSON.stringify(qrData)).toString('base64');
+    
+    // Create a FULL URL that points to your check-in page
+    const checkinUrl = `https://gym-pro-mvyv.onrender.com/member-checkin.html?qr=${encodeURIComponent(encodedData)}`;
     
     res.json({
-      qrString,
+      qrString: checkinUrl,
+      qrData: encodedData,
       gymName: user.name,
-      gymId: userId
+      gymId: userId,
+      checkinUrl: checkinUrl
     });
     
   } catch (err) {
@@ -106,6 +112,7 @@ router.post('/member-checkin', async (req, res) => {
         alreadyChecked: true,
         message: `Welcome back ${member.name}! You already checked in today.`,
         memberName: member.name,
+        memberId: member._id,
         checkinTime: existingAttendance.markedAt
       });
     }
@@ -136,6 +143,7 @@ router.post('/member-checkin', async (req, res) => {
       success: true,
       message: `✅ Welcome ${member.name}! Your attendance has been marked for today.`,
       memberName: member.name,
+      memberId: member._id,
       memberPlan: member.plan,
       expiryDate: member.expiryDate,
       weeklyAttendance: weeklyCount,
