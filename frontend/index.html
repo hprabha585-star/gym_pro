@@ -106,14 +106,17 @@
   <!-- ──────────────── DASHBOARD ──────────────── -->
   <div id="page-dashboard" class="page active">
 
+    <!-- Alert Banner -->
     <div id="alertBanner" class="banner green">
       <div class="banner-text"><h3>✅ All Good!</h3><p>No payments due this week</p></div>
     </div>
 
+    <!-- TODAY heading -->
     <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding:0 2px" id="dashTodayLabel">Today</div>
 
-    <!-- Primary 2-col hero tiles -->
+    <!-- Primary 2-col hero tiles (Today) -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <!-- Attendance -->
       <div style="background:#1A8C8C;border-radius:18px;padding:16px 14px;cursor:pointer;position:relative;overflow:hidden"
         onclick="showPage('attendance',document.querySelector('[data-page=attendance]'));updateBNav('attendance')">
         <div style="position:absolute;top:-12px;right:-12px;width:60px;height:60px;background:rgba(255,255,255,.1);border-radius:50%"></div>
@@ -122,6 +125,7 @@
         <div style="font-size:.72rem;color:rgba(255,255,255,.75);font-weight:600;margin-top:4px">Today's Attendance</div>
         <div style="font-size:.62rem;color:rgba(255,255,255,.5);margin-top:2px">Tap to mark ›</div>
       </div>
+      <!-- Total Members -->
       <div style="background:#fff;border:1px solid #E0ECEC;border-radius:18px;padding:16px 14px;cursor:pointer;position:relative;overflow:hidden">
         <div style="position:absolute;top:-12px;right:-12px;width:60px;height:60px;background:#F0FAFA;border-radius:50%"></div>
         <div style="font-size:1.8rem;margin-bottom:6px">👥</div>
@@ -172,19 +176,23 @@
     <!-- Expiry alert tiles row -->
     <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding:0 2px">Membership Alerts</div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">
-      <div style="background:#fff;border:1px solid #FECDD5;border-radius:14px;padding:10px 6px;text-align:center" onclick="filterDash(0)">
+      <div style="background:#fff;border:1px solid #FECDD5;border-radius:14px;padding:10px 6px;text-align:center"
+        onclick="filterDash(0)">
         <div style="font-size:1.2rem;font-weight:800;color:#E74C3C" id="statExpToday">0</div>
         <div style="font-size:.55rem;color:#8AABAB;font-weight:700;margin-top:3px;line-height:1.3">Expires<br>Today</div>
       </div>
-      <div style="background:#fff;border:1px solid #FED7AA;border-radius:14px;padding:10px 6px;text-align:center" onclick="filterDash(3)">
+      <div style="background:#fff;border:1px solid #FED7AA;border-radius:14px;padding:10px 6px;text-align:center"
+        onclick="filterDash(3)">
         <div style="font-size:1.2rem;font-weight:800;color:#F39C12" id="statExp3">0</div>
         <div style="font-size:.55rem;color:#8AABAB;font-weight:700;margin-top:3px;line-height:1.3">In<br>1–3d</div>
       </div>
-      <div style="background:#fff;border:1px solid #FED7AA;border-radius:14px;padding:10px 6px;text-align:center" onclick="filterDash(7)">
+      <div style="background:#fff;border:1px solid #FED7AA;border-radius:14px;padding:10px 6px;text-align:center"
+        onclick="filterDash(7)">
         <div style="font-size:1.2rem;font-weight:800;color:#F39C12" id="statExp7">0</div>
         <div style="font-size:.55rem;color:#8AABAB;font-weight:700;margin-top:3px;line-height:1.3">In<br>4–7d</div>
       </div>
-      <div style="background:#fff;border:1px solid #E0ECEC;border-radius:14px;padding:10px 6px;text-align:center" onclick="filterDash(15)">
+      <div style="background:#fff;border:1px solid #E0ECEC;border-radius:14px;padding:10px 6px;text-align:center"
+        onclick="filterDash(15)">
         <div style="font-size:1.2rem;font-weight:800;color:#4A6464" id="statExp15">0</div>
         <div style="font-size:.55rem;color:#8AABAB;font-weight:700;margin-top:3px;line-height:1.3">In<br>8–15d</div>
       </div>
@@ -221,6 +229,8 @@
 
   <!-- ──────────────── MEMBERS ──────────────── -->
   <div id="page-members" class="page">
+
+    <!-- Search bar (matches reference screenshot) -->
     <div style="position:relative;margin-bottom:10px">
       <input type="search" id="memberSearch"
         placeholder='Search for "Name or Phone"'
@@ -231,20 +241,39 @@
         style="position:absolute;right:4px;top:4px;bottom:4px;background:#1A8C8C;color:#fff;border:none;border-radius:18px;padding:0 14px;font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer">🔍</button>
     </div>
 
+    <!-- Filter chips (All Member ▾ / Active / Trial / Expired / Inactive) -->
     <div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:10px;padding-bottom:2px">
-      <button class="member-filter-chip active" onclick="setMembersFilter('all',this)" style="display:inline-flex;align-items:center;padding:7px 14px;border-radius:20px;font-size:.75rem;font-weight:700;white-space:nowrap;cursor:pointer;transition:all .15s;border:1.5px solid #1A8C8C;font-family:inherit;background:#1A8C8C;color:#fff;flex-shrink:0">All Member ▾</button>
-      <button class="member-filter-chip" onclick="setMembersFilter('Active',this)" style="display:inline-flex;align-items:center;padding:7px 14px;border-radius:20px;font-size:.75rem;font-weight:700;white-space:nowrap;cursor:pointer;border:1.5px solid #D5D5DF;font-family:inherit;background:#fff;color:#555566;flex-shrink:0">Active</button>
-      <button class="member-filter-chip" onclick="setMembersFilter('Trial',this)" style="display:inline-flex;align-items:center;padding:7px 14px;border-radius:20px;font-size:.75rem;font-weight:700;white-space:nowrap;cursor:pointer;border:1.5px solid #D5D5DF;font-family:inherit;background:#fff;color:#555566;flex-shrink:0">Trial</button>
-      <button class="member-filter-chip" onclick="setMembersFilter('Expired',this)" style="display:inline-flex;align-items:center;padding:7px 14px;border-radius:20px;font-size:.75rem;font-weight:700;white-space:nowrap;cursor:pointer;border:1.5px solid #D5D5DF;font-family:inherit;background:#fff;color:#555566;flex-shrink:0">Expired</button>
-      <button class="member-filter-chip" onclick="setMembersFilter('Inactive',this)" style="display:inline-flex;align-items:center;padding:7px 14px;border-radius:20px;font-size:.75rem;font-weight:700;white-space:nowrap;cursor:pointer;border:1.5px solid #D5D5DF;font-family:inherit;background:#fff;color:#555566;flex-shrink:0">Inactive</button>
+      <button class="member-filter-chip active" onclick="setMembersFilter('all',this)"
+        style="display:inline-flex;align-items:center;padding:7px 14px;border-radius:20px;font-size:.75rem;font-weight:700;white-space:nowrap;cursor:pointer;transition:all .15s;border:1.5px solid #1A8C8C;font-family:inherit;background:#1A8C8C;color:#fff;flex-shrink:0">
+        All Member ▾
+      </button>
+      <button class="member-filter-chip" onclick="setMembersFilter('Active',this)"
+        style="display:inline-flex;align-items:center;padding:7px 14px;border-radius:20px;font-size:.75rem;font-weight:700;white-space:nowrap;cursor:pointer;border:1.5px solid #D5D5DF;font-family:inherit;background:#fff;color:#555566;flex-shrink:0">
+        Active
+      </button>
+      <button class="member-filter-chip" onclick="setMembersFilter('Trial',this)"
+        style="display:inline-flex;align-items:center;padding:7px 14px;border-radius:20px;font-size:.75rem;font-weight:700;white-space:nowrap;cursor:pointer;border:1.5px solid #D5D5DF;font-family:inherit;background:#fff;color:#555566;flex-shrink:0">
+        Trial
+      </button>
+      <button class="member-filter-chip" onclick="setMembersFilter('Expired',this)"
+        style="display:inline-flex;align-items:center;padding:7px 14px;border-radius:20px;font-size:.75rem;font-weight:700;white-space:nowrap;cursor:pointer;border:1.5px solid #D5D5DF;font-family:inherit;background:#fff;color:#555566;flex-shrink:0">
+        Expired
+      </button>
+      <button class="member-filter-chip" onclick="setMembersFilter('Inactive',this)"
+        style="display:inline-flex;align-items:center;padding:7px 14px;border-radius:20px;font-size:.75rem;font-weight:700;white-space:nowrap;cursor:pointer;border:1.5px solid #D5D5DF;font-family:inherit;background:#fff;color:#555566;flex-shrink:0">
+        Inactive
+      </button>
     </div>
 
+    <!-- Member cards list — rendered by script.js into membersListWrap -->
     <div id="membersListWrap">
       <div class="empty"><div class="ei">⏳</div><p>Loading members…</p></div>
     </div>
 
+    <!-- Hidden table kept for any legacy code that references membersBody -->
     <div style="display:none"><table><tbody id="membersBody"></tbody></table></div>
 
+    <!-- FAB: Add Member button (floating, matches reference) -->
     <button onclick="openModal('addMemberModal')"
       style="position:fixed;right:1rem;bottom:calc(68px + env(safe-area-inset-bottom));
         height:48px;background:#1A8C8C;color:#fff;border:none;border-radius:30px;
@@ -253,18 +282,22 @@
         box-shadow:0 4px 18px rgba(26,140,140,.45);z-index:800;transition:all .2s">
       👤 Add Member
     </button>
-    <div style="height:50px"></div>
+
+    <!-- Delete all (small, secondary) -->
+    <div style="height:50px"></div><!-- spacer for FAB -->
   </div>
 
   <!-- ──────────────── ATTENDANCE ──────────────── -->
   <div id="page-attendance" class="page">
     <div class="card">
+      <!-- Teal left-border accent header matching screenshots -->
       <div style="padding:14px 16px 10px;border-bottom:1px solid #F0F5F5;display:flex;align-items:center;gap:10px">
         <div style="width:4px;height:22px;background:#1A8C8C;border-radius:4px;flex-shrink:0"></div>
         <span style="font-size:1rem;font-weight:800;color:#1A2E2E">Attendance</span>
       </div>
 
       <div style="padding:14px 16px 0">
+        <!-- Date + Load row -->
         <div style="display:flex;gap:10px;margin-bottom:12px">
           <input type="date" id="attDate"
             style="flex:1;min-height:50px;border:2px solid #E0ECEC;border-radius:14px;
@@ -280,6 +313,7 @@
           </button>
         </div>
 
+        <!-- Mark All Present -->
         <button onclick="markAllPresent()"
           style="width:100%;height:52px;background:#27AE60;color:#fff;
                  border:none;border-radius:14px;font-family:inherit;font-size:.95rem;
@@ -289,6 +323,7 @@
           ✔ Mark All Present
         </button>
 
+        <!-- Stats row -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
           <div style="background:#F0FAFA;border-radius:12px;padding:12px 8px;text-align:center;border:1px solid #D5EDED">
             <div style="font-size:1.5rem;font-weight:800;color:#1A8C8C;line-height:1" id="attTotal">0</div>
@@ -314,7 +349,9 @@
             </tr>
           </thead>
           <tbody id="attBody">
-            <tr><td colspan="2"><div class="empty"><p>Select a date and press Load</p></div></td></tr>
+            <tr><td colspan="2">
+              <div class="empty"><p>Select a date and press Load</p></div>
+            </td></tr>
           </tbody>
         </table>
       </div>
@@ -323,36 +360,52 @@
 
   <!-- ──────────────── TRAINERS ──────────────── -->
   <div id="page-trainers" class="page">
-    <div style="background:#1A8C8C;border-radius:18px;padding:16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+    <div style="background:#1A8C8C;border-radius:18px;padding:16px;margin-bottom:12px;
+      display:flex;align-items:center;justify-content:space-between">
       <div>
         <div style="font-size:1rem;font-weight:800;color:#fff">💪 Trainers</div>
         <div style="font-size:.72rem;color:rgba(255,255,255,.65);margin-top:2px">Manage your training staff</div>
       </div>
-      <button onclick="openModal('addTrainerModal')" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:12px;padding:8px 16px;font-family:inherit;font-size:.82rem;font-weight:800;cursor:pointer;min-height:40px">+ Add Trainer</button>
+      <button onclick="openModal('addTrainerModal')"
+        style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);
+          border-radius:12px;padding:8px 16px;font-family:inherit;font-size:.82rem;
+          font-weight:800;cursor:pointer;min-height:40px">+ Add Trainer</button>
     </div>
-    <div id="trainersListWrap"><div class="empty"><div class="ei">⏳</div><p>Loading trainers…</p></div></div>
+    <div id="trainersListWrap">
+      <div class="empty"><div class="ei">⏳</div><p>Loading trainers…</p></div>
+    </div>
   </div>
 
   <!-- ──────────────── PLANS ──────────────── -->
   <div id="page-plans" class="page">
-    <div style="background:linear-gradient(135deg,#1A8C8C,#27AE60);border-radius:18px;padding:16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+    <div style="background:linear-gradient(135deg,#1A8C8C,#27AE60);border-radius:18px;
+      padding:16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
       <div>
         <div style="font-size:1rem;font-weight:800;color:#fff">💎 Membership Plans</div>
         <div style="font-size:.72rem;color:rgba(255,255,255,.65);margin-top:2px">Synced across all devices</div>
       </div>
-      <button onclick="openModal('addPlanModal')" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:12px;padding:8px 16px;font-family:inherit;font-size:.82rem;font-weight:800;cursor:pointer;min-height:40px">+ Add Plan</button>
+      <button onclick="openModal('addPlanModal')"
+        style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);
+          border-radius:12px;padding:8px 16px;font-family:inherit;font-size:.82rem;
+          font-weight:800;cursor:pointer;min-height:40px">+ Add Plan</button>
     </div>
-    <div id="plansListWrap"><div class="empty"><div class="ei">⏳</div><p>Loading plans…</p></div></div>
+    <div id="plansListWrap">
+      <div class="empty"><div class="ei">⏳</div><p>Loading plans…</p></div>
+    </div>
   </div>
 
   <!-- ──────────────── DISCOUNTS ──────────────── -->
   <div id="page-discounts" class="page">
-    <div style="background:linear-gradient(135deg,#F39C12,#E74C3C);border-radius:18px;padding:16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+    <div style="background:linear-gradient(135deg,#F39C12,#E74C3C);border-radius:18px;
+      padding:16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
       <div>
         <div style="font-size:1rem;font-weight:800;color:#fff">🏷️ Discounts & Offers</div>
         <div style="font-size:.72rem;color:rgba(255,255,255,.7);margin-top:2px">Active discount campaigns</div>
       </div>
-      <button onclick="openModal('addDiscountModal')" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:12px;padding:8px 16px;font-family:inherit;font-size:.82rem;font-weight:800;cursor:pointer;min-height:40px">+ Add Offer</button>
+      <button onclick="openModal('addDiscountModal')"
+        style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);
+          border-radius:12px;padding:8px 16px;font-family:inherit;font-size:.82rem;
+          font-weight:800;cursor:pointer;min-height:40px">+ Add Offer</button>
     </div>
     <div id="discTable"></div>
   </div>
@@ -361,28 +414,44 @@
   <div id="page-payments" class="page">
     <div class="card">
       <div class="card-head"><span class="card-title">Due Payments</span></div>
-      <div id="payList"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></div>
+      <div id="payList">
+        <div class="empty"><div class="ei">⏳</div><p>Loading…</p></div>
+      </div>
     </div>
   </div>
 
   <!-- ──────────────── SETTINGS ──────────────── -->
   <div id="page-settings" class="page">
     <div class="card">
-      <h3 style="font-size:.95rem;font-weight:800;color:var(--tx);margin-bottom:.75rem;display:flex;align-items:center;gap:7px;">
+      <h3 style="font-size:.95rem;font-weight:800;color:var(--tx);margin-bottom:.75rem;
+                 display:flex;align-items:center;gap:7px;">
         <span>💳</span> UPI Payment Settings
       </h3>
       <p class="sync-note" style="margin-bottom:.9rem">🔄 Synced across all your devices.</p>
-      <div class="form-group"><label>Your UPI ID</label><input type="text" id="sUpiId" placeholder="e.g. yourname@upi"></div>
-      <div class="form-group"><label>Display Name (on QR)</label><input type="text" id="sUpiName" placeholder="e.g. My Gym"></div>
+      <div class="form-group">
+        <label>Your UPI ID</label>
+        <input type="text" id="sUpiId" placeholder="e.g. yourname@upi">
+      </div>
+      <div class="form-group">
+        <label>Display Name (on QR)</label>
+        <input type="text" id="sUpiName" placeholder="e.g. My Gym">
+      </div>
       <button class="btn btn-primary btn-full" onclick="saveSettings()">Save UPI Settings</button>
     </div>
 
     <div class="card">
-      <h3 style="font-size:.95rem;font-weight:800;color:var(--tx);margin-bottom:.75rem;display:flex;align-items:center;gap:7px;">
+      <h3 style="font-size:.95rem;font-weight:800;color:var(--tx);margin-bottom:.75rem;
+                 display:flex;align-items:center;gap:7px;">
         <span>🎟️</span> Default Fees
       </h3>
-      <div class="form-group"><label>Default Admission Fee (₹)</label><input type="number" id="sAdmFee" placeholder="e.g. 500" min="0"></div>
-      <div class="form-group"><label>Default PT Fee / month (₹)</label><input type="number" id="sPtFee" placeholder="e.g. 2000" min="0"></div>
+      <div class="form-group">
+        <label>Default Admission Fee (₹)</label>
+        <input type="number" id="sAdmFee" placeholder="e.g. 500" min="0">
+      </div>
+      <div class="form-group">
+        <label>Default PT Fee / month (₹)</label>
+        <input type="number" id="sPtFee" placeholder="e.g. 2000" min="0">
+      </div>
       <button class="btn btn-primary btn-full" onclick="saveSettings()">Save Fee Settings</button>
     </div>
   </div>
@@ -392,12 +461,30 @@
 <!-- ════════════ EDIT TRAINER MODAL ════════════ -->
 <div class="modal" id="editTrainerModal">
   <div class="mbox" style="max-width:420px">
-    <div class="mhdr"><span class="mtitle">✏️ Edit Trainer</span><button class="mclose" onclick="closeModal('editTrainerModal')">✕</button></div>
+    <div class="mhdr">
+      <span class="mtitle">✏️ Edit Trainer</span>
+      <button class="mclose" onclick="closeModal('editTrainerModal')">✕</button>
+    </div>
     <input type="hidden" id="etId">
-    <div class="form-group"><label>Full Name *</label><input type="text" id="etName" placeholder="Trainer name" autocomplete="name"></div>
-    <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="etPhone" placeholder="9876543210" maxlength="10" inputmode="numeric"></div>
-    <div class="form-group"><label>Specialty *</label><input type="text" id="etSpecialty" placeholder="e.g. Yoga, HIIT"></div>
-    <div class="form-group"><label>Status</label><select id="etStatus"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
+    <div class="form-group">
+      <label>Full Name *</label>
+      <input type="text" id="etName" placeholder="Trainer name" autocomplete="name">
+    </div>
+    <div class="form-group">
+      <label>Phone * (10 digits)</label>
+      <input type="tel" id="etPhone" placeholder="9876543210" maxlength="10" inputmode="numeric">
+    </div>
+    <div class="form-group">
+      <label>Specialty *</label>
+      <input type="text" id="etSpecialty" placeholder="e.g. Yoga, HIIT">
+    </div>
+    <div class="form-group">
+      <label>Status</label>
+      <select id="etStatus">
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+      </select>
+    </div>
     <div style="display:flex;flex-direction:column;gap:9px;margin-top:1.1rem">
       <button class="btn btn-primary btn-full" onclick="saveEditTrainer()" style="min-height:50px;font-size:.96rem">Save Changes</button>
       <button class="btn btn-ghost btn-full" onclick="closeModal('editTrainerModal')">Cancel</button>
@@ -409,23 +496,35 @@
 <div class="modal" id="memberAttModal">
   <div class="mbox" style="max-height:92vh">
     <div class="mhdr">
-      <div><div class="mtitle" id="memberAttTitle">Attendance</div><div style="font-size:.72rem;color:#8AABAB;font-weight:600;margin-top:2px" id="memberAttSubtitle">Records & Analysis</div></div>
+      <div>
+        <div class="mtitle" id="memberAttTitle">Attendance</div>
+        <div style="font-size:.72rem;color:#8AABAB;font-weight:600;margin-top:2px" id="memberAttSubtitle">Records & Analysis</div>
+      </div>
       <button class="mclose" onclick="closeModal('memberAttModal')">✕</button>
     </div>
+    <!-- Calendar + stats rendered here by openMemberAttendance() -->
     <div id="memberAttCal"></div>
     <div id="memberAttStat"></div>
-    <div style="margin-top:14px"><button class="btn btn-primary btn-full" style="min-height:48px" onclick="closeModal('memberAttModal')">Close</button></div>
+    <div style="margin-top:14px">
+      <button class="btn btn-primary btn-full" style="min-height:48px" onclick="closeModal('memberAttModal')">Close</button>
+    </div>
   </div>
 </div>
 
 <!-- ═══════════════════ ADD MEMBER MODAL ═══════════════════ -->
 <div class="modal" id="addMemberModal">
   <div class="mbox">
-    <div class="mhdr"><span class="mtitle">Add New Member</span><button class="mclose" onclick="closeModal('addMemberModal')">✕</button></div>
+    <div class="mhdr">
+      <span class="mtitle">Add New Member</span>
+      <button class="mclose" onclick="closeModal('addMemberModal')">✕</button>
+    </div>
     <form id="addMemberForm">
       <div class="form-sep" style="margin-top:0">📷 Profile Photo</div>
       <div style="display:flex;gap:1rem;align-items:center;margin-bottom:12px">
-        <img id="photoPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231A8C8C22'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" style="width:100px;height:100px;border-radius:16px;object-fit:cover;flex-shrink:0;background:var(--teal-light);border:3px solid var(--border2);box-shadow:0 4px 14px rgba(0,0,0,.1)">
+        <img id="photoPreview"
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231A8C8C22'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"
+          style="width:100px;height:100px;border-radius:16px;object-fit:cover;flex-shrink:0;
+                 background:var(--teal-light);border:3px solid var(--border2);box-shadow:0 4px 14px rgba(0,0,0,.1)">
         <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
           <button type="button" class="btn btn-ghost btn-sm" id="openCamBtn" style="border-radius:20px;">📷 Camera</button>
           <button type="button" class="btn btn-ghost btn-sm" id="uploadBtn" style="border-radius:20px;">📁 Upload</button>
@@ -437,15 +536,38 @@
 
       <div class="form-sep">👤 Basic Info</div>
       <div class="form-grid">
-        <div class="form-group"><label>Full Name *</label><input type="text" id="mName" required placeholder="Arjun Reddy"></div>
-        <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="mPhone" required placeholder="9876543210" maxlength="10" inputmode="numeric"></div>
-        <div class="form-group"><label>Email</label><input type="email" id="mEmail" placeholder="optional"></div>
-        <div class="form-group"><label>Age</label><input type="text" id="mAge" placeholder="e.g. 25" inputmode="numeric" autocomplete="off"></div>
-        <div class="form-group" style="grid-column:1/-1"><label>Gender *</label><select id="mGender" required><option value="">Select Gender</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select></div>
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" id="mName" required placeholder="Arjun Reddy">
+        </div>
+        <div class="form-group">
+          <label>Phone * (10 digits)</label>
+          <input type="tel" id="mPhone" required placeholder="9876543210" maxlength="10" inputmode="numeric">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="mEmail" placeholder="optional">
+        </div>
+        <div class="form-group">
+          <label>Age</label>
+          <input type="text" id="mAge" placeholder="e.g. 25" inputmode="numeric" autocomplete="off">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Gender *</label>
+          <select id="mGender" required>
+            <option value="">Select Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
       </div>
 
       <div class="form-sep">💎 Membership Plan</div>
-      <div class="form-group"><label>Plan *</label><select id="mPlan" required onchange="onPlanChange()"></select></div>
+      <div class="form-group">
+        <label>Plan *</label>
+        <select id="mPlan" required onchange="onPlanChange()"></select>
+      </div>
 
       <div class="disc-box">
         <h4>🏷️ Discount (Optional)</h4>
@@ -455,52 +577,110 @@
           <label><input type="radio" name="dType" value="fixed" onchange="recalcPrice()"> Fixed ₹</label>
         </div>
         <div class="form-grid">
-          <div class="form-group"><label>Discount Value</label><input type="text" id="dValue" inputmode="decimal" placeholder="e.g. 200" onchange="recalcPrice()" autocomplete="off"></div>
-          <div class="form-group"><label>Reason</label><input type="text" id="dReason" placeholder="e.g. Festival offer"></div>
+          <div class="form-group">
+            <label>Discount Value</label>
+            <input type="text" id="dValue" inputmode="decimal" placeholder="e.g. 200"
+              onchange="recalcPrice()" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label>Reason</label>
+            <input type="text" id="dReason" placeholder="e.g. Festival offer">
+          </div>
         </div>
-        <div class="price-sum"><div class="pl"><span>Original</span><span id="origPrice">₹0</span></div><div class="pl"><span>Final Price</span><span id="finalPrice">₹0</span></div></div>
+        <div class="price-sum">
+          <div class="pl"><span>Original</span><span id="origPrice">₹0</span></div>
+          <div class="pl"><span>Final Price</span><span id="finalPrice">₹0</span></div>
+        </div>
       </div>
 
       <div class="adm-box">
         <h4>🎟️ Admission Fee (One-time)</h4>
         <div class="form-grid">
-          <div class="form-group"><label>Amount (₹)</label><input type="text" id="mAdmFee" inputmode="decimal" placeholder="e.g. 500"></div>
-          <div class="form-group"><label>Waive Fee?</label><select id="mWaive"><option value="no">No — Collect</option><option value="yes">Yes — Waive</option></select></div>
+          <div class="form-group">
+            <label>Amount (₹)</label>
+            <input type="text" id="mAdmFee" inputmode="decimal" placeholder="e.g. 500">
+          </div>
+          <div class="form-group">
+            <label>Waive Fee?</label>
+            <select id="mWaive">
+              <option value="no">No — Collect</option>
+              <option value="yes">Yes — Waive</option>
+            </select>
+          </div>
         </div>
       </div>
 
       <div class="pt-box">
         <h4>💪 Personal Training</h4>
         <div class="toggle-row">
-          <label class="toggle-sw"><input type="checkbox" id="mPtEnabled" onchange="togglePT('mPtDetails')"><span class="toggle-track"></span></label>
+          <label class="toggle-sw">
+            <input type="checkbox" id="mPtEnabled" onchange="togglePT('mPtDetails')">
+            <span class="toggle-track"></span>
+          </label>
           <span style="font-size:.88rem;font-weight:700">Enable PT</span>
         </div>
         <div id="mPtDetails" style="display:none">
           <div class="form-grid">
-            <div class="form-group"><label>PT Fee / month (₹)</label><input type="text" id="mPtFee" inputmode="decimal" placeholder="e.g. 2000" onchange="recalcPrice()"></div>
-            <div class="form-group"><label>Trainer</label><select id="mPtTrainer"><option value="">Select Trainer</option></select></div>
+            <div class="form-group">
+              <label>PT Fee / month (₹)</label>
+              <input type="text" id="mPtFee" inputmode="decimal" placeholder="e.g. 2000" onchange="recalcPrice()">
+            </div>
+            <div class="form-group">
+              <label>Trainer</label>
+              <select id="mPtTrainer"><option value="">Select Trainer</option></select>
+            </div>
           </div>
-          <div class="form-group"><label>PT Notes</label><input type="text" id="mPtNotes" placeholder="e.g. Weight loss, 5 days/week"></div>
+          <div class="form-group">
+            <label>PT Notes</label>
+            <input type="text" id="mPtNotes" placeholder="e.g. Weight loss, 5 days/week">
+          </div>
         </div>
       </div>
 
       <div class="form-grid">
-        <div class="form-group"><label>Start Date *</label><input type="date" id="mStart" required onchange="onPlanChange()"></div>
-        <div class="form-group"><label>Expiry Date *</label><input type="date" id="mExpiry" required></div>
+        <div class="form-group">
+          <label>Start Date *</label>
+          <input type="date" id="mStart" required onchange="onPlanChange()">
+        </div>
+        <div class="form-group">
+          <label>Expiry Date *</label>
+          <input type="date" id="mExpiry" required>
+        </div>
       </div>
-      <div class="form-group"><label>Status</label><select id="mStatus"><option value="Active">Active</option><option value="Trial">Trial</option><option value="Inactive">Inactive</option></select></div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="mStatus">
+          <option value="Active">Active</option>
+          <option value="Trial">Trial</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+      </div>
 
       <div class="form-sep">🆘 Emergency Contact</div>
       <div class="form-grid">
-        <div class="form-group"><label>Name</label><input type="text" id="mEcName" placeholder="Contact name"></div>
-        <div class="form-group"><label>Phone</label><input type="tel" id="mEcPhone" placeholder="Phone"></div>
-        <div class="form-group" style="grid-column:1/-1"><label>Relationship</label><input type="text" id="mEcRel" placeholder="e.g. Father"></div>
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" id="mEcName" placeholder="Contact name">
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" id="mEcPhone" placeholder="Phone">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Relationship</label>
+          <input type="text" id="mEcRel" placeholder="e.g. Father">
+        </div>
       </div>
 
       <div class="form-sep">🏥 Health Info</div>
       <div id="condContainer"></div>
-      <button type="button" class="btn btn-ghost btn-sm btn-full" style="margin-bottom:10px;border-radius:12px;min-height:42px;" onclick="addCondition('condContainer')">+ Add Health Condition</button>
-      <div class="form-group"><label>Medical Notes</label><textarea id="mNotes" placeholder="Any notes…"></textarea></div>
+      <button type="button" class="btn btn-ghost btn-sm btn-full"
+        style="margin-bottom:10px;border-radius:12px;min-height:42px;"
+        onclick="addCondition('condContainer')">+ Add Health Condition</button>
+      <div class="form-group">
+        <label>Medical Notes</label>
+        <textarea id="mNotes" placeholder="Any notes…"></textarea>
+      </div>
 
       <div style="display:flex;flex-direction:column;gap:9px;margin-top:1.1rem">
         <button type="submit" class="btn btn-primary btn-full">Add Member</button>
@@ -513,12 +693,19 @@
 <!-- ═══════════════════ EDIT MEMBER MODAL ═══════════════════ -->
 <div class="modal" id="editMemberModal">
   <div class="mbox">
-    <div class="mhdr"><span class="mtitle">✏️ Edit Member</span><button class="mclose" onclick="closeModal('editMemberModal')">✕</button></div>
+    <div class="mhdr">
+      <span class="mtitle">✏️ Edit Member</span>
+      <button class="mclose" onclick="closeModal('editMemberModal')">✕</button>
+    </div>
     <form id="editMemberForm">
       <input type="hidden" id="editMemberId">
+
       <div class="form-sep" style="margin-top:0">📷 Profile Photo</div>
       <div style="display:flex;gap:1rem;align-items:center;margin-bottom:12px">
-        <img id="ePhotoPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231A8C8C22'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" style="width:100px;height:100px;border-radius:16px;object-fit:cover;flex-shrink:0;background:#F0F5F5;border:3px solid #E0ECEC;box-shadow:0 4px 14px rgba(0,0,0,.1)">
+        <img id="ePhotoPreview"
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231A8C8C22'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"
+          style="width:100px;height:100px;border-radius:16px;object-fit:cover;flex-shrink:0;
+                 background:#F0F5F5;border:3px solid #E0ECEC;box-shadow:0 4px 14px rgba(0,0,0,.1)">
         <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
           <button type="button" class="btn btn-ghost btn-sm" id="eOpenCamBtn" style="border-radius:20px;">📷 Camera</button>
           <button type="button" class="btn btn-ghost btn-sm" id="eUploadBtn" style="border-radius:20px;">📁 Upload</button>
@@ -534,8 +721,24 @@
         <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="ePhone" required maxlength="10" inputmode="numeric"></div>
         <div class="form-group"><label>Email</label><input type="email" id="eEmail"></div>
         <div class="form-group"><label>Age</label><input type="text" id="eAge" inputmode="numeric" autocomplete="off"></div>
-        <div class="form-group"><label>Gender *</label><select id="eGender" required><option value="">Select</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select></div>
-        <div class="form-group"><label>Status</label><select id="eStatus"><option value="Active">Active</option><option value="Trial">Trial</option><option value="Inactive">Inactive</option><option value="Expired">Expired</option></select></div>
+        <div class="form-group">
+          <label>Gender *</label>
+          <select id="eGender" required>
+            <option value="">Select</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="eStatus">
+            <option value="Active">Active</option>
+            <option value="Trial">Trial</option>
+            <option value="Inactive">Inactive</option>
+            <option value="Expired">Expired</option>
+          </select>
+        </div>
       </div>
 
       <div class="form-sep">💎 Membership</div>
@@ -551,21 +754,29 @@
           <div class="form-group"><label>Value</label><input type="text" id="edValue" inputmode="decimal" placeholder="e.g. 200" onchange="recalcEditPrice()" autocomplete="off"></div>
           <div class="form-group"><label>Reason</label><input type="text" id="edReason" placeholder="e.g. Festival offer"></div>
         </div>
-        <div class="price-sum"><div class="pl"><span>Original</span><span id="eOrigPrice">₹0</span></div><div class="pl"><span>Final Price</span><span id="eFinalPrice">₹0</span></div></div>
+        <div class="price-sum">
+          <div class="pl"><span>Original</span><span id="eOrigPrice">₹0</span></div>
+          <div class="pl"><span>Final Price</span><span id="eFinalPrice">₹0</span></div>
+        </div>
       </div>
 
       <div class="adm-box">
         <h4>🎟️ Admission Fee</h4>
         <div class="form-grid">
           <div class="form-group"><label>Amount (₹)</label><input type="text" id="eAdmFee" inputmode="decimal"></div>
-          <div class="form-group"><label>Waive Fee?</label><select id="eWaive"><option value="no">No — Collect</option><option value="yes">Yes — Waive</option></select></div>
+          <div class="form-group"><label>Waive Fee?</label>
+            <select id="eWaive"><option value="no">No — Collect</option><option value="yes">Yes — Waive</option></select>
+          </div>
         </div>
       </div>
 
       <div class="pt-box">
         <h4>💪 Personal Training</h4>
         <div class="toggle-row">
-          <label class="toggle-sw"><input type="checkbox" id="ePtEnabled" onchange="togglePT('ePtDetails')"><span class="toggle-track"></span></label>
+          <label class="toggle-sw">
+            <input type="checkbox" id="ePtEnabled" onchange="togglePT('ePtDetails')">
+            <span class="toggle-track"></span>
+          </label>
           <span style="font-size:.88rem;font-weight:700">Enable PT</span>
         </div>
         <div id="ePtDetails" style="display:none">
@@ -578,16 +789,20 @@
       </div>
 
       <div class="form-group"><label>Expiry Date *</label><input type="date" id="eExpiry" required></div>
+
       <div class="form-sep">📊 Attendance Analytics</div>
       <div id="eAttStats" style="margin-bottom:1.1rem"></div>
+
       <div class="form-sep">🆘 Emergency Contact</div>
       <div class="form-grid">
         <div class="form-group"><label>Name</label><input type="text" id="eEcName"></div>
         <div class="form-group"><label>Phone</label><input type="tel" id="eEcPhone"></div>
         <div class="form-group" style="grid-column:1/-1"><label>Relationship</label><input type="text" id="eEcRel"></div>
       </div>
+
       <div class="form-sep">🏥 Medical Notes</div>
       <div class="form-group"><label>Notes</label><textarea id="eNotes" placeholder="Any notes…"></textarea></div>
+
       <div style="display:flex;flex-direction:column;gap:9px;margin-top:1.1rem">
         <button type="submit" class="btn btn-primary btn-full">Save Changes</button>
         <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('editMemberModal')">Cancel</button>
@@ -599,7 +814,10 @@
 <!-- ═══════════════════ EDIT PLAN MODAL ═══════════════════ -->
 <div class="modal" id="editPlanModal">
   <div class="mbox" style="max-width:360px">
-    <div class="mhdr"><span class="mtitle">✏️ Edit Plan</span><button class="mclose" onclick="closeModal('editPlanModal')">✕</button></div>
+    <div class="mhdr">
+      <span class="mtitle">✏️ Edit Plan</span>
+      <button class="mclose" onclick="closeModal('editPlanModal')">✕</button>
+    </div>
     <input type="hidden" id="editPlanOrigName">
     <div class="form-group"><label>Plan Name *</label><input type="text" id="editPlanName"></div>
     <div class="form-group"><label>Price (₹) *</label><input type="number" id="editPlanPrice" min="0"></div>
@@ -614,8 +832,12 @@
 <!-- ═══════════════════ CAMERA MODAL ═══════════════════ -->
 <div class="modal" id="cameraModal">
   <div class="mbox" style="max-width:400px;text-align:center">
-    <div class="mhdr"><span class="mtitle">Take Photo</span><button type="button" class="mclose" id="closeCamBtn">✕</button></div>
-    <video id="camVideo" autoplay playsinline style="width:100%;max-height:280px;background:#000;border-radius:14px;margin-bottom:1.2rem"></video>
+    <div class="mhdr">
+      <span class="mtitle">Take Photo</span>
+      <button type="button" class="mclose" id="closeCamBtn">✕</button>
+    </div>
+    <video id="camVideo" autoplay playsinline
+      style="width:100%;max-height:280px;background:#000;border-radius:14px;margin-bottom:1.2rem"></video>
     <canvas id="camCanvas" style="display:none"></canvas>
     <button type="button" class="btn btn-primary btn-full" id="captureBtn">📸 Capture Photo</button>
   </div>
@@ -624,12 +846,17 @@
 <!-- ═══════════════════ ADD TRAINER MODAL ═══════════════════ -->
 <div class="modal" id="addTrainerModal">
   <div class="mbox" style="max-width:380px">
-    <div class="mhdr"><span class="mtitle">Add Trainer</span><button class="mclose" onclick="closeModal('addTrainerModal')">✕</button></div>
+    <div class="mhdr">
+      <span class="mtitle">Add Trainer</span>
+      <button class="mclose" onclick="closeModal('addTrainerModal')">✕</button>
+    </div>
     <form id="addTrainerForm">
       <div class="form-group"><label>Full Name *</label><input type="text" id="tName" required placeholder="Trainer name"></div>
       <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="tPhone" required placeholder="9876543210" maxlength="10"></div>
       <div class="form-group"><label>Specialty *</label><input type="text" id="tSpecialty" required placeholder="e.g. Yoga, HIIT"></div>
-      <div class="form-group"><label>Status</label><select id="tStatus"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
+      <div class="form-group"><label>Status</label>
+        <select id="tStatus"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+      </div>
       <div style="display:flex;flex-direction:column;gap:9px;margin-top:1.1rem">
         <button type="submit" class="btn btn-primary btn-full">Add Trainer</button>
         <button type="button" class="btn btn-ghost btn-full" onclick="closeModal('addTrainerModal')">Cancel</button>
@@ -641,7 +868,10 @@
 <!-- ═══════════════════ ADD PLAN MODAL ═══════════════════ -->
 <div class="modal" id="addPlanModal">
   <div class="mbox" style="max-width:360px">
-    <div class="mhdr"><span class="mtitle">Add Plan</span><button class="mclose" onclick="closeModal('addPlanModal')">✕</button></div>
+    <div class="mhdr">
+      <span class="mtitle">Add Plan</span>
+      <button class="mclose" onclick="closeModal('addPlanModal')">✕</button>
+    </div>
     <div class="form-group"><label>Plan Name *</label><input type="text" id="newPlanName" placeholder="e.g. 1 Month Strength"></div>
     <div class="form-group"><label>Price (₹) *</label><input type="number" id="newPlanPrice" min="0" placeholder="e.g. 1000"></div>
     <div class="form-group"><label>Duration (months) *</label><input type="number" id="newPlanMonths" min="1" placeholder="e.g. 1"></div>
@@ -655,11 +885,27 @@
 <!-- ═══════════════════ ADD DISCOUNT MODAL ═══════════════════ -->
 <div class="modal" id="addDiscountModal">
   <div class="mbox" style="max-width:390px">
-    <div class="mhdr"><span class="mtitle">Add Discount</span><button class="mclose" onclick="closeModal('addDiscountModal')">✕</button></div>
+    <div class="mhdr">
+      <span class="mtitle">Add Discount</span>
+      <button class="mclose" onclick="closeModal('addDiscountModal')">✕</button>
+    </div>
     <div class="form-group"><label>Discount Name *</label><input type="text" id="discName" placeholder="e.g. Festival Offer"></div>
-    <div class="form-group"><label>Applies To</label><select id="discApplies" onchange="toggleDiscPlan()"><option value="all">All Plans</option><option value="specific">Specific Plan</option></select></div>
-    <div class="form-group" id="discPlanGroup" style="display:none"><label>Select Plan</label><select id="discPlan"></select></div>
-    <div class="form-group"><label>Type</label><select id="discType"><option value="percentage">Percentage (%)</option><option value="fixed">Fixed (₹)</option></select></div>
+    <div class="form-group"><label>Applies To</label>
+      <select id="discApplies" onchange="toggleDiscPlan()">
+        <option value="all">All Plans</option>
+        <option value="specific">Specific Plan</option>
+      </select>
+    </div>
+    <div class="form-group" id="discPlanGroup" style="display:none">
+      <label>Select Plan</label>
+      <select id="discPlan"></select>
+    </div>
+    <div class="form-group"><label>Type</label>
+      <select id="discType">
+        <option value="percentage">Percentage (%)</option>
+        <option value="fixed">Fixed (₹)</option>
+      </select>
+    </div>
     <div class="form-group"><label>Value *</label><input type="number" id="discVal" min="0" placeholder="Enter value"></div>
     <div class="form-group"><label>Valid Until</label><input type="date" id="discExpiry"></div>
     <div style="display:flex;flex-direction:column;gap:9px;margin-top:1.1rem">
@@ -669,49 +915,16 @@
   </div>
 </div>
 
-<!-- ═══════════════════ PAYMENT MODAL WITH PAYMENT METHOD SELECTION ═══════════════════ -->
+<!-- ═══════════════════ PAYMENT MODAL ═══════════════════ -->
 <div class="modal" id="paymentModal">
   <div class="mbox" style="max-width:390px">
     <div class="mhdr">
-      <span class="mtitle">💳 Payment</span>
+      <span class="mtitle">💳 Renew Plan</span>
       <button class="mclose" onclick="closeModal('paymentModal')">✕</button>
     </div>
-    
-    <!-- Payment Method Selector -->
-    <div id="payMethodSelector">
-      <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Select Payment Method</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
-        <button type="button" id="pmUpi" onclick="selectPayMethod('upi')" 
-          style="padding:12px 8px;border:2px solid #E0ECEC;border-radius:14px;background:#fff;font-family:inherit;font-size:.8rem;font-weight:800;color:#4A6464;cursor:pointer;transition:all .2s">
-          📱 UPI
-        </button>
-        <button type="button" id="pmCash" onclick="selectPayMethod('cash')" 
-          style="padding:12px 8px;border:2px solid #E0ECEC;border-radius:14px;background:#fff;font-family:inherit;font-size:.8rem;font-weight:800;color:#4A6464;cursor:pointer;transition:all .2s">
-          💵 Cash
-        </button>
-        <button type="button" id="pmCard" onclick="selectPayMethod('card')" 
-          style="padding:12px 8px;border:2px solid #E0ECEC;border-radius:14px;background:#fff;font-family:inherit;font-size:.8rem;font-weight:800;color:#4A6464;cursor:pointer;transition:all .2s">
-          💳 Card
-        </button>
-      </div>
-    </div>
-    
-    <!-- Member & Amount Info -->
-    <div style="background:#F0F5F5;border-radius:14px;padding:12px;margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
-        <span style="color:#8AABAB;font-size:.75rem">Member</span>
-        <span style="font-weight:800;font-size:.85rem" id="payMemberName">—</span>
-      </div>
-      <div style="display:flex;justify-content:space-between">
-        <span style="color:#8AABAB;font-size:.75rem">Total Amount</span>
-        <span style="font-weight:800;font-size:1.1rem;color:#1A8C8C" id="payTotalAmount">₹0</span>
-      </div>
-    </div>
-    
     <div class="form-group"><label>Change Plan</label>
       <select id="payPlan" onchange="recalcPayment()"></select>
     </div>
-    
     <div class="pt-box" style="margin-bottom:10px">
       <div class="toggle-row" style="margin-bottom:0">
         <label class="toggle-sw">
@@ -727,38 +940,14 @@
         </div>
       </div>
     </div>
-    
     <div id="payInfo"></div>
-    
-    <!-- UPI Panel -->
-    <div id="payUpiPanel" style="display:none">
-      <div class="qr-box">
-        <p style="font-size:.72rem;color:var(--tx3);margin-bottom:8px;font-weight:700;">SCAN TO PAY VIA UPI</p>
-        <img id="payQR" src="" alt="QR Code">
-        <span class="upi-txt" id="dispUpi">—</span>
-      </div>
+    <div class="qr-box">
+      <p style="font-size:.72rem;color:var(--tx3);margin-bottom:8px;font-weight:700;">SCAN TO PAY VIA UPI</p>
+      <img id="payQR" src="" alt="QR Code">
+      <span class="upi-txt" id="dispUpi">—</span>
     </div>
-    
-    <!-- Cash Panel -->
-    <div id="payCashPanel" style="display:none">
-      <div style="background:#E8F8EF;border-radius:14px;padding:16px;text-align:center;margin-bottom:12px">
-        <div style="font-size:2rem;margin-bottom:8px">💵</div>
-        <div style="font-weight:800;color:#27AE60">Cash Payment</div>
-        <div style="font-size:.75rem;color:#8AABAB;margin-top:4px">Collect ₹<span id="cashAmount">0</span> from member</div>
-      </div>
-    </div>
-    
-    <!-- Card Panel -->
-    <div id="payCardPanel" style="display:none">
-      <div style="background:#E3F2FD;border-radius:14px;padding:16px;text-align:center;margin-bottom:12px">
-        <div style="font-size:2rem;margin-bottom:8px">💳</div>
-        <div style="font-weight:800;color:#1565C0">Card Payment</div>
-        <div style="font-size:.75rem;color:#8AABAB;margin-top:4px">Process ₹<span id="cardAmount">0</span> on card machine</div>
-      </div>
-    </div>
-    
     <div style="display:flex;flex-direction:column;gap:9px">
-      <button class="btn btn-success btn-full" id="confirmPayBtn" onclick="confirmPayment()" disabled style="opacity:0.5">Select Payment Method</button>
+      <button class="btn btn-success btn-full" id="confirmPayBtn" onclick="confirmPayment()">✅ Confirm Payment</button>
       <button class="btn btn-ghost btn-full" onclick="closeModal('paymentModal')">Cancel</button>
     </div>
   </div>
@@ -767,12 +956,15 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<!-- ═══════════════════ DASHBOARD EXTRA TILES + MEMBER FILTER CHIP STYLES ═══════════════════ -->
 <style>
+/* Active chip style override */
 .member-filter-chip.active {
   background: #1A8C8C !important;
   color: #fff !important;
   border-color: #1A8C8C !important;
 }
+/* Attendance analytics colour vars that match script.js */
 :root {
   --pl2: #F2FAFA;
   --pl:  #C8E6E6;
@@ -785,6 +977,7 @@
 </style>
 
 <script>
+/* ── Extra dashboard tile filler (hooks into fetch, zero conflicts) ── */
 function _fillExtraDashTiles(members) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const parseExp = m => {
@@ -796,15 +989,25 @@ function _fillExtraDashTiles(members) {
   const active = members.filter(m => m.status === 'Active' || m.status === 'Trial');
 
   const el = id => document.getElementById(id);
-  if (el('statExpToday')) el('statExpToday').textContent = active.filter(m => daysLeft(m) === 0).length;
-  if (el('statExp3'))  el('statExp3').textContent  = active.filter(m => { const d = daysLeft(m); return d >= 1 && d <= 3; }).length;
-  if (el('statExp7'))  el('statExp7').textContent  = active.filter(m => { const d = daysLeft(m); return d >= 4 && d <= 7; }).length;
-  if (el('statExp15')) el('statExp15').textContent = active.filter(m => { const d = daysLeft(m); return d >= 8 && d <= 15; }).length;
+  if (el('statExpToday')) el('statExpToday').textContent =
+    active.filter(m => daysLeft(m) === 0).length;
+  if (el('statExp3'))  el('statExp3').textContent  =
+    active.filter(m => { const d = daysLeft(m); return d >= 1 && d <= 3; }).length;
+  if (el('statExp7'))  el('statExp7').textContent  =
+    active.filter(m => { const d = daysLeft(m); return d >= 4 && d <= 7; }).length;
+  if (el('statExp15')) el('statExp15').textContent =
+    active.filter(m => { const d = daysLeft(m); return d >= 8 && d <= 15; }).length;
+  const total = active.reduce((s, m) => s + (m.planPrice || 0), 0);
+  if (el('statCollThisMonth'))
+    el('statCollThisMonth').textContent =
+      total >= 1000 ? `₹${(total / 1000).toFixed(1)}k` : `₹${total}`;
   const d = new Date();
   if (el('dashTodayLabel'))
-    el('dashTodayLabel').textContent = `Today — ${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+    el('dashTodayLabel').textContent =
+      `Today — ${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`;
 }
 
+/* Intercept fetch to hook extra tiles — only applies to members list GET */
 (function () {
   const _fetch = window.fetch;
   window.fetch = async function (...args) {
@@ -822,6 +1025,7 @@ function _fillExtraDashTiles(members) {
 })();
 </script>
 
+<!-- Updated script.js — member card UI + MongoDB attendance -->
 <script src="script.js"></script>
 
 </body>
