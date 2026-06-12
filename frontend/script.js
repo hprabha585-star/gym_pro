@@ -546,20 +546,20 @@ function renderDashTable(membersList) {
       ? `<span style="background:${gb[m.gender]||'#F3F4F6'};color:${gc[m.gender]||'#555'};padding:2px 9px;border-radius:20px;font-size:.62rem;font-weight:800">${esc(m.gender)}</span>`
       : '';
     return `<tr onclick="openEditMember('${m._id}')" style="cursor:pointer;border-bottom:1px solid #F0F5F5">
-      <td style="padding:10px 8px 10px 12px;vertical-align:middle">
-        <div style="display:flex;align-items:center;gap:12px">
-          ${avImg(m)}
-          <div style="min-width:0">
-            <div style="font-weight:800;font-size:.88rem;color:#1A2E2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px">${esc(m.name)}</div>
-            <div style="font-size:.72rem;color:#8AABAB;margin-top:1px">${esc(m.phone||'')}</div>
-            <div style="margin-top:3px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+      <td style="padding:12px 8px 12px 12px;vertical-align:middle">
+        <div style="display:flex;align-items:center;gap:14px">
+          ${_memberAvatar(m)}
+          <div style="min-width:0;display:flex;flex-direction:column;justify-content:center">
+            <div style="font-weight:800;font-size:.92rem;color:#1A2E2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px">${esc(m.name)}</div>
+            <div style="font-size:.72rem;color:#8AABAB;margin-top:2px">${esc(m.phone||'')}</div>
+            <div style="margin-top:4px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">
               ${genderPill}
               <span style="font-size:.68rem;color:#4A6464;font-weight:600">${esc(m.plan||'')}</span>
             </div>
           </div>
         </div>
        </td>
-      <td style="padding:10px 12px 10px 6px;vertical-align:middle;text-align:right;white-space:nowrap">
+      <td style="padding:12px 12px 12px 6px;vertical-align:middle;text-align:right;white-space:nowrap">
         <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end;margin-bottom:5px">
           <span style="width:8px;height:8px;border-radius:50%;background:${expColor};flex-shrink:0"></span>
           <span style="font-size:.78rem;font-weight:700;color:#1A2E2E">${expLabel}</span>
