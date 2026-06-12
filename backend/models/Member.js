@@ -74,11 +74,23 @@ const memberSchema = new mongoose.Schema({
   lastPaymentDate: { type: Date },
   nextPaymentDue: { type: Date },
   lastReminderSent: { type: Date },
+  // Payment tracking fields
+  lastPaymentMethod: { 
+    type: String, 
+    enum: ['upi', 'cash', 'card', null], 
+    default: null 
+  },
+  lastPaymentAmount: { 
+    type: Number, 
+    default: 0 
+  },
   paymentHistory: [{
     amount: Number,
     date: { type: Date, default: Date.now },
-    method: String,
-    receiptNo: String
+    method: { type: String, enum: ['upi', 'cash', 'card'] },
+    receiptNo: String,
+    plan: String,
+    months: Number
   }],
   status: { 
     type: String, 
@@ -89,6 +101,13 @@ const memberSchema = new mongoose.Schema({
   timestamps: true 
 });
 
+// Compound index to ensure unique phone per user
 memberSchema.index({ userId: 1, phone: 1 }, { unique: true });
+
+// Index for expiry date queries
+memberSchema.index({ userId: 1, expiryDate: 1 });
+
+// Index for status queries
+memberSchema.index({ userId: 1, status: 1 });
 
 module.exports = mongoose.model('Member', memberSchema);
