@@ -364,6 +364,55 @@ function resetPhoto() {
   document.getElementById('photoFile').value = '';
 }
 
+/* ── EDIT MEMBER PHOTO BUTTONS ── */
+function setupEditPhoto() {
+  const ePrev = document.getElementById('ePhotoPreview');
+  const ePD   = document.getElementById('ePhotoData');
+  const eClr  = document.getElementById('eClearPhotoBtn');
+  const eFile = document.getElementById('ePhotoFile');
+
+  document.getElementById('eUploadBtn').onclick = () => eFile.click();
+  document.getElementById('eOpenCamBtn').onclick = async () => {
+    eFile.setAttribute('capture', 'environment');
+    eFile.setAttribute('accept', 'image/*');
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    if (isAndroid || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      eFile.click(); return;
+    }
+    try {
+      curStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+      document.getElementById('camVideo').srcObject = curStream;
+      window._editPhotoMode = true;
+      openModal('cameraModal');
+    } catch(e) { eFile.click(); }
+  };
+  eFile.onchange = ev => {
+    const f = ev.target.files[0];
+    if (!f) return;
+    ePrev.style.opacity = '0.5';
+    const r = new FileReader();
+    r.onload = e2 => {
+      const result = e2.target.result;
+      if (!result) { ePrev.style.opacity='1'; return; }
+      ePrev.src = result;
+      ePrev.style.opacity = '1';
+      ePD.value = result;
+      eClr.style.display = 'inline-flex';
+      const modal = document.getElementById('editMemberModal');
+      if (modal && !modal.classList.contains('open')) {
+        modal.classList.add('open'); _setModalHeight(modal);
+      }
+    };
+    r.onerror = () => { ePrev.style.opacity='1'; toast('Photo error','error'); };
+    r.readAsDataURL(f);
+    setTimeout(() => { ev.target.value=''; }, 400);
+  };
+  eClr.onclick = () => {
+    ePrev.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231A8C8C22'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+    ePD.value = ''; eClr.style.display = 'none'; eFile.value = '';
+  };
+}
+
 /* ── SMART PLAN SELECT (Includes Global Discounts!) ── */
 function populatePlanSelect(selId='mPlan') {
   const sel = document.getElementById(selId);
@@ -607,11 +656,11 @@ function _avColor(name) {
 
 function _memberAvatar(m) {
   if (m.photo && m.photo.startsWith('data:image')) {
-    return `<img src="${m.photo}" alt="${esc(m.name)}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.12)">`;
+    return `<img src="${m.photo}" alt="${esc(m.name)}" style="width:90px;height:90px;border-radius:16px;object-fit:cover;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.18);flex-shrink:0">`;
   }
   const initials = (m.name||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
   const bg = _avColor(m.name);
-  return `<div style="width:52px;height:52px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,.3);box-shadow:0 2px 6px rgba(0,0,0,.12)">${esc(initials)}</div>`;
+  return `<div style="width:90px;height:90px;border-radius:16px;background:linear-gradient(135deg,${bg},${bg}CC);display:flex;align-items:center;justify-content:center;font-size:1.9rem;font-weight:800;color:#fff;flex-shrink:0;border:3px solid rgba(255,255,255,.4);box-shadow:0 4px 14px rgba(0,0,0,.18)">${esc(initials)}</div>`;
 }
 
 function _getDueAmount(m) {
@@ -649,9 +698,9 @@ function _renderMemberCard(m, idx) {
     animation:pageIn .2s ${idx*0.04}s both;
   ">
     <!-- TOP ROW: Avatar + Info + Delete -->
-    <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 12px 8px;position:relative">
+    <div style="display:flex;align-items:stretch;gap:12px;padding:12px 12px 8px;position:relative">
       ${_memberAvatar(m)}
-      <div style="flex:1;min-width:0">
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center">
         <!-- Name + M ID row -->
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px">
           <div>
@@ -839,6 +888,20 @@ async function openEditMember(id) {
     document.getElementById('eEcRel').value  = member.emergencyContact?.relationship || '';
     document.getElementById('eNotes').value = member.medicalNotes || '';
 
+    // Populate edit photo preview
+    const ePrev = document.getElementById('ePhotoPreview');
+    const ePD   = document.getElementById('ePhotoData');
+    const eClr  = document.getElementById('eClearPhotoBtn');
+    if (member.photo && member.photo.startsWith('data:image')) {
+      ePrev.src = member.photo;
+      ePD.value = member.photo;
+      eClr.style.display = 'inline-flex';
+    } else {
+      ePrev.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231A8C8C22'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+      ePD.value = '';
+      eClr.style.display = 'none';
+    }
+
 // Trigger the analytics in the background!
     renderMemberAttendanceStats(id);
     
@@ -890,7 +953,8 @@ document.getElementById('editMemberForm').addEventListener('submit', async e => 
       phone:        document.getElementById('eEcPhone').value.trim(),
       relationship: document.getElementById('eEcRel').value.trim()
     },
-    medicalNotes: document.getElementById('eNotes').value.trim()
+    medicalNotes: document.getElementById('eNotes').value.trim(),
+    photo: document.getElementById('ePhotoData').value || ''
   };
 
   const btn = e.submitter; btn.disabled=true; btn.textContent='Saving…';
@@ -1966,6 +2030,7 @@ async function saveSettings() {
 window.addEventListener('DOMContentLoaded', async () => {
   if (!checkAuth()) return;
   setupCamera();
+  setupEditPhoto();
 
   // Attach instant input listeners for real-time calculation
   ['dValue', 'mPlan'].forEach(id => {
