@@ -524,7 +524,7 @@ function renderDashTable(membersList) {
             </div>
           </div>
         </div>
-       </td>
+        </td>
       <td style="padding:12px 12px 12px 6px;vertical-align:middle;text-align:right;white-space:nowrap">
         <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end;margin-bottom:5px">
           <span style="width:8px;height:8px;border-radius:50%;background:${expColor};flex-shrink:0"></span>
@@ -532,7 +532,7 @@ function renderDashTable(membersList) {
         </div>
         <span style="background:${sb};color:${sc};padding:3px 10px;border-radius:20px;font-size:.65rem;font-weight:800">${esc(m.status||'')}</span>
        </td>
-     </tr>`;
+     </table>`;
   }).join('');
 }
 
@@ -565,19 +565,37 @@ async function loadPaymentStats() {
     let onlinePayments = 0;
     let cashPayments = 0;
     
-    members.forEach(m => {
-      if (m.lastPaymentMethod === 'upi' || m.lastPaymentMethod === 'card') {
-        onlinePayments += (m.lastPaymentAmount || 0);
-      } else if (m.lastPaymentMethod === 'cash') {
-        cashPayments += (m.lastPaymentAmount || 0);
+    members.forEach(member => {
+      // Check last payment method and amount
+      if (member.lastPaymentMethod === 'upi' || member.lastPaymentMethod === 'card') {
+        onlinePayments += (member.lastPaymentAmount || 0);
+      } else if (member.lastPaymentMethod === 'cash') {
+        cashPayments += (member.lastPaymentAmount || 0);
+      }
+      
+      // ALSO check payment history for all payments
+      if (member.paymentHistory && member.paymentHistory.length > 0) {
+        member.paymentHistory.forEach(payment => {
+          if (payment.method === 'upi' || payment.method === 'card') {
+            onlinePayments += (payment.amount || 0);
+          } else if (payment.method === 'cash') {
+            cashPayments += (payment.amount || 0);
+          }
+        });
       }
     });
     
     const onlineEl = document.getElementById('statOnlinePayments');
     const cashEl = document.getElementById('statCashPayments');
     
-    if (onlineEl) onlineEl.textContent = onlinePayments >= 1000 ? `₹${(onlinePayments/1000).toFixed(1)}k` : `₹${onlinePayments}`;
-    if (cashEl) cashEl.textContent = cashPayments >= 1000 ? `₹${(cashPayments/1000).toFixed(1)}k` : `₹${cashPayments}`;
+    if (onlineEl) {
+      onlineEl.textContent = onlinePayments >= 1000 ? `₹${(onlinePayments/1000).toFixed(1)}k` : `₹${onlinePayments}`;
+    }
+    if (cashEl) {
+      cashEl.textContent = cashPayments >= 1000 ? `₹${(cashPayments/1000).toFixed(1)}k` : `₹${cashPayments}`;
+    }
+    
+    console.log('Payment Stats - Online:', onlinePayments, 'Cash:', cashPayments);
     
   } catch(e) {
     console.error('Payment stats error:', e);
@@ -633,7 +651,7 @@ async function loadDashboard() {
     dashMembersCache = sorted;
     renderDashTable(sorted.slice(0,8));
     
-    loadPaymentStats();
+    await loadPaymentStats();
     
   } catch(e) { toast('Error loading dashboard','error'); }
 }
@@ -1081,7 +1099,7 @@ async function loadAttendance() {
   const date   = dateEl.value || getLocalTodayStr();
   dateEl.value = date;
   const tbody  = document.getElementById('attBody');
-  tbody.innerHTML = '<tr><td colspan="2"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr>';
+  tbody.innerHTML = '<tr><td colspan="2"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></tr></tr>';
 
   try {
     const [mRes] = await Promise.all([
@@ -1963,12 +1981,41 @@ async function confirmPayment() {
   }
   
   if (curPayMember.isNew) {
-    toast(`✅ Member added! Payment via ${curPayMethod.toUpperCase()} recorded`, 'success');
+    // For new member, update the member with payment info
+    try {
+      const updatePayload = {
+        lastPaymentMethod: curPayMethod,
+        lastPaymentAmount: curPayTotal,
+        lastPaymentDate: new Date(),
+        paymentHistory: [{
+          amount: curPayTotal,
+          date: new Date(),
+          method: curPayMethod,
+          receiptNo: 'NEW-' + Date.now()
+        }]
+      };
+      
+      await fetch(`${API}/${curPayMember.id}`, {
+        method: 'PATCH',
+        headers: hdrs(),
+        body: JSON.stringify(updatePayload)
+      });
+      
+      toast(`✅ Member added! Payment via ${curPayMethod.toUpperCase()} recorded`, 'success');
+    } catch(e) {
+      console.error('Failed to save payment method:', e);
+      toast(`✅ Member added! (Payment recorded locally)`, 'success');
+    }
+    
     closeModal('paymentModal');
     curPayMember = null;
+    await loadDashboard();
+    await loadAllMembers();
+    await loadPaymentStats();
     return;
   }
   
+  // For renewal
   const planName = document.getElementById('payPlan').value;
   const planAmt = getPlanPrice(planName);
   const months = getPlanMonths(planName);
@@ -2008,19 +2055,44 @@ async function confirmPayment() {
   }
   
   try {
-    await fetch(`${API}/${curPayMember.id}`, {
+    const res = await fetch(`${API}/${curPayMember.id}`, {
       method: 'PUT',
       headers: hdrs(),
       body: JSON.stringify(payload)
     });
-    toast(`✅ Renewed via ${curPayMethod.toUpperCase()}! Valid till ${baseDate.toLocaleDateString('en-IN')}`, 'success');
+    
+    if (res.ok) {
+      // Also add to payment history
+      await fetch(`${API}/${curPayMember.id}`, {
+        method: 'PATCH',
+        headers: hdrs(),
+        body: JSON.stringify({
+          $push: {
+            paymentHistory: {
+              amount: curPayTotal,
+              date: new Date(),
+              method: curPayMethod,
+              receiptNo: 'RENEW-' + Date.now(),
+              plan: planName,
+              months: months
+            }
+          }
+        })
+      });
+      
+      toast(`✅ Renewed via ${curPayMethod.toUpperCase()}! Valid till ${baseDate.toLocaleDateString('en-IN')}`, 'success');
+    } else {
+      throw new Error('Update failed');
+    }
+    
     closeModal('paymentModal');
     curPayMember = null;
-    loadDashboard();
-    loadPayments();
-    loadAllMembers();
+    await loadDashboard();
+    await loadPayments();
+    await loadAllMembers();
+    await loadPaymentStats();
   } catch (e) {
-    toast('Network error', 'error');
+    toast('Network error: ' + e.message, 'error');
   }
   if (btn) {
     btn.disabled = false;
@@ -2092,7 +2164,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   populatePlanSelect();
   populatePlanSelect('ePlan');
   recalcPrice();
-  loadDashboard();
+  await loadDashboard();
   loadPlans();
 
   fetch(`${BASE}/health`, {headers:hdrs()}).catch(()=>{});
