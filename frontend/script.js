@@ -1897,6 +1897,39 @@ function openPaymentFor(m, isNew = false) {
   openModal('paymentModal');
 }
 
+function selectPayMethod(method) {
+  curPayMethod = method;
+
+  // Style active button
+  ['upi','cash','card'].forEach(m => {
+    const btn = document.getElementById(`pm${m.charAt(0).toUpperCase()+m.slice(1)}`);
+    if (!btn) return;
+    if (m === method) {
+      btn.style.borderColor = '#1A8C8C';
+      btn.style.background  = '#F0FAFA';
+      btn.style.color       = '#1A8C8C';
+    } else {
+      btn.style.borderColor = '#E0ECEC';
+      btn.style.background  = '#fff';
+      btn.style.color       = '#4A6464';
+    }
+  });
+
+  // Show/hide panels
+  document.getElementById('payUpiPanel').style.display  = method === 'upi'  ? 'block' : 'none';
+  document.getElementById('payCashPanel').style.display = method === 'cash' ? 'block' : 'none';
+  document.getElementById('payCardPanel').style.display = method === 'card' ? 'block' : 'none';
+
+  // Enable confirm button
+  const btn = document.getElementById('confirmPayBtn');
+  if (btn) {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    const labels = { upi:'✅ Confirm UPI Payment', cash:'✅ Confirm Cash Received', card:'✅ Confirm Card Payment' };
+    btn.textContent = labels[method] || '✅ Confirm Payment';
+  }
+}
+
 function recalcPayment() {
   if(!curPayMember) return;
   const isNew = curPayMember.isNew;
@@ -1913,7 +1946,6 @@ function recalcPayment() {
     const planSel = document.getElementById('payPlan');
     planName = planSel.value;
     planAmt = parseInt(planSel.options[planSel.selectedIndex]?.getAttribute('data-price')) || getPlanPrice(planName);
-    
     const isPt = document.getElementById('payPtEnabled').checked;
     ptAmt = isPt ? (parseFloat(document.getElementById('payPtFee').value)||0) : 0;
     admAmt = 0; 
@@ -1931,12 +1963,20 @@ function recalcPayment() {
   rows += `<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1.5px solid var(--border);margin-top:6px"><span style="font-weight:800;font-size:.88rem">Total</span><strong style="color:var(--g);font-size:1.05rem">₹${total.toLocaleString('en-IN')}</strong></div>`;
 
   document.getElementById('payInfo').innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r3);padding:12px;margin-bottom:.6rem">${rows}</div>`;
-  
+
+  // Rebuild UPI QR whenever total changes
   const upiId = gymCfg.upiId || 'your-upi@bank';
   const upiName = gymCfg.upiName || 'GymPro';
-  document.getElementById('dispUpi').textContent = upiId;
-  const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${total}&cu=INR`;
-  document.getElementById('payQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=158x158&data=${encodeURIComponent(upiUrl)}`;
+  const dispUpi = document.getElementById('dispUpi');
+  const payQR   = document.getElementById('payQR');
+  if (dispUpi) dispUpi.textContent = upiId;
+  if (payQR) {
+    const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${total}&cu=INR`;
+    payQR.src = `https://api.qrserver.com/v1/create-qr-code/?size=158x158&data=${encodeURIComponent(upiUrl)}`;
+  }
+
+  // Store total for confirmPayment
+  curPayTotal = total;
 }
 
 async function confirmPayment() {
