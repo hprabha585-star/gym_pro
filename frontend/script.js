@@ -111,10 +111,11 @@ const avClr = n => ['#5B4CFF','#0EA669','#E53E3E','#D97706','#0369A1','#7C3AED']
 
 function av(name) {
   const i = (name||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
-  return `<div class="av" style="background:${avClr(name)}">${esc(i)}</div>`;
+  const bg = avClr(name);
+  return `<div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,${bg},${bg}CC);display:inline-flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.13)">${esc(i)}</div>`;
 }
 function avImg(m) {
-  if (m.photo?.startsWith('data:image')) return `<img src="${m.photo}" alt="${esc(m.name)}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0">`;
+  if (m.photo?.startsWith('data:image')) return `<img src="${m.photo}" alt="${esc(m.name)}" style="width:52px;height:52px;border-radius:14px;object-fit:cover;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.13)">`;
   return av(m.name);
 }
 function badge(status) {
@@ -546,7 +547,7 @@ function renderDashTable(membersList) {
       : '';
     return `<tr onclick="openEditMember('${m._id}')" style="cursor:pointer;border-bottom:1px solid #F0F5F5">
       <td style="padding:10px 8px 10px 12px;vertical-align:middle">
-        <div style="display:flex;align-items:center;gap:10px">
+        <div style="display:flex;align-items:center;gap:12px">
           ${avImg(m)}
           <div style="min-width:0">
             <div style="font-weight:800;font-size:.88rem;color:#1A2E2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px">${esc(m.name)}</div>
@@ -1153,7 +1154,7 @@ async function loadAttendance() {
       const isP = st === 'Present';
       return `<tr style="background:${isP ? '#F5FFFB' : '#fff'};border-bottom:1px solid #F0F5F5">
         <td style="padding:10px 6px 10px 12px;vertical-align:middle">
-          <div style="display:flex;align-items:center;gap:10px">
+          <div style="display:flex;align-items:center;gap:12px">
             ${avImg(m)}
             <div style="min-width:0">
               <div style="font-weight:800;font-size:.9rem;color:#1A2E2E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.name)}</div>
@@ -1859,7 +1860,7 @@ async function loadPayments() {
       const expDate = new Date(p[0], p[1]-1, p[2]);
       const d = Math.ceil((expDate - today)/86400000);
       return `<div class="pay-row">
-        <div style="display:flex;align-items:center;gap:8px">${avImg(m)}<div><div style="font-weight:700;font-size:.85rem">${esc(m.name)}</div><div style="font-size:.72rem;color:var(--tx3)">${esc(m.plan)}</div><div style="font-size:.7rem;color:var(--tx3)">Exp: ${fmt(m.expiryDate)}</div></div></div>
+        <div style="display:flex;align-items:center;gap:12px">${avImg(m)}<div><div style="font-weight:700;font-size:.85rem">${esc(m.name)}</div><div style="font-size:.72rem;color:var(--tx3)">${esc(m.plan)}</div><div style="font-size:.7rem;color:var(--tx3)">Exp: ${fmt(m.expiryDate)}</div></div></div>
         <span class="badge ${d<0?'b-inactive':'b-trial'}">${d<0?'Overdue':d+'d'}</span>
         <button class="btn btn-success btn-sm" onclick='openPaymentFor(${JSON.stringify(m).replace(/'/g,"&#39;")})'>Renew</button>
       </div>`;
