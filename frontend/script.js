@@ -524,7 +524,7 @@ function renderDashTable(membersList) {
             </div>
           </div>
         </div>
-       </td>
+        </td>
       <td style="padding:12px 12px 12px 6px;vertical-align:middle;text-align:right;white-space:nowrap">
         <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end;margin-bottom:5px">
           <span style="width:8px;height:8px;border-radius:50%;background:${expColor};flex-shrink:0"></span>
@@ -571,6 +571,16 @@ async function loadPaymentStats() {
       } else if (m.lastPaymentMethod === 'cash') {
         cashPayments += (m.lastPaymentAmount || 0);
       }
+      
+      if (m.paymentHistory && m.paymentHistory.length > 0) {
+        m.paymentHistory.forEach(payment => {
+          if (payment.method === 'upi' || payment.method === 'card') {
+            onlinePayments += (payment.amount || 0);
+          } else if (payment.method === 'cash') {
+            cashPayments += (payment.amount || 0);
+          }
+        });
+      }
     });
     
     const onlineEl = document.getElementById('statOnlinePayments');
@@ -578,6 +588,8 @@ async function loadPaymentStats() {
     
     if (onlineEl) onlineEl.textContent = onlinePayments >= 1000 ? `₹${(onlinePayments/1000).toFixed(1)}k` : `₹${onlinePayments}`;
     if (cashEl) cashEl.textContent = cashPayments >= 1000 ? `₹${(cashPayments/1000).toFixed(1)}k` : `₹${cashPayments}`;
+    
+    console.log('Payment Stats - Online:', onlinePayments, 'Cash:', cashPayments);
     
   } catch(e) {
     console.error('Payment stats error:', e);
@@ -1966,6 +1978,9 @@ async function confirmPayment() {
     toast(`✅ Member added! Payment via ${curPayMethod.toUpperCase()} recorded`, 'success');
     closeModal('paymentModal');
     curPayMember = null;
+    loadDashboard();
+    loadAllMembers();
+    loadPaymentStats();
     return;
   }
   
@@ -2019,6 +2034,7 @@ async function confirmPayment() {
     loadDashboard();
     loadPayments();
     loadAllMembers();
+    loadPaymentStats();
   } catch (e) {
     toast('Network error', 'error');
   }
