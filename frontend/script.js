@@ -1055,7 +1055,9 @@ document.getElementById('addMemberForm').addEventListener('submit', async e => {
       
       toast(`${added.name} added!`,'success');
       loadDashboard();
-      
+      loadAllMembers();
+
+      // Open payment — if user cancels, member will be deleted
       openPaymentFor(added, true);
     }else{
       const err=await res.json(); toast(err.error||'Could not add member','error');
@@ -1881,7 +1883,7 @@ async function loadPayments() {
 }
 
 function openPaymentFor(m, isNew = false) {
-  curPayMember = {id: m._id, name: m.name, expiryDate: m.expiryDate, isNew: isNew, originalData: m};
+  curPayMember = {id: m._id || m.id, name: m.name, expiryDate: m.expiryDate, isNew: isNew, originalData: m};
 
   const mhdr = document.querySelector('#paymentModal .mhdr .mtitle');
   if(mhdr) mhdr.textContent = isNew ? '💳 Complete Payment' : '💳 Renew Plan';
@@ -2012,6 +2014,25 @@ function recalcPayment() {
   curPayTotal = total;
 }
 
+async function cancelPayment() {
+  if (curPayMember && curPayMember.isNew) {
+    // Member was saved to DB — delete them since payment was not completed
+    const id   = curPayMember.id;
+    const name = curPayMember.name;
+    try {
+      await fetch(`${API}/${id}`, { method: 'DELETE', headers: hdrs() });
+      toast(`❌ Cancelled — ${name} not added`, 'error');
+      loadAllMembers();
+      loadDashboard();
+    } catch(e) {
+      toast('Could not remove member — please delete manually', 'error');
+    }
+  }
+  curPayMember = null;
+  curPayMethod = null;
+  closeModal('paymentModal');
+}
+
 async function confirmPayment() {
   if (!curPayMember) return;
   if (!curPayMethod) { toast('Please select a payment method','error'); return; }
@@ -2020,26 +2041,27 @@ async function confirmPayment() {
   const total  = curPayTotal || 0;
 
   if (curPayMember.isNew) {
-    // Just record confirmation for new member — member already saved
     const payEntry = {
       amount: total,
       date: new Date(),
       method: method,
       receiptNo: 'REC-' + Date.now()
     };
+    const btn = document.getElementById('confirmPayBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
     try {
-      const existing = await fetch(`${API}/${curPayMember.id}`, { headers: hdrs() });
-      if (existing.ok) {
-        const mem = await existing.json();
-        const history = mem.paymentHistory || [];
-        history.push(payEntry);
-        await fetch(`${API}/${curPayMember.id}`, {
-          method: 'PUT', headers: hdrs(),
-          body: JSON.stringify({ paymentHistory: history, lastPaymentDate: new Date() })
-        });
-      }
-    } catch(e) { /* non-critical */ }
-    toast(`✅ ${method.toUpperCase()} payment confirmed!`, 'success');
+      await fetch(`${API}/${curPayMember.id}`, {
+        method: 'PUT', headers: hdrs(),
+        body: JSON.stringify({
+          paymentHistory: [payEntry],
+          lastPaymentDate: new Date()
+        })
+      });
+      const methodLabel = { upi:'📱 UPI', cash:'💵 Cash', card:'💳 Card' }[method] || method;
+      toast(`✅ Member added — ${methodLabel} payment confirmed!`, 'success');
+    } catch(e) {
+      toast('Member added but payment record failed', 'error');
+    }
     closeModal('paymentModal');
     curPayMember = null; curPayMethod = null;
     loadDashboard(); loadAllMembers();
