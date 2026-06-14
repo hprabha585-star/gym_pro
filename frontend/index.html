@@ -57,14 +57,12 @@
     <button class="nav-btn" onclick="showPage('settings',this);updateBNav('none')" data-page="settings">
       <span class="ni">⚙️</span>Settings
     </button>
-    <!-- Add these buttons in the Manage section, after Settings button -->
     <button class="nav-btn" onclick="window.location.href='/gym-qr.html'" data-page="none">
-    <span class="ni">📱</span>Gym QR Code
+      <span class="ni">📱</span>Gym QR Code
     </button>
     <button class="nav-btn" onclick="window.location.href='/scan-stats.html'" data-page="none">
-    <span class="ni">📊</span>Today's Check-ins
+      <span class="ni">📊</span>Today's Check-ins
     </button>
-
   </div>
 
   <div class="sb-foot">
@@ -82,7 +80,6 @@
 </div>
 
 <div id="offline-banner">⚠️ You are offline — viewing saved data.</div>
-
 
 <!-- ═══════════════════════════════ BOTTOM NAV ═══════════════════════════════ -->
 <nav class="bottom-nav">
@@ -109,17 +106,13 @@
   <!-- ──────────────── DASHBOARD ──────────────── -->
   <div id="page-dashboard" class="page active">
 
-    <!-- Alert Banner -->
     <div id="alertBanner" class="banner green">
       <div class="banner-text"><h3>✅ All Good!</h3><p>No payments due this week</p></div>
     </div>
 
-    <!-- TODAY heading -->
     <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding:0 2px" id="dashTodayLabel">Today</div>
 
-    <!-- Primary 2-col hero tiles (Today) -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-      <!-- Attendance -->
       <div style="background:#1A8C8C;border-radius:18px;padding:16px 14px;cursor:pointer;position:relative;overflow:hidden"
         onclick="showPage('attendance',document.querySelector('[data-page=attendance]'));updateBNav('attendance')">
         <div style="position:absolute;top:-12px;right:-12px;width:60px;height:60px;background:rgba(255,255,255,.1);border-radius:50%"></div>
@@ -128,7 +121,6 @@
         <div style="font-size:.72rem;color:rgba(255,255,255,.75);font-weight:600;margin-top:4px">Today's Attendance</div>
         <div style="font-size:.62rem;color:rgba(255,255,255,.5);margin-top:2px">Tap to mark ›</div>
       </div>
-      <!-- Total Members -->
       <div style="background:#fff;border:1px solid #E0ECEC;border-radius:18px;padding:16px 14px;cursor:pointer;position:relative;overflow:hidden">
         <div style="position:absolute;top:-12px;right:-12px;width:60px;height:60px;background:#F0FAFA;border-radius:50%"></div>
         <div style="font-size:1.8rem;margin-bottom:6px">👥</div>
@@ -138,7 +130,6 @@
       </div>
     </div>
 
-    <!-- Financial Summary card -->
     <div style="background:#fff;border:1px solid #E0ECEC;border-radius:18px;padding:16px;margin-bottom:10px">
       <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">Financial Summary</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
@@ -159,34 +150,46 @@
         <span style="font-size:.78rem;font-weight:700;color:#4A6464">Total Revenue</span>
         <span style="font-size:1.05rem;font-weight:800;color:#1A8C8C" id="statRev">—</span>
       </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid #F0F5F5;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:#EFF6FF;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:8px">
+          <div style="width:32px;height:32px;border-radius:10px;background:#DBEAFE;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">📱</div>
+          <div>
+            <div style="font-size:.58rem;color:#2563EB;font-weight:800;text-transform:uppercase;letter-spacing:.4px">Online</div>
+            <div style="font-size:.95rem;font-weight:800;color:#1D4ED8" id="revOnline">—</div>
+            <div style="font-size:.58rem;color:#93C5FD;font-weight:700">UPI + Card</div>
+          </div>
+        </div>
+        <div style="background:#F0FDF4;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:8px">
+          <div style="width:32px;height:32px;border-radius:10px;background:#DCFCE7;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">💵</div>
+          <div>
+            <div style="font-size:.58rem;color:#16A34A;font-weight:800;text-transform:uppercase;letter-spacing:.4px">Cash</div>
+            <div style="font-size:.95rem;font-weight:800;color:#15803D" id="revCash">—</div>
+            <div style="font-size:.58rem;color:#86EFAC;font-weight:700">In-person</div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Expiry alert tiles row -->
     <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding:0 2px">Membership Alerts</div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">
-      <div style="background:#fff;border:1px solid #FECDD5;border-radius:14px;padding:10px 6px;text-align:center"
-        onclick="filterDash(0)">
+      <div style="background:#fff;border:1px solid #FECDD5;border-radius:14px;padding:10px 6px;text-align:center" onclick="filterDash(0)">
         <div style="font-size:1.2rem;font-weight:800;color:#E74C3C" id="statExpToday">0</div>
         <div style="font-size:.55rem;color:#8AABAB;font-weight:700;margin-top:3px;line-height:1.3">Expires<br>Today</div>
       </div>
-      <div style="background:#fff;border:1px solid #FED7AA;border-radius:14px;padding:10px 6px;text-align:center"
-        onclick="filterDash(3)">
+      <div style="background:#fff;border:1px solid #FED7AA;border-radius:14px;padding:10px 6px;text-align:center" onclick="filterDash(3)">
         <div style="font-size:1.2rem;font-weight:800;color:#F39C12" id="statExp3">0</div>
         <div style="font-size:.55rem;color:#8AABAB;font-weight:700;margin-top:3px;line-height:1.3">In<br>1–3d</div>
       </div>
-      <div style="background:#fff;border:1px solid #FED7AA;border-radius:14px;padding:10px 6px;text-align:center"
-        onclick="filterDash(7)">
+      <div style="background:#fff;border:1px solid #FED7AA;border-radius:14px;padding:10px 6px;text-align:center" onclick="filterDash(7)">
         <div style="font-size:1.2rem;font-weight:800;color:#F39C12" id="statExp7">0</div>
         <div style="font-size:.55rem;color:#8AABAB;font-weight:700;margin-top:3px;line-height:1.3">In<br>4–7d</div>
       </div>
-      <div style="background:#fff;border:1px solid #E0ECEC;border-radius:14px;padding:10px 6px;text-align:center"
-        onclick="filterDash(15)">
+      <div style="background:#fff;border:1px solid #E0ECEC;border-radius:14px;padding:10px 6px;text-align:center" onclick="filterDash(15)">
         <div style="font-size:1.2rem;font-weight:800;color:#4A6464" id="statExp15">0</div>
         <div style="font-size:.55rem;color:#8AABAB;font-weight:700;margin-top:3px;line-height:1.3">In<br>8–15d</div>
       </div>
     </div>
 
-    <!-- Expiring Soon table -->
     <div style="background:#fff;border:1px solid #E0ECEC;border-radius:18px;overflow:hidden;margin-bottom:8px">
       <div style="padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <div style="display:flex;align-items:center;gap:8px">
@@ -217,8 +220,6 @@
 
   <!-- ──────────────── MEMBERS ──────────────── -->
   <div id="page-members" class="page">
-
-    <!-- Search bar (matches reference screenshot) -->
     <div style="position:relative;margin-bottom:10px">
       <input type="search" id="memberSearch"
         placeholder='Search for "Name or Phone"'
@@ -229,7 +230,6 @@
         style="position:absolute;right:4px;top:4px;bottom:4px;background:#1A8C8C;color:#fff;border:none;border-radius:18px;padding:0 14px;font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer">🔍</button>
     </div>
 
-    <!-- Filter chips (All Member ▾ / Active / Trial / Expired / Inactive) -->
     <div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:10px;padding-bottom:2px">
       <button class="member-filter-chip active" onclick="setMembersFilter('all',this)"
         style="display:inline-flex;align-items:center;padding:7px 14px;border-radius:20px;font-size:.75rem;font-weight:700;white-space:nowrap;cursor:pointer;transition:all .15s;border:1.5px solid #1A8C8C;font-family:inherit;background:#1A8C8C;color:#fff;flex-shrink:0">
@@ -253,15 +253,11 @@
       </button>
     </div>
 
-    <!-- Member cards list — rendered by script.js into membersListWrap -->
     <div id="membersListWrap">
       <div class="empty"><div class="ei">⏳</div><p>Loading members…</p></div>
     </div>
-
-    <!-- Hidden table kept for any legacy code that references membersBody -->
     <div style="display:none"><table><tbody id="membersBody"></tbody></table></div>
 
-    <!-- FAB: Add Member button (floating, matches reference) -->
     <button onclick="openModal('addMemberModal')"
       style="position:fixed;right:1rem;bottom:calc(68px + env(safe-area-inset-bottom));
         height:48px;background:#1A8C8C;color:#fff;border:none;border-radius:30px;
@@ -270,22 +266,17 @@
         box-shadow:0 4px 18px rgba(26,140,140,.45);z-index:800;transition:all .2s">
       👤 Add Member
     </button>
-
-    <!-- Delete all (small, secondary) -->
-    <div style="height:50px"></div><!-- spacer for FAB -->
+    <div style="height:50px"></div>
   </div>
 
   <!-- ──────────────── ATTENDANCE ──────────────── -->
   <div id="page-attendance" class="page">
     <div class="card">
-      <!-- Teal left-border accent header matching screenshots -->
       <div style="padding:14px 16px 10px;border-bottom:1px solid #F0F5F5;display:flex;align-items:center;gap:10px">
         <div style="width:4px;height:22px;background:#1A8C8C;border-radius:4px;flex-shrink:0"></div>
         <span style="font-size:1rem;font-weight:800;color:#1A2E2E">Attendance</span>
       </div>
-
       <div style="padding:14px 16px 0">
-        <!-- Date + Load row -->
         <div style="display:flex;gap:10px;margin-bottom:12px">
           <input type="date" id="attDate"
             style="flex:1;min-height:50px;border:2px solid #E0ECEC;border-radius:14px;
@@ -300,8 +291,6 @@
             Load
           </button>
         </div>
-
-        <!-- Mark All Present -->
         <button onclick="markAllPresent()"
           style="width:100%;height:52px;background:#27AE60;color:#fff;
                  border:none;border-radius:14px;font-family:inherit;font-size:.95rem;
@@ -310,8 +299,6 @@
                  display:flex;align-items:center;justify-content:center;gap:8px">
           ✔ Mark All Present
         </button>
-
-        <!-- Stats row -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
           <div style="background:#F0FAFA;border-radius:12px;padding:12px 8px;text-align:center;border:1px solid #D5EDED">
             <div style="font-size:1.5rem;font-weight:800;color:#1A8C8C;line-height:1" id="attTotal">0</div>
@@ -327,7 +314,6 @@
           </div>
         </div>
       </div>
-
       <div class="tbl-wrap">
         <table>
           <thead>
@@ -479,6 +465,7 @@
     </div>
   </div>
 </div>
+
 <!-- ════════════ MEMBER ATTENDANCE MODAL ════════════ -->
 <div class="modal" id="memberAttModal">
   <div class="mbox" style="max-height:92vh">
@@ -489,7 +476,6 @@
       </div>
       <button class="mclose" onclick="closeModal('memberAttModal')">✕</button>
     </div>
-    <!-- Calendar + stats rendered here by openMemberAttendance() -->
     <div id="memberAttCal"></div>
     <div id="memberAttStat"></div>
     <div style="margin-top:14px">
@@ -497,8 +483,6 @@
     </div>
   </div>
 </div>
-
-
 
 <!-- ═══════════════════ ADD MEMBER MODAL ═══════════════════ -->
 <div class="modal" id="addMemberModal">
@@ -512,8 +496,8 @@
       <div style="display:flex;gap:1rem;align-items:center;margin-bottom:12px">
         <img id="photoPreview"
           src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231A8C8C22'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"
-          style="width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0;
-                 background:var(--teal-light);border:2px solid var(--border2)">
+          style="width:100px;height:100px;border-radius:16px;object-fit:cover;flex-shrink:0;
+                 background:var(--teal-light);border:3px solid var(--border2);box-shadow:0 4px 14px rgba(0,0,0,.1)">
         <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
           <button type="button" class="btn btn-ghost btn-sm" id="openCamBtn" style="border-radius:20px;">📷 Camera</button>
           <button type="button" class="btn btn-ghost btn-sm" id="uploadBtn" style="border-radius:20px;">📁 Upload</button>
@@ -626,6 +610,7 @@
         </div>
       </div>
 
+      <!-- ── Dates + Payment Date ── -->
       <div class="form-grid">
         <div class="form-group">
           <label>Start Date *</label>
@@ -635,7 +620,16 @@
           <label>Expiry Date *</label>
           <input type="date" id="mExpiry" required>
         </div>
+        <!-- NEW: Payment Date field -->
+        <div class="form-group" style="grid-column:1/-1">
+          <label>💳 Payment Date</label>
+          <input type="date" id="mPaymentDate"
+            style="width:100%;padding:11px 14px;background:#fff;border:1.5px solid #D5D5DF;
+                   border-radius:14px;font-family:inherit;font-size:.88rem;font-weight:500;
+                   color:#1A2E2E;-webkit-appearance:none;appearance:none;box-sizing:border-box">
+        </div>
       </div>
+
       <div class="form-group">
         <label>Status</label>
         <select id="mStatus">
@@ -689,7 +683,22 @@
     <form id="editMemberForm">
       <input type="hidden" id="editMemberId">
 
-      <div class="form-sep" style="margin-top:0">👤 Basic Info</div>
+      <div class="form-sep" style="margin-top:0">📷 Profile Photo</div>
+      <div style="display:flex;gap:1rem;align-items:center;margin-bottom:12px">
+        <img id="ePhotoPreview"
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231A8C8C22'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"
+          style="width:100px;height:100px;border-radius:16px;object-fit:cover;flex-shrink:0;
+                 background:#F0F5F5;border:3px solid #E0ECEC;box-shadow:0 4px 14px rgba(0,0,0,.1)">
+        <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
+          <button type="button" class="btn btn-ghost btn-sm" id="eOpenCamBtn" style="border-radius:20px;">📷 Camera</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="eUploadBtn" style="border-radius:20px;">📁 Upload</button>
+          <button type="button" class="btn btn-danger btn-sm" id="eClearPhotoBtn" style="display:none;border-radius:20px;">🗑 Remove</button>
+        </div>
+        <input type="file" id="ePhotoFile" accept="image/*" capture="environment" style="display:none">
+        <input type="hidden" id="ePhotoData">
+      </div>
+
+      <div class="form-sep">👤 Basic Info</div>
       <div class="form-grid">
         <div class="form-group"><label>Full Name *</label><input type="text" id="eName" required></div>
         <div class="form-group"><label>Phone * (10 digits)</label><input type="tel" id="ePhone" required maxlength="10" inputmode="numeric"></div>
@@ -896,13 +905,10 @@
       <span class="mtitle">💳 Renew Plan</span>
       <button class="mclose" onclick="cancelPayment()">✕</button>
     </div>
-
-    <!-- Plan selector (renewal only) -->
     <div class="form-group" id="payPlanRow"><label>Change Plan</label>
       <select id="payPlan" onchange="recalcPayment();updateRenewalDates()"></select>
     </div>
 
-    <!-- Start Date / Expiry Date / Payment Date (renewal only) -->
     <div id="payDatesRow" style="display:none;margin-bottom:.9rem">
       <div class="form-grid">
         <div class="form-group" style="margin-bottom:0">
@@ -911,17 +917,19 @@
         </div>
         <div class="form-group" style="margin-bottom:0">
           <label>Expiry Date</label>
-          <input type="date" id="payExpiryDate" readonly
-            style="background:#F8F8F8;color:#4A6464;cursor:not-allowed">
+          <input type="date" id="payExpiryDate" readonly style="background:#F8F8F8;color:#4A6464;cursor:not-allowed">
         </div>
-      </div>
-      <div class="form-group" style="margin-top:8px;margin-bottom:0">
-        <label>💳 Payment Date</label>
-        <input type="date" id="payPaymentDate">
+        <!-- NEW: Payment Date for renewal -->
+        <div class="form-group" style="grid-column:1/-1;margin-bottom:0">
+          <label>💳 Payment Date</label>
+          <input type="date" id="payRenewalPayDate"
+            style="width:100%;padding:11px 14px;background:#fff;border:1.5px solid #D5D5DF;
+                   border-radius:14px;font-family:inherit;font-size:.88rem;font-weight:500;
+                   color:#1A2E2E;-webkit-appearance:none;appearance:none;box-sizing:border-box">
+        </div>
       </div>
     </div>
 
-    <!-- PT toggle -->
     <div class="pt-box" style="margin-bottom:10px">
       <div class="toggle-row" style="margin-bottom:0">
         <label class="toggle-sw">
@@ -932,17 +940,14 @@
       </div>
       <div id="payPtDetails" style="display:none;margin-top:.85rem">
         <div class="form-grid">
-          <div class="form-group" style="margin-bottom:0"><label>PT Fee (₹)</label>
-            <input type="number" id="payPtFee" onchange="recalcPayment()"></div>
-          <div class="form-group" style="margin-bottom:0"><label>Trainer</label>
-            <select id="payPtTrainer"></select></div>
+          <div class="form-group" style="margin-bottom:0"><label>PT Fee (₹)</label><input type="number" id="payPtFee" onchange="recalcPayment()"></div>
+          <div class="form-group" style="margin-bottom:0"><label>Trainer</label><select id="payPtTrainer"></select></div>
         </div>
       </div>
     </div>
 
     <div id="payInfo"></div>
 
-    <!-- Payment Method -->
     <div style="margin-bottom:12px">
       <div style="font-size:.7rem;font-weight:800;color:#1A8C8C;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Payment Method</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px" id="payMethodBtns">
@@ -961,7 +966,6 @@
       </div>
     </div>
 
-    <!-- UPI Panel -->
     <div id="payUpiPanel" style="display:none">
       <div class="qr-box">
         <p style="font-size:.72rem;color:var(--tx3);margin-bottom:8px;font-weight:700;">SCAN TO PAY VIA UPI</p>
@@ -970,7 +974,6 @@
       </div>
     </div>
 
-    <!-- Cash Panel -->
     <div id="payCashPanel" style="display:none">
       <div style="background:#EDFBF3;border:1.5px solid #A7F3D0;border-radius:14px;padding:14px;text-align:center;margin-bottom:12px">
         <div style="font-size:2rem;margin-bottom:6px">💵</div>
@@ -979,7 +982,6 @@
       </div>
     </div>
 
-    <!-- Card Panel -->
     <div id="payCardPanel" style="display:none">
       <div style="background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:14px;padding:14px;text-align:center;margin-bottom:12px">
         <div style="font-size:2rem;margin-bottom:6px">💳</div>
@@ -999,15 +1001,12 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- ═══════════════════ DASHBOARD EXTRA TILES + MEMBER FILTER CHIP STYLES ═══════════════════ -->
 <style>
-/* Active chip style override */
 .member-filter-chip.active {
   background: #1A8C8C !important;
   color: #fff !important;
   border-color: #1A8C8C !important;
 }
-/* Attendance analytics colour vars that match script.js */
 :root {
   --pl2: #F2FAFA;
   --pl:  #C8E6E6;
@@ -1020,7 +1019,6 @@
 </style>
 
 <script>
-/* ── Extra dashboard tile filler (hooks into fetch, zero conflicts) ── */
 function _fillExtraDashTiles(members) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const parseExp = m => {
@@ -1050,7 +1048,6 @@ function _fillExtraDashTiles(members) {
       `Today — ${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`;
 }
 
-/* Intercept fetch to hook extra tiles — only applies to members list GET */
 (function () {
   const _fetch = window.fetch;
   window.fetch = async function (...args) {
@@ -1068,8 +1065,6 @@ function _fillExtraDashTiles(members) {
 })();
 </script>
 
-<!-- Updated script.js — member card UI + MongoDB attendance -->
 <script src="script.js"></script>
-
 </body>
 </html>
