@@ -605,32 +605,21 @@ async function loadDashboard() {
 
     let monthly=0, admission=0, pt=0, online=0, offline=0;
     members.forEach(m => {
-      // Accumulate ALL payments from paymentHistory (plan + admission + PT over time)
-      const hist = m.paymentHistory || [];
-      if (hist.length > 0) {
-        // Sum all payment history entries for this member
-        hist.forEach(p => {
-          const amt = p.amount || 0;
-          monthly += amt; // total collected
-          if (p.method === 'cash') offline += amt;
-          else if (p.method === 'upi' || p.method === 'card') online += amt;
-        });
-      } else {
-        // Fallback for members with no paymentHistory yet (old records)
-        monthly += (m.planPrice > 0 ? m.planPrice : getPlanPrice(m.plan));
-        if (!m.admissionWaived) monthly += (m.admissionFee || 0);
-        if (m.ptEnabled) monthly += (m.ptFee || 0);
-      }
-      // Admission always tracked separately
-      if (!m.admissionWaived) admission += (m.admissionFee || 0);
-      if (m.ptEnabled) pt += (m.ptFee || 0);
+      monthly   += (m.planPrice > 0 ? m.planPrice : getPlanPrice(m.plan));
+      if (!m.admissionWaived) admission += (m.admissionFee||0);
+      if (m.ptEnabled)        pt        += (m.ptFee||0);
+
+      // Tally online vs offline from paymentHistory
+      (m.paymentHistory || []).forEach(p => {
+        const amt = p.amount || 0;
+        if (p.method === 'cash') offline += amt;
+        else if (p.method === 'upi' || p.method === 'card') online += amt;
+      });
     });
-    // Monthly = plan fees only (total - admission - pt) for display
-    const planOnly = Math.max(0, monthly - admission - pt);
-    const total = monthly;
+    const total = monthly + admission + pt;
     const fmtR  = v => v >= 1000 ? `₹${(v/1000).toFixed(1)}k` : `₹${v}`;
     document.getElementById('statRev').textContent  = fmtR(Math.round(total));
-    document.getElementById('revM').textContent     = `₹${Math.round(planOnly).toLocaleString('en-IN')}`;
+    document.getElementById('revM').textContent     = `₹${Math.round(monthly).toLocaleString('en-IN')}`;
     document.getElementById('revA').textContent     = `₹${Math.round(admission).toLocaleString('en-IN')}`;
     document.getElementById('revPT').textContent    = `₹${Math.round(pt).toLocaleString('en-IN')}`;
     const revOnlineEl  = document.getElementById('revOnline');
@@ -2042,17 +2031,10 @@ function recalcPayment() {
   } else {
     const planSel = document.getElementById('payPlan');
     planName = planSel.value;
-    const origAmt = parseInt(planSel.options[planSel.selectedIndex]?.getAttribute('data-price')) || getPlanPrice(planName);
-    // Apply renewal discount
-    const rdType   = document.querySelector('input[name="payDType"]:checked')?.value || 'none';
-    const rdRawVal = (document.getElementById('payDValue')?.value || '').replace(/,/g,'').trim();
-    const rdVal    = rdRawVal === '' ? 0 : (parseFloat(rdRawVal) || 0);
-    if (rdType === 'percentage' && rdVal > 0) planAmt = Math.round(origAmt - origAmt * Math.min(rdVal,100) / 100);
-    else if (rdType === 'fixed' && rdVal > 0) planAmt = Math.max(0, Math.round(origAmt - rdVal));
-    else planAmt = origAmt;
+    planAmt = parseInt(planSel.options[planSel.selectedIndex]?.getAttribute('data-price')) || getPlanPrice(planName);
     const isPt = document.getElementById('payPtEnabled').checked;
     ptAmt = isPt ? (parseFloat(document.getElementById('payPtFee').value)||0) : 0;
-    admAmt = 0;
+    admAmt = 0; 
   }
 
   const total = planAmt + ptAmt + admAmt;
@@ -2137,28 +2119,21 @@ async function confirmPayment() {
     return;
   }
 
-  // Renewal — read plan + discount
-  const planName    = document.getElementById('payPlan').value;
-  const planSel     = document.getElementById('payPlan');
-  const origPlanAmt = parseInt(planSel.options[planSel.selectedIndex]?.getAttribute('data-price')) || getPlanPrice(planName);
-  const isPt        = document.getElementById('payPtEnabled').checked;
-  const ptAmt       = isPt ? (parseFloat(document.getElementById('payPtFee').value)||0) : 0;
-  const ptTrainer   = isPt ? document.getElementById('payPtTrainer').value : '';
-
-  // Renewal discount
-  const rdType   = document.querySelector('input[name="payDType"]:checked')?.value || 'none';
-  const rdRawVal = (document.getElementById('payDValue')?.value || '').replace(/,/g,'').trim();
-  const rdVal    = rdRawVal === '' ? 0 : (parseFloat(rdRawVal) || 0);
-  let planAmt = origPlanAmt;
-  if (rdType === 'percentage' && rdVal > 0) planAmt = Math.round(origPlanAmt - origPlanAmt * Math.min(rdVal,100) / 100);
-  else if (rdType === 'fixed' && rdVal > 0) planAmt = Math.max(0, Math.round(origPlanAmt - rdVal));
+  // Renewal
+  const planName = document.getElementById('payPlan').value;
+  const planAmt  = getPlanPrice(planName);
+  const isPt     = document.getElementById('payPtEnabled').checked;
+  const ptAmt    = isPt ? (parseFloat(document.getElementById('payPtFee').value)||0) : 0;
+  const ptTrainer= isPt ? document.getElementById('payPtTrainer').value : '';
 
   // Use the date fields set by the user
-  const expiryDateEl  = document.getElementById('payExpiryDate');
-  const payDateEl     = document.getElementById('payRenewalPayDate');
+  const startDateEl  = document.getElementById('payStartDate');
+  const expiryDateEl = document.getElementById('payExpiryDate');
+  const payDateEl    = document.getElementById('payPaymentDate');
   const chosenPayDate = payDateEl && payDateEl.value ? new Date(payDateEl.value) : new Date();
 
   const newExpiry = expiryDateEl && expiryDateEl.value ? expiryDateEl.value : (() => {
+    // Fallback: compute from current expiry
     let baseDate = new Date();
     baseDate.setHours(0,0,0,0);
     if (curPayMember.expiryDate) {
@@ -2171,7 +2146,7 @@ async function confirmPayment() {
   })();
 
   const payEntry = {
-    amount:    planAmt + ptAmt,  // only plan + PT for renewal (no admission)
+    amount:    total,
     date:      chosenPayDate,
     method:    method,
     receiptNo: 'REC-' + Date.now()
@@ -2181,15 +2156,23 @@ async function confirmPayment() {
   if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
 
   try {
-    // PUT core renewal fields — never overwrite admissionFee/admissionWaived
+    const payload = {
+      plan: planName, planPrice: planAmt,
+      ptEnabled: isPt, ptFee: ptAmt, ptTrainer,
+      expiryDate: newExpiry, status: 'Active',
+      lastPaymentDate: chosenPayDate,
+      $push: undefined   // we use $addToSet via a workaround below
+    };
+    delete payload.$push;
+
+    // First PUT core fields
     const res = await fetch(`${API}/${curPayMember.id}`, {
       method: 'PUT', headers: hdrs(),
       body: JSON.stringify({
         plan: planName, planPrice: planAmt,
         ptEnabled: isPt, ptFee: ptAmt, ptTrainer,
         expiryDate: newExpiry, status: 'Active',
-        lastPaymentDate: chosenPayDate,
-        discountType: rdType, discountValue: rdVal
+        lastPaymentDate: new Date()
       })
     });
 
@@ -2198,22 +2181,22 @@ async function confirmPayment() {
       throw new Error(err.error || err.message || `Server error ${res.status}`);
     }
 
-    // Append to paymentHistory
+    // Second PUT to append payment history — fetch current first with short timeout
     try {
-      const ctrl   = new AbortController();
-      const tid    = setTimeout(()=>ctrl.abort(), 5000);
+      const ctrl = new AbortController();
+      const tid  = setTimeout(()=>ctrl.abort(), 5000);
       const memRes = await fetch(`${API}/${curPayMember.id}`, { headers: hdrs(), signal: ctrl.signal });
       clearTimeout(tid);
-      const mem    = memRes.ok ? await memRes.json() : {};
+      const mem = memRes.ok ? await memRes.json() : {};
       const history = [...(mem.paymentHistory || []), payEntry];
       await fetch(`${API}/${curPayMember.id}`, {
         method: 'PUT', headers: hdrs(),
         body: JSON.stringify({ paymentHistory: history })
       });
-    } catch(e2) { /* non-critical */ }
+    } catch(e2) { /* non-critical — core renewal already saved */ }
 
-    const methodLabel   = { upi:'📱 UPI', cash:'💵 Cash', card:'💳 Card' }[method] || method;
-    const expiryDisplay = new Date(newExpiry + 'T00:00:00').toLocaleDateString('en-IN');
+    const methodLabel = { upi:'📱 UPI', cash:'💵 Cash', card:'💳 Card' }[method] || method;
+    const expiryDisplay = new Date(newExpiry).toLocaleDateString('en-IN');
     toast(`✅ ${methodLabel} — Renewed until ${expiryDisplay}`, 'success');
     closeModal('paymentModal');
     curPayMember = null; curPayMethod = null;
