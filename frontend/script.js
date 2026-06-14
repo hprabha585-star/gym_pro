@@ -1816,6 +1816,9 @@ function openPaymentFor(m, isNew = false) {
     const expiryEl = document.getElementById('payExpiryDate');
     if (startEl)  startEl.value  = '';
     if (expiryEl) expiryEl.value = '';
+    // ── NEW: default renewal payment date to today ──
+    const renewPayDateEl = document.getElementById('payRenewalPayDate');
+    if (renewPayDateEl) renewPayDateEl.value = getLocalTodayStr();
 
     populatePlanSelect('payPlan');
     document.getElementById('payPlan').value = m.plan || gymPlans[0].name;
@@ -2041,9 +2044,13 @@ async function confirmPayment() {
     return baseDate.toISOString().split('T')[0];
   })();
 
+  // ── NEW: use chosen renewal payment date, fallback to today ──
+  const renewPayDateVal = document.getElementById('payRenewalPayDate')?.value;
+  const renewPayDate    = renewPayDateVal ? new Date(renewPayDateVal) : new Date();
+
   const payEntry = {
     amount:    total,
-    date:      new Date(),
+    date:      renewPayDate,
     method:    method,
     receiptNo: 'REC-' + Date.now()
   };
@@ -2072,7 +2079,7 @@ async function confirmPayment() {
       ptTrainer,
       expiryDate:      newExpiry,
       status:          'Active',
-      lastPaymentDate: new Date(),
+      lastPaymentDate: renewPayDate,
       paymentHistory:  history
     };
 
