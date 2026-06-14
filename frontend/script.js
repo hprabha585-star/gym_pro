@@ -726,13 +726,17 @@ function _renderMemberCard(m, idx) {
         <div style="font-size:.78rem;color:#4A6464;margin-bottom:3px">
           <span style="font-weight:600">Mobile: </span>+91 - ${safePhone}
         </div>
-        <!-- Plan Expiry + Due Amount -->
+        <!-- Plan Expiry + Amount Paid + Payment Date -->
         <div style="display:flex;align-items:center;justify-content:space-between;gap:4px">
           <div style="font-size:.75rem;color:#4A6464">
             <span style="font-weight:600">Plan Expiry: </span>
             <span style="font-weight:700;color:#1A2E2E">${expiryStr}</span>
           </div>
-          <div style="font-size:.75rem;font-weight:800;color:${dueColor}">${dueText}</div>
+          <div style="font-size:.75rem;font-weight:800;color:#27AE60">Paid: ₹${(m.planPrice||0).toLocaleString('en-IN')}</div>
+        </div>
+        <div style="font-size:.72rem;color:#8AABAB;margin-top:2px">
+          <span style="font-weight:600">Payment Date: </span>
+          <span style="font-weight:700;color:#4A6464">${m.lastPaymentDate ? new Date(m.lastPaymentDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</span>
         </div>
       </div>
       <!-- Delete button -->
@@ -1891,20 +1895,32 @@ function openPaymentFor(m, isNew = false) {
   if (isNew) {
     document.getElementById('payPlan').parentElement.style.display = 'none';
     document.getElementById('payPtEnabled').closest('.pt-box').style.display = 'none';
+    const payDatesRow = document.getElementById('payDatesRow');
+    if (payDatesRow) payDatesRow.style.display = 'none';
   } else {
     document.getElementById('payPlan').parentElement.style.display = 'block';
     document.getElementById('payPtEnabled').closest('.pt-box').style.display = 'block';
-    
+
+    // Show & init renewal date fields
+    const payDatesRow = document.getElementById('payDatesRow');
+    if (payDatesRow) payDatesRow.style.display = 'block';
+    const startEl  = document.getElementById('payStartDate');
+    const expiryEl = document.getElementById('payExpiryDate');
+    if (startEl)  startEl.value  = '';
+    if (expiryEl) expiryEl.value = '';
+
     populatePlanSelect('payPlan');
     document.getElementById('payPlan').value = m.plan || gymPlans[0].name;
-    
+
     const ptEn = !!m.ptEnabled;
     document.getElementById('payPtEnabled').checked = ptEn;
     document.getElementById('payPtDetails').style.display = ptEn ? 'block' : 'none';
     document.getElementById('payPtFee').value = m.ptFee || gymCfg.ptFee || 0;
-    
+
     document.getElementById('payPtTrainer').innerHTML = document.getElementById('ePtTrainer').innerHTML || '<option value="">Select Trainer</option>';
     document.getElementById('payPtTrainer').value = m.ptTrainer || '';
+
+    updateRenewalDates();
   }
 
   recalcPayment();
@@ -1930,6 +1946,38 @@ function openPaymentFor(m, isNew = false) {
   }
 
   openModal('paymentModal');
+}
+
+function updateRenewalDates() {
+  const startEl  = document.getElementById('payStartDate');
+  const expiryEl = document.getElementById('payExpiryDate');
+  if (!startEl || !expiryEl) return;
+  if (!startEl.value) {
+    // Default start: today (or member's current expiry if future)
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    let startDefault = today;
+    if (curPayMember && curPayMember.expiryDate) {
+      const p = curPayMember.expiryDate.split('T')[0].split('-');
+      const d = new Date(+p[0], +p[1]-1, +p[2]);
+      if (d > today) startDefault = d;
+    }
+    startEl.value = startDefault.toISOString().split('T')[0];
+  }
+  updateRenewalExpiry();
+}
+
+function updateRenewalExpiry() {
+  const startEl  = document.getElementById('payStartDate');
+  const expiryEl = document.getElementById('payExpiryDate');
+  if (!startEl || !expiryEl || !startEl.value) return;
+  const planSel = document.getElementById('payPlan');
+  const planName = planSel ? planSel.value : '';
+  const months = getPlanMonths(planName);
+  const p = startEl.value.split('-');
+  const d = new Date(+p[0], +p[1]-1, +p[2]);
+  d.setMonth(d.getMonth() + months);
+  expiryEl.value = d.toISOString().split('T')[0];
 }
 
 function selectPayMethod(method) {
@@ -2071,20 +2119,25 @@ async function confirmPayment() {
   // Renewal
   const planName = document.getElementById('payPlan').value;
   const planAmt  = getPlanPrice(planName);
-  const months   = getPlanMonths(planName);
   const isPt     = document.getElementById('payPtEnabled').checked;
   const ptAmt    = isPt ? (parseFloat(document.getElementById('payPtFee').value)||0) : 0;
   const ptTrainer= isPt ? document.getElementById('payPtTrainer').value : '';
 
-  let baseDate = new Date();
-  baseDate.setHours(0,0,0,0);
-  if (curPayMember.expiryDate) {
-    const p = curPayMember.expiryDate.split('T')[0].split('-');
-    const d = new Date(p[0], p[1]-1, p[2]);
-    if (d > new Date()) baseDate = d;
-  }
-  baseDate.setMonth(baseDate.getMonth() + months);
-  const newExpiry = baseDate.getFullYear() + '-' + String(baseDate.getMonth()+1).padStart(2,'0') + '-' + String(baseDate.getDate()).padStart(2,'0');
+  // Use the date fields set by the user
+  const startDateEl  = document.getElementById('payStartDate');
+  const expiryDateEl = document.getElementById('payExpiryDate');
+  const newExpiry = expiryDateEl && expiryDateEl.value ? expiryDateEl.value : (() => {
+    // Fallback: compute from current expiry
+    let baseDate = new Date();
+    baseDate.setHours(0,0,0,0);
+    if (curPayMember.expiryDate) {
+      const p = curPayMember.expiryDate.split('T')[0].split('-');
+      const d = new Date(+p[0], +p[1]-1, +p[2]);
+      if (d > new Date()) baseDate = d;
+    }
+    baseDate.setMonth(baseDate.getMonth() + getPlanMonths(planName));
+    return baseDate.toISOString().split('T')[0];
+  })();
 
   const payEntry = {
     amount: total,
@@ -2115,7 +2168,8 @@ async function confirmPayment() {
     });
 
     const methodLabel = { upi:'📱 UPI', cash:'💵 Cash', card:'💳 Card' }[method] || method;
-    toast(`✅ ${methodLabel} — Renewed to ${baseDate.toLocaleDateString('en-IN')}`, 'success');
+    const expiryDisplay = new Date(newExpiry).toLocaleDateString('en-IN');
+    toast(`✅ ${methodLabel} — Renewed until ${expiryDisplay}`, 'success');
     closeModal('paymentModal');
     curPayMember = null; curPayMethod = null;
     loadDashboard(); loadPayments(); loadAllMembers();
