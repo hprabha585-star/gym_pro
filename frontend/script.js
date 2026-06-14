@@ -563,14 +563,27 @@ async function loadDashboard() {
 
     let monthly=0, admission=0, pt=0, online=0, offline=0;
     members.forEach(m => {
-      monthly   += (m.planPrice > 0 ? m.planPrice : getPlanPrice(m.plan));
-      if (!m.admissionWaived) admission += (m.admissionFee||0);
-      if (m.ptEnabled)        pt        += (m.ptFee||0);
-      (m.paymentHistory || []).forEach(p => {
-        const amt = p.amount || 0;
-        if (p.method === 'cash') offline += amt;
-        else if (p.method === 'upi' || p.method === 'card') online += amt;
-      });
+      const history = m.paymentHistory || [];
+      if (history.length > 0) {
+        // ── paymentHistory is the single source of truth ──
+        // Each entry has entryType: 'plan' | 'admission' | 'pt' | 'renewal'
+        // Legacy entries (no entryType) are counted as plan/monthly
+        history.forEach(p => {
+          const amt = p.amount || 0;
+          const typ = p.entryType || 'plan';
+          if (typ === 'admission') admission += amt;
+          else if (typ === 'pt')   pt        += amt;
+          else                     monthly   += amt; // plan / renewal / legacy
+          // Online vs cash across ALL entries
+          if      (p.method === 'cash')              offline += amt;
+          else if (p.method === 'upi' || p.method === 'card') online += amt;
+        });
+      } else {
+        // Legacy fallback — member predates paymentHistory
+        monthly   += (m.planPrice > 0 ? m.planPrice : getPlanPrice(m.plan));
+        if (!m.admissionWaived) admission += (m.admissionFee || 0);
+        if (m.ptEnabled)        pt        += (m.ptFee || 0);
+      }
     });
     const total = monthly + admission + pt;
     const fmtR  = v => v >= 1000 ? `₹${(v/1000).toFixed(1)}k` : `₹${v}`;
@@ -1996,20 +2009,37 @@ async function confirmPayment() {
   if (curPayMember.isNew) {
     // Use the payment date chosen in the Add Member form
     const chosenDate = curPayMember._chosenPaymentDate;
-    const payEntry = {
-      amount:    total,
-      date:      chosenDate ? new Date(chosenDate) : new Date(),
-      method:    method,
-      receiptNo: 'REC-' + Date.now()
-    };
+    const orig = curPayMember.originalData;
+    const payDate = chosenDate ? new Date(chosenDate) : new Date();
+    const receiptBase = 'REC-' + Date.now();
+
+    // ── Build separate entries per charge type so dashboard can break down correctly ──
+    const newHistory = [];
+    const planAmt = orig.planPrice || 0;
+    if (planAmt > 0) {
+      newHistory.push({ entryType:'plan', amount: planAmt, date: payDate, method, receiptNo: receiptBase + '-P' });
+    }
+    const admAmt = (!orig.admissionWaived && orig.admissionFee > 0) ? orig.admissionFee : 0;
+    if (admAmt > 0) {
+      newHistory.push({ entryType:'admission', amount: admAmt, date: payDate, method, receiptNo: receiptBase + '-A' });
+    }
+    const ptAmt = (orig.ptEnabled && orig.ptFee > 0) ? orig.ptFee : 0;
+    if (ptAmt > 0) {
+      newHistory.push({ entryType:'pt', amount: ptAmt, date: payDate, method, receiptNo: receiptBase + '-T' });
+    }
+    // Fallback: if somehow all zero, store single entry with total
+    if (newHistory.length === 0) {
+      newHistory.push({ entryType:'plan', amount: total, date: payDate, method, receiptNo: receiptBase });
+    }
+
     const btn = document.getElementById('confirmPayBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
     try {
       await fetch(`${API}/${memberId}`, {
         method: 'PUT', headers: hdrs(),
         body: JSON.stringify({
-          paymentHistory:  [payEntry],
-          lastPaymentDate: chosenDate ? new Date(chosenDate) : new Date()
+          paymentHistory:  newHistory,
+          lastPaymentDate: payDate
         })
       });
       const methodLabel = { upi:'📱 UPI', cash:'💵 Cash', card:'💳 Card' }[method] || method;
@@ -2044,28 +2074,34 @@ async function confirmPayment() {
     return baseDate.toISOString().split('T')[0];
   })();
 
-  // ── NEW: use chosen renewal payment date, fallback to today ──
+  // ── use chosen renewal payment date, fallback to today ──
   const renewPayDateVal = document.getElementById('payRenewalPayDate')?.value;
   const renewPayDate    = renewPayDateVal ? new Date(renewPayDateVal) : new Date();
+  const renewReceiptBase = 'REC-' + Date.now();
 
-  const payEntry = {
-    amount:    total,
-    date:      renewPayDate,
-    method:    method,
-    receiptNo: 'REC-' + Date.now()
-  };
+  // ── Build separate entries per charge type so dashboard totals are additive ──
+  const renewEntries = [];
+  if (planAmt > 0) {
+    renewEntries.push({ entryType:'renewal', amount: planAmt, date: renewPayDate, method, receiptNo: renewReceiptBase + '-P' });
+  }
+  if (ptAmt > 0) {
+    renewEntries.push({ entryType:'pt', amount: ptAmt, date: renewPayDate, method, receiptNo: renewReceiptBase + '-T' });
+  }
+  if (renewEntries.length === 0) {
+    renewEntries.push({ entryType:'renewal', amount: total, date: renewPayDate, method, receiptNo: renewReceiptBase });
+  }
 
   const btn = document.getElementById('confirmPayBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
 
   try {
     // ── FIX: wrap GET in try/catch so a cold-start timeout doesn't kill the renewal ──
-    let history = [payEntry];
+    let history = [...renewEntries];
     try {
       const memRes = await fetch(`${API}/${memberId}`, { headers: hdrs() });
       if (memRes.ok) {
         const mem = await memRes.json();
-        history = [...(mem.paymentHistory || []), payEntry];
+        history = [...(mem.paymentHistory || []), ...renewEntries];
       }
     } catch(fetchErr) {
       console.warn('Could not fetch payment history, starting fresh:', fetchErr);
