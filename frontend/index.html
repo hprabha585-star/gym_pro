@@ -930,8 +930,22 @@
       <span class="mtitle">💳 Renew Plan</span>
       <button class="mclose" onclick="cancelPayment()">✕</button>
     </div>
-    <div class="form-group"><label>Change Plan</label>
-      <select id="payPlan" onchange="recalcPayment()"></select>
+    <div class="form-group" id="payPlanRow"><label>Change Plan</label>
+      <select id="payPlan" onchange="recalcPayment();updateRenewalDates()"></select>
+    </div>
+
+    <!-- Start Date & Expiry Date (renewal) -->
+    <div id="payDatesRow" style="display:none;margin-bottom:.9rem">
+      <div class="form-grid">
+        <div class="form-group" style="margin-bottom:0">
+          <label>Start Date</label>
+          <input type="date" id="payStartDate" onchange="updateRenewalExpiry()">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Expiry Date</label>
+          <input type="date" id="payExpiryDate" readonly style="background:#F8F8F8;color:#4A6464;cursor:not-allowed">
+        </div>
+      </div>
     </div>
     <div class="pt-box" style="margin-bottom:10px">
       <div class="toggle-row" style="margin-bottom:0">
