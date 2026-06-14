@@ -24,8 +24,8 @@ const DEFAULT_PLANS = [
 /* ── In-memory state ── */
 let gymPlans   = [...DEFAULT_PLANS];
 let gymDisc    = [];
-let gymCfg     = {}; 
-let trainerMap = {}; 
+let gymCfg     = {};
+let trainerMap = {};
 
 let curPayMember = null;
 let curPayMethod = null;
@@ -36,8 +36,6 @@ let curStream    = null;
 const hdrs = () => ({ 'Content-Type':'application/json', 'Authorization':`Bearer ${localStorage.getItem('token')}` });
 const checkAuth = () => { if (!localStorage.getItem('token')) { location.href='/login.html'; return false; } return true; };
 function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); location.href='/login.html'; }
-
-
 
 /* ── PROFILE SYNC ── */
 async function loadServerProfile() {
@@ -52,8 +50,6 @@ async function loadServerProfile() {
       if (d.disc) gymDisc = d.disc;
     }
     localStorage.setItem('gymProfile_cache', JSON.stringify({ plans: gymPlans, cfg: gymCfg, disc: gymDisc }));
-    
-    // Refresh UI elements after data loads
     populatePlanSelect();
     populatePlanSelect('ePlan');
     populatePlanSelect('payPlan');
@@ -101,7 +97,6 @@ function toast(msg, type='') {
 
 const esc  = s => String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-// TIMEZONE FIX: Strictly parses YYYY-MM-DD as local date
 const fmt = d => {
   if(!d) return '—';
   const p = d.split('T')[0].split('-');
@@ -130,16 +125,13 @@ function gBadge(g) {
   return `<span class="badge ${m[g]||'b-other'}">${esc(g)}</span>`;
 }
 
-// TIMEZONE FIX: Local Math
 function expCell(expiryDate, status) {
   if (!expiryDate) return '—';
   const p = expiryDate.split('T')[0].split('-');
   const expDate = new Date(p[0], p[1]-1, p[2]);
   const today = new Date();
   today.setHours(0,0,0,0);
-  
   const days = Math.ceil((expDate - today) / 86400000);
-  
   if (status !== 'Active' && status !== 'Trial') return `<span class="exp-txt g">${fmt(expiryDate)}</span>`;
   if (days <= 3) return `<div class="exp-cell"><div class="exp-dot r"></div><div><div class="exp-txt r">${fmt(expiryDate)}</div><div class="exp-txt r">${days<0?'Expired':days+'d left'}</div></div></div>`;
   if (days <= 5) return `<div class="exp-cell"><div class="exp-dot y"></div><div><div class="exp-txt y">${fmt(expiryDate)}</div><div class="exp-txt y">${days}d left</div></div></div>`;
@@ -156,15 +148,7 @@ function sortByExpiry(members) {
   });
 }
 
-/* ═══════════════════════════════════════════════════════
-   ANDROID WEBVIEW — External App Launchers
-   window.open() fails in WebView for tel: whatsapp: etc.
-   Must use location.href OR Android Intent URLs
-   ═══════════════════════════════════════════════════════ */
-
 function dialPhone(phone) {
-  // In Android WebView: location.href triggers shouldOverrideUrlLoading
-  // In browser: window.location.href also works for tel: links
   window.location.href = 'tel:' + String(phone).replace(/[^0-9+]/g,'');
 }
 
@@ -172,8 +156,6 @@ function openWhatsApp(phone) {
   const clean = String(phone).replace(/[^0-9]/g, '');
   const num   = clean.startsWith('91') ? clean : '91' + clean;
   const url   = 'https://wa.me/' + num;
-  // In Android WebView: use location.href (MainActivity intercepts it)
-  // In browser: use window.open (opens WhatsApp web in new tab)
   const isAndroidWebView = /wv/.test(navigator.userAgent) ||
     (/Android/i.test(navigator.userAgent) && /Version\//.test(navigator.userAgent));
   if (isAndroidWebView) {
@@ -191,10 +173,10 @@ function toggleSidebar() {
   if (isOpen) {
     sb.classList.remove('open');
     ov.classList.remove('show');
-        } else {
+  } else {
     sb.classList.add('open');
     ov.classList.add('show');
-        }
+  }
 }
 function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
@@ -205,9 +187,7 @@ function updateBNav(id) {
   if (id !== 'none') document.getElementById(`bn-${id}`)?.classList.add('active');
 }
 
-/* ── FIX: Add missing loadSubscriptionPage function ── */
 function loadSubscriptionPage() {
-  // Subscription page not implemented in UI, just redirect or show message
   console.log('Subscription page not implemented');
   toast('Subscription features coming soon', 'info');
 }
@@ -230,19 +210,11 @@ function getLocalTodayStr() {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
-/* ═══════════════════════════════════════════════════════
-   MODAL SYSTEM — Android WebView fixes
-   • Sets mbox height via window.innerHeight (not vh)
-   • Locks body scroll when modal open
-   • Prevents touch passthrough
-   ═══════════════════════════════════════════════════════ */
-
 function _setModalHeight(modalEl) {
   const mbox = modalEl.querySelector('.mbox');
   if (!mbox) return;
-  // Use window.innerHeight (correct in Android WebView; 100vh is wrong)
   const vh = window.innerHeight;
-  const maxH = Math.floor(vh * 0.91); // 91% of real viewport
+  const maxH = Math.floor(vh * 0.91);
   mbox.style.maxHeight = maxH + 'px';
   mbox.style.height    = 'auto';
 }
@@ -253,13 +225,14 @@ const openModal = id => {
   el.classList.add('open');
   _setModalHeight(el);
 
-
   if (id === 'addMemberModal') {
     const startInput = document.getElementById('mStart');
     if (startInput) { startInput.value = getLocalTodayStr(); onPlanChange(); }
+    // ── NEW: auto-set payment date to today if empty ──
+    const payDateInput = document.getElementById('mPaymentDate');
+    if (payDateInput && !payDateInput.value) payDateInput.value = getLocalTodayStr();
   }
 
-  // Scroll mbox to top on open
   const mbox = el.querySelector('.mbox');
   if (mbox) mbox.scrollTop = 0;
 };
@@ -270,12 +243,10 @@ const closeModal = id => {
   el.classList.remove('open');
 };
 
-// Re-calc on resize/orientation change
 window.addEventListener('resize', () => {
   document.querySelectorAll('.modal.open').forEach(m => _setModalHeight(m));
 });
 
-// Close when tapping dark backdrop (not the mbox)
 document.addEventListener('click', e => {
   if (e.target.classList.contains('modal')) {
     closeModal(e.target.id);
@@ -295,12 +266,8 @@ function setupCamera() {
     const camInput = document.getElementById('photoFile');
     camInput.setAttribute('capture', 'environment');
     camInput.setAttribute('accept', 'image/*');
-
-    // Save the currently open modal ID before camera launches
     const openModalEl = document.querySelector('.modal.open');
     window._presCamModalId = openModalEl ? openModalEl.id : null;
-
-    // Always use file input on Android (getUserMedia blocked in WebView)
     const isAndroid = /Android/i.test(navigator.userAgent);
     if (isAndroid || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       camInput.click();
@@ -339,14 +306,12 @@ function setupCamera() {
       prev.style.opacity = '1';
       pd.value     = result;
       clr.style.display = 'inline-flex';
-      // Restore the modal that was open before camera launched
       const modalId = window._presCamModalId ||
         (document.getElementById('editMemberModal') ? 'editMemberModal' : 'addMemberModal');
       const modal = document.getElementById(modalId);
       if (modal && !modal.classList.contains('open')) {
         modal.classList.add('open');
         _setModalHeight(modal);
-        // Scroll to top of modal so user sees the photo
         const mbox = modal.querySelector('.mbox');
         if (mbox) setTimeout(() => { mbox.scrollTop = 0; }, 50);
       }
@@ -354,7 +319,6 @@ function setupCamera() {
     };
     r.onerror = () => { prev.style.opacity = '1'; toast('Photo error — try Upload', 'error'); };
     r.readAsDataURL(f);
-    // Reset so same photo can be re-selected
     setTimeout(() => { e.target.value = ''; }, 400);
   };
   clr.onclick = resetPhoto;
@@ -416,7 +380,7 @@ function setupEditPhoto() {
   };
 }
 
-/* ── SMART PLAN SELECT (Includes Global Discounts!) ── */
+/* ── SMART PLAN SELECT ── */
 function populatePlanSelect(selId='mPlan') {
   const sel = document.getElementById(selId);
   if (!sel) return;
@@ -437,7 +401,7 @@ function populatePlanSelect(selId='mPlan') {
     return `<option value="${esc(p.name)}" data-price="${discPrice}" data-months="${p.months}">${esc(p.name)} — ${txt}</option>`;
   }).join('');
   if (cur) sel.value = cur;
-  
+
   const dp = document.getElementById('discPlan');
   if (dp) dp.innerHTML = gymPlans.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
   if (selId==='mPlan') recalcPrice();
@@ -445,8 +409,8 @@ function populatePlanSelect(selId='mPlan') {
 }
 
 function togglePT(detailId) {
-  const chk = detailId === 'mPtDetails' ? document.getElementById('mPtEnabled') : 
-              detailId === 'ePtDetails' ? document.getElementById('ePtEnabled') : 
+  const chk = detailId === 'mPtDetails' ? document.getElementById('mPtEnabled') :
+              detailId === 'ePtDetails' ? document.getElementById('ePtEnabled') :
               document.getElementById('payPtEnabled');
   if(document.getElementById(detailId)) {
     document.getElementById(detailId).style.display = chk.checked ? 'block' : 'none';
@@ -481,12 +445,10 @@ function recalcEditPrice() {
   document.getElementById('eFinalPrice').textContent = `₹${final.toLocaleString('en-IN')}`;
 }
 
-// TIMEZONE FIX: Uses strictly local dates
 function onPlanChange() {
   const sel = document.getElementById('mPlan');
   if (!sel || !sel.options[sel.selectedIndex]) return;
   const months = parseInt(sel.options[sel.selectedIndex].getAttribute('data-months'))||1;
-  
   const startInput = document.getElementById('mStart');
   let sd = new Date();
   if (startInput && startInput.value) {
@@ -495,10 +457,8 @@ function onPlanChange() {
   } else if (startInput) {
     startInput.value = getLocalTodayStr();
   }
-
   sd.setMonth(sd.getMonth() + months);
   document.getElementById('mExpiry').value = sd.getFullYear() + '-' + String(sd.getMonth()+1).padStart(2,'0') + '-' + String(sd.getDate()).padStart(2,'0');
-  
   recalcPrice();
 }
 
@@ -560,15 +520,15 @@ function renderDashTable(membersList) {
             </div>
           </div>
         </div>
-       </td>
+      </td>
       <td style="padding:12px 12px 12px 6px;vertical-align:middle;text-align:right;white-space:nowrap">
         <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end;margin-bottom:5px">
           <span style="width:8px;height:8px;border-radius:50%;background:${expColor};flex-shrink:0"></span>
           <span style="font-size:.78rem;font-weight:700;color:#1A2E2E">${expLabel}</span>
         </div>
         <span style="background:${sb};color:${sc};padding:3px 10px;border-radius:20px;font-size:.65rem;font-weight:800">${esc(m.status||'')}</span>
-       </td>
-     </tr>`;
+      </td>
+    </tr>`;
   }).join('');
 }
 
@@ -582,10 +542,8 @@ function filterDash(days) {
   const targetDate = new Date(today);
   targetDate.setDate(today.getDate() + days);
   targetDate.setHours(23,59,59,999);
-
   const filtered = dashMembersCache.filter(m => {
     if (m.status !== 'Active' && m.status !== 'Trial') return false;
-    // Timezone fix for filters
     const p = m.expiryDate.split('T')[0].split('-');
     const exp = new Date(p[0], p[1]-1, p[2]);
     return exp >= today && exp <= targetDate;
@@ -608,8 +566,6 @@ async function loadDashboard() {
       monthly   += (m.planPrice > 0 ? m.planPrice : getPlanPrice(m.plan));
       if (!m.admissionWaived) admission += (m.admissionFee||0);
       if (m.ptEnabled)        pt        += (m.ptFee||0);
-
-      // Tally online vs offline from paymentHistory
       (m.paymentHistory || []).forEach(p => {
         const amt = p.amount || 0;
         if (p.method === 'cash') offline += amt;
@@ -626,6 +582,7 @@ async function loadDashboard() {
     const revCashEl    = document.getElementById('revCash');
     if (revOnlineEl) revOnlineEl.textContent = fmtR(Math.round(online));
     if (revCashEl)   revCashEl.textContent   = fmtR(Math.round(offline));
+
     const today = new Date();
     today.setHours(0,0,0,0);
     const in7Days = new Date(today);
@@ -651,13 +608,10 @@ async function loadDashboard() {
 
     dashMembersCache = sorted;
     renderDashTable(sorted.slice(0,8));
-    
   } catch(e) { toast('Error loading dashboard','error'); }
 }
 
 /* ── ALL MEMBERS ── */
-
-// Master cache for search/filter
 let _allMembersCache = [];
 let _memberStatusFilter = 'all';
 let _memberSearchQuery  = '';
@@ -677,16 +631,13 @@ function _memberAvatar(m) {
 }
 
 function _getDueAmount(m) {
-  // planPrice = final price after discount; 0 if paid/waived
   return m.planPrice || 0;
 }
 
 function _renderMemberCard(m, idx) {
   const due      = _getDueAmount(m);
   const dueColor = due > 0 ? '#E74C3C' : '#27AE60';
-  const dueText  = due > 0 ? `Due Amount: ₹${due.toLocaleString('en-IN')}` : 'Due Amount: 0';
 
-  // Expiry
   let expiryStr = '—';
   if (m.expiryDate) {
     const p   = m.expiryDate.split('T')[0].split('-');
@@ -694,7 +645,6 @@ function _renderMemberCard(m, idx) {
     expiryStr = exp.toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'});
   }
 
-  // Status color strip
   const stClr = {Active:'#27AE60',Trial:'#2980B9',Inactive:'#95A5A6',Expired:'#E74C3C'};
   const stripColor = stClr[m.status] || '#95A5A6';
 
@@ -710,11 +660,9 @@ function _renderMemberCard(m, idx) {
     overflow:hidden; border-left:4px solid ${stripColor};
     animation:pageIn .2s ${idx*0.04}s both;
   ">
-    <!-- TOP ROW: Avatar + Info + Delete -->
     <div style="display:flex;align-items:stretch;gap:12px;padding:12px 12px 8px;position:relative">
       ${_memberAvatar(m)}
       <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center">
-        <!-- Name + M ID row -->
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px">
           <div>
             <span style="font-size:.85rem;font-weight:800;color:#1A2E2E">Name: </span>
@@ -722,11 +670,9 @@ function _renderMemberCard(m, idx) {
           </div>
           <span style="font-size:.7rem;font-weight:700;color:#1A8C8C;white-space:nowrap">M ID ${idx+1}</span>
         </div>
-        <!-- Mobile -->
         <div style="font-size:.78rem;color:#4A6464;margin-bottom:3px">
           <span style="font-weight:600">Mobile: </span>+91 - ${safePhone}
         </div>
-        <!-- Plan Expiry + Amount Paid + Payment Date -->
         <div style="display:flex;align-items:center;justify-content:space-between;gap:4px">
           <div style="font-size:.75rem;color:#4A6464">
             <span style="font-weight:600">Plan Expiry: </span>
@@ -739,14 +685,12 @@ function _renderMemberCard(m, idx) {
           <span style="font-weight:700;color:#4A6464">${m.lastPaymentDate ? new Date(m.lastPaymentDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</span>
         </div>
       </div>
-      <!-- Delete button -->
       <button onclick="event.stopPropagation();delMember('${safeId}','${safeName.replace(/'/g,"\\'")}')"
         style="position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;background:#FEECEB;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#E74C3C;flex-shrink:0">
         🗑
       </button>
     </div>
 
-    <!-- ACTION BUTTONS ROW (green gradient like reference) -->
     <div style="
       display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;
       padding:6px 8px;border-top:1px solid #F0F5F5;
@@ -805,7 +749,6 @@ function _applyMembersFilters() {
   wrap.innerHTML = list.map((m,i) => _renderMemberCard(m, i)).join('');
 }
 
-// Called from HTML filter chips
 function setMembersFilter(status, btn) {
   _memberStatusFilter = status;
   document.querySelectorAll('.member-filter-chip').forEach(c => c.classList.remove('active'));
@@ -813,7 +756,6 @@ function setMembersFilter(status, btn) {
   _applyMembersFilters();
 }
 
-// Called from search input
 function searchMembers(q) {
   _memberSearchQuery = (q||'').toLowerCase().trim();
   _applyMembersFilters();
@@ -905,7 +847,6 @@ async function openEditMember(id) {
     document.getElementById('eEcRel').value  = member.emergencyContact?.relationship || '';
     document.getElementById('eNotes').value = member.medicalNotes || '';
 
-    // Populate edit photo preview
     const ePrev = document.getElementById('ePhotoPreview');
     const ePD   = document.getElementById('ePhotoData');
     const eClr  = document.getElementById('eClearPhotoBtn');
@@ -919,9 +860,7 @@ async function openEditMember(id) {
       eClr.style.display = 'none';
     }
 
-// Trigger the analytics in the background!
     renderMemberAttendanceStats(id);
-    
     openModal('editMemberModal');
   } catch(e) { toast('Error loading member','error'); console.error(e); }
 }
@@ -931,7 +870,7 @@ document.getElementById('editMemberForm').addEventListener('submit', async e => 
   const id    = document.getElementById('editMemberId').value;
   const phone = document.getElementById('ePhone').value.trim();
   if (!/^\d{10}$/.test(phone)) { toast('Enter valid 10-digit phone','error'); return; }
-  
+
   const sel       = document.getElementById('ePlan');
   const origPrice = parseInt(sel.options[sel.selectedIndex]?.getAttribute('data-price')) || getPlanPrice(sel.value);
   const dType     = document.querySelector('input[name="edType"]:checked')?.value || 'none';
@@ -963,7 +902,7 @@ document.getElementById('editMemberForm').addEventListener('submit', async e => 
     ptFee:     ptEnabled ? ptFee : 0,
     ptTrainer: ptEnabled ? document.getElementById('ePtTrainer').value : '',
     ptNotes:   ptEnabled ? document.getElementById('ePtNotes').value.trim() : '',
-    expiryDate: document.getElementById('eExpiry').value, // Standard YYYY-MM-DD
+    expiryDate: document.getElementById('eExpiry').value,
     status:    document.getElementById('eStatus').value,
     emergencyContact: {
       name:         document.getElementById('eEcName').value.trim(),
@@ -1010,6 +949,9 @@ document.getElementById('addMemberForm').addEventListener('submit', async e => {
   const ptEnabled = document.getElementById('mPtEnabled').checked;
   const ptFee     = parseFloat(document.getElementById('mPtFee').value||0) || gymCfg.ptFee || 0;
 
+  // ── NEW: capture payment date from form ──
+  const paymentDateVal = document.getElementById('mPaymentDate')?.value || getLocalTodayStr();
+
   const conditions=[];
   document.querySelectorAll('#condContainer .cond-row').forEach(row=>{
     const cond=row.querySelector('.cType')?.value;
@@ -1032,7 +974,9 @@ document.getElementById('addMemberForm').addEventListener('submit', async e => {
     ptFee:     ptEnabled?ptFee:0,
     ptTrainer: ptEnabled?document.getElementById('mPtTrainer').value:'',
     ptNotes:   ptEnabled?document.getElementById('mPtNotes').value.trim():'',
-    joinDate: document.getElementById('mStart').value, 
+    joinDate: document.getElementById('mStart').value,
+    // ── NEW: store payment date ──
+    lastPaymentDate: paymentDateVal ? new Date(paymentDateVal) : new Date(),
     expiryDate: document.getElementById('mExpiry').value,
     status:    document.getElementById('mStatus').value,
     emergencyContact:{name:document.getElementById('mEcName').value.trim(),phone:document.getElementById('mEcPhone').value.trim(),relationship:document.getElementById('mEcRel').value.trim()},
@@ -1050,18 +994,22 @@ document.getElementById('addMemberForm').addEventListener('submit', async e => {
       document.getElementById('condContainer').innerHTML='';
       document.getElementById('mPtEnabled').checked=false;
       document.getElementById('mPtDetails').style.display='none';
-      resetPhoto(); 
-      
+      resetPhoto();
+
       if(document.getElementById('mStart')) {
-          document.getElementById('mStart').value = getLocalTodayStr();
+        document.getElementById('mStart').value = getLocalTodayStr();
       }
+      // Reset payment date
+      const pdEl = document.getElementById('mPaymentDate');
+      if (pdEl) pdEl.value = getLocalTodayStr();
+
       onPlanChange();
-      
       toast(`${added.name} added!`,'success');
       loadDashboard();
       loadAllMembers();
 
-      // Open payment — if user cancels, member will be deleted
+      // Store the chosen payment date on the member object for confirmPayment
+      added._chosenPaymentDate = paymentDateVal;
       openPaymentFor(added, true);
     }else{
       const err=await res.json(); toast(err.error||'Could not add member','error');
@@ -1073,8 +1021,6 @@ document.getElementById('addMemberForm').addEventListener('submit', async e => {
 /* ══════════════════════════════════════════════════════
    ATTENDANCE — MongoDB primary, localStorage offline cache
    ══════════════════════════════════════════════════════ */
-
-// In-memory attendance cache keyed by date: { date → { memberId → status } }
 const _attCache = {};
 
 function attKey(date) {
@@ -1082,7 +1028,6 @@ function attKey(date) {
   catch(e) { return `att_${date}`; }
 }
 
-/* Fetch ALL attendance from MongoDB once per session and cache in memory */
 let _attFetched = false;
 let _attFetchPromise = null;
 
@@ -1094,25 +1039,22 @@ async function _ensureAttLoaded() {
       const res = await fetch(`${BASE}/attendance`, { headers: hdrs() });
       if (!res.ok) throw new Error('fetch failed');
       const all = await res.json();
-      // Populate in-memory cache
       all.forEach(a => {
         const mid = typeof a.memberId === 'object' ? (a.memberId?._id || '') : (a.memberId || '');
         if (!mid || !a.date) return;
         if (!_attCache[a.date]) _attCache[a.date] = {};
         _attCache[a.date][mid] = a.status;
       });
-      // Also write to localStorage for offline
       Object.keys(_attCache).forEach(d => {
         localStorage.setItem(attKey(d), JSON.stringify(_attCache[d]));
       });
       _attFetched = true;
     } catch(e) {
-      // Offline: load from localStorage
       console.warn('Offline — loading attendance from localStorage');
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
         if (k && k.startsWith('att_')) {
-          const datePart = k.split('_').pop(); // YYYY-MM-DD
+          const datePart = k.split('_').pop();
           try {
             const obj = JSON.parse(localStorage.getItem(k) || '{}');
             if (datePart && datePart.match(/^\d{4}-\d{2}-\d{2}$/)) {
@@ -1128,7 +1070,6 @@ async function _ensureAttLoaded() {
   return _attFetchPromise;
 }
 
-/* Invalidate cache so next load re-fetches */
 function _invalidateAttCache() {
   _attFetched = false;
   _attFetchPromise = null;
@@ -1142,7 +1083,6 @@ async function loadAttendance() {
   tbody.innerHTML = '<tr><td colspan="2"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div><tr></tr>';
 
   try {
-    // Step 1: Load members + attendance in parallel
     const [mRes] = await Promise.all([
       fetch(API, { headers: hdrs() }),
       _ensureAttLoaded()
@@ -1151,10 +1091,8 @@ async function loadAttendance() {
     const members = await mRes.json();
     const active  = members.filter(m => m.status === 'Active' || m.status === 'Trial');
 
-    // Step 2: Get today's attendance from in-memory cache
     const todayAtt = _attCache[date] || {};
 
-    // Step 3: Render stats
     const pCount = Object.values(todayAtt).filter(s => s === 'Present').length;
     document.getElementById('attTotal').textContent   = active.length;
     document.getElementById('attPresent').textContent = pCount;
@@ -1166,7 +1104,6 @@ async function loadAttendance() {
       return;
     }
 
-    // Step 4: Render rows — 2-column mobile-optimised layout
     tbody.innerHTML = active.map(m => {
       const st  = todayAtt[m._id] || 'Absent';
       const isP = st === 'Present';
@@ -1180,15 +1117,15 @@ async function loadAttendance() {
               <div style="font-size:.7rem;color:#4A6464;margin-top:2px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.plan || '')}</div>
             </div>
           </div>
-         </td>
+        </td>
         <td style="padding:10px 12px 10px 4px;vertical-align:middle;text-align:right">
           <div id="ab-${m._id}" style="display:inline-block;padding:4px 11px;border-radius:20px;font-size:.72rem;font-weight:800;margin-bottom:6px;background:${isP?'#E8F8EF':'#FEECEB'};color:${isP?'#27AE60':'#E74C3C'}">${st}</div>
           <div style="display:flex;gap:5px;justify-content:flex-end">
             <button onclick="markAtt('${m._id}','${date}','Present')" style="padding:6px 12px;border-radius:20px;border:none;background:#E8F8EF;color:#27AE60;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;min-height:36px;-webkit-tap-highlight-color:transparent">✓ P</button>
             <button onclick="markAtt('${m._id}','${date}','Absent')"  style="padding:6px 12px;border-radius:20px;border:none;background:#FEECEB;color:#E74C3C;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;min-height:36px;-webkit-tap-highlight-color:transparent">✗ A</button>
           </div>
-         </td>
-       </tr>`;
+        </td>
+      </tr>`;
     }).join('');
 
   } catch(e) {
@@ -1197,9 +1134,7 @@ async function loadAttendance() {
   }
 }
 
-/* ── MARK SINGLE ATTENDANCE — saves to MongoDB + cache ── */
 async function markAtt(memberId, date, status) {
-  // 1. Update UI instantly
   const badge = document.getElementById(`ab-${memberId}`);
   if (badge) {
     badge.textContent = status;
@@ -1209,21 +1144,16 @@ async function markAtt(memberId, date, status) {
     if (row) row.style.background = status === 'Present' ? '#F5FFFB' : '#fff';
   }
 
-  // 2. Update in-memory cache
   if (!_attCache[date]) _attCache[date] = {};
   _attCache[date][memberId] = status;
-
-  // 3. Write to localStorage for offline use
   localStorage.setItem(attKey(date), JSON.stringify(_attCache[date]));
 
-  // 4. Update counters from cache
   const activeTotal = parseInt(document.getElementById('attTotal').textContent) || 0;
   const present = Object.values(_attCache[date]).filter(s => s === 'Present').length;
   document.getElementById('attPresent').textContent = present;
   document.getElementById('attPct').textContent = activeTotal
     ? `${Math.min(100, Math.round(present / activeTotal * 100))}%` : '0%';
 
-  // 5. Persist to MongoDB
   try {
     const res = await fetch(`${BASE}/attendance`, {
       method: 'POST',
@@ -1236,19 +1166,16 @@ async function markAtt(memberId, date, status) {
     }
   } catch (err) {
     console.error('Attendance DB Error:', err.message);
-    // Keep UI green — data is in cache, will retry on reload
     toast('⚠️ Saved locally — sync pending', 'error');
   }
 }
 
-/* ── MARK ALL PRESENT ── */
 async function markAllPresent() {
   const date = document.getElementById('attDate').value || getLocalTodayStr();
   if (!confirm(`Mark ALL active members Present for ${fmt(date)}?`)) return;
   try {
     const members = await fetch(API, { headers: hdrs() }).then(r => r.json());
     const active  = members.filter(m => m.status === 'Active' || m.status === 'Trial');
-    // Sequential to avoid rate-limiting
     for (const m of active) {
       await markAtt(m._id, date, 'Present');
     }
@@ -1257,12 +1184,10 @@ async function markAllPresent() {
   } catch(e) { toast('Error marking attendance', 'error'); }
 }
 
-/* ═══════════════════════════════════════════════════════════
-   MEMBER ATTENDANCE MODAL — opens from member card "Attendance" button
-   Shows full calendar + monthly analysis for that specific member
-   ═══════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   MEMBER ATTENDANCE MODAL
+   ══════════════════════════════════════════════════════════════ */
 async function openMemberAttendance(memberId, memberName) {
-  // Set modal title
   document.getElementById('memberAttTitle').textContent = '📅 ' + memberName;
   document.getElementById('memberAttSubtitle').textContent = 'Attendance Records & Analysis';
   openModal('memberAttModal');
@@ -1274,8 +1199,7 @@ async function openMemberAttendance(memberId, memberName) {
 
   await _ensureAttLoaded();
 
-  // ── Collect all dates this member was present/absent ──
-  const records = {}; // date → status
+  const records = {};
   Object.keys(_attCache).forEach(date => {
     const dayData = _attCache[date];
     if (dayData && dayData[memberId]) {
@@ -1287,15 +1211,13 @@ async function openMemberAttendance(memberId, memberName) {
   const totalPresent = allDates.filter(d => records[d] === 'Present').length;
   const totalMarked  = allDates.length;
 
-  // ── Build month groups for calendar view ──
-  const months = {}; // 'YYYY-MM' → [dates]
+  const months = {};
   allDates.forEach(d => {
     const key = d.slice(0,7);
     if (!months[key]) months[key] = [];
     months[key].push(d);
   });
 
-  // Filter to LAST 3 MONTHS only for clean analysis
   const today3 = new Date(); today3.setHours(0,0,0,0);
   const threeMonthsAgo = new Date(today3);
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
@@ -1319,7 +1241,6 @@ async function openMemberAttendance(memberId, memberName) {
     return;
   }
 
-  // ── Summary banner ──
   const overallPct = totalMarked > 0 ? Math.round(totalPresent/totalMarked*100) : 0;
   const summClr = overallPct >= 70 ? '#27AE60' : overallPct >= 40 ? '#F39C12' : '#E74C3C';
   calWrap.innerHTML = `
@@ -1337,7 +1258,6 @@ async function openMemberAttendance(memberId, memberName) {
       </div>
     </div>`;
 
-  // ── Per-month calendar blocks ──
   let calHTML = calWrap.innerHTML;
   monthKeys.forEach(key => {
     const [y, m] = key.split('-');
@@ -1350,18 +1270,14 @@ async function openMemberAttendance(memberId, memberName) {
     const pct  = elapsed > 0 ? Math.round(presentDays/elapsed*100) : 0;
     const clr  = pct >= 70 ? '#27AE60' : pct >= 40 ? '#F39C12' : '#E74C3C';
 
-    // Build mini calendar grid (7 cols = Mon–Sun)
-    const firstDay = new Date(parseInt(y), parseInt(m)-1, 1).getDay(); // 0=Sun
-    const startOffset = firstDay === 0 ? 6 : firstDay - 1; // Mon-start
+    const firstDay = new Date(parseInt(y), parseInt(m)-1, 1).getDay();
+    const startOffset = firstDay === 0 ? 6 : firstDay - 1;
 
     let cells = '';
-    // Day headers
     ['M','T','W','T','F','S','S'].forEach(d => {
       cells += `<div style="font-size:.58rem;font-weight:800;color:#8AABAB;text-align:center;padding:2px 0">${d}</div>`;
     });
-    // Empty offset cells
     for (let i = 0; i < startOffset; i++) cells += '<div></div>';
-    // Day cells
     for (let day = 1; day <= total; day++) {
       const dStr = y+'-'+m+'-'+String(day).padStart(2,'0');
       const st   = records[dStr];
@@ -1401,8 +1317,7 @@ async function openMemberAttendance(memberId, memberName) {
 }
 
 /* ══════════════════════════════════════════════════════
-   MEMBER ATTENDANCE ANALYTICS — uses in-memory _attCache
-   Shows monthly bars + overall streak for performance
+   MEMBER ATTENDANCE ANALYTICS
    ══════════════════════════════════════════════════════ */
 async function renderMemberAttendanceStats(memberId) {
   const container = document.getElementById('eAttStats');
@@ -1410,11 +1325,9 @@ async function renderMemberAttendanceStats(memberId) {
   container.innerHTML = '<div style="text-align:center;padding:16px;color:#8AABAB;font-size:.84rem;font-weight:600">⏳ Loading attendance data…</div>';
 
   try {
-    // Ensure attendance is loaded from MongoDB
     await _ensureAttLoaded();
 
-    // Build per-month counts from in-memory cache
-    const monthlyStats = {}; // { 'YYYY-MM': count }
+    const monthlyStats = {};
     let totalPresent = 0;
 
     Object.keys(_attCache).forEach(date => {
@@ -1448,7 +1361,6 @@ async function renderMemberAttendanceStats(memberId) {
       return;
     }
 
-    // Summary card
     let html = `
       <div style="background:#1A8C8C;border-radius:14px;padding:14px 16px;margin-bottom:12px;color:#fff">
         <div style="font-size:.72rem;font-weight:700;opacity:.75;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Total Attendance</div>
@@ -1464,8 +1376,7 @@ async function renderMemberAttendanceStats(memberId) {
       const isCurrent = key === curKey;
 
       if (isCurrent) {
-        // Current month — show actual days, no percentage (month not over)
-        const daysInCur = today.getDate(); // days elapsed
+        const daysInCur = today.getDate();
         const pct = daysInCur > 0 ? Math.round(present / daysInCur * 100) : 0;
         const clr = pct >= 70 ? '#27AE60' : pct >= 40 ? '#F39C12' : '#E74C3C';
         html += `
@@ -1483,7 +1394,6 @@ async function renderMemberAttendanceStats(memberId) {
             </div>
           </div>`;
       } else {
-        // Past month — full percentage
         const total = daysInMonth(parseInt(y), parseInt(m));
         const pct   = Math.round(present / total * 100);
         const clr   = pct >= 70 ? '#27AE60' : pct >= 40 ? '#F39C12' : '#E74C3C';
@@ -1512,17 +1422,17 @@ async function renderMemberAttendanceStats(memberId) {
     console.error('renderMemberAttendanceStats error:', e);
   }
 }
+
 /* ══════════════════════════════════════════════
-   TRAINERS — mobile card UI
+   TRAINERS
    ══════════════════════════════════════════════ */
 async function loadTrainers() {
   const wrap = document.getElementById('trainersListWrap');
   if (!wrap) return;
   wrap.innerHTML = '<div class="empty"><div class="ei">⏳</div><p>Loading trainers…</p></div>';
   try {
-    // Add timeout so it doesn't hang forever on Render cold start
     const controller = new AbortController();
-    const tid = setTimeout(() => controller.abort(), 15000); // 15s timeout
+    const tid = setTimeout(() => controller.abort(), 15000);
     const res = await fetch(TAPI, {headers:hdrs(), signal: controller.signal});
     clearTimeout(tid);
     if (res.status===401) { logout(); return; }
@@ -1603,7 +1513,6 @@ async function openEditTrainerModal(id) {
   } catch(e) { toast('Error loading trainer','error'); }
 }
 
-/* Edit trainer modal submit */
 async function saveEditTrainer() {
   const id   = document.getElementById('etId').value;
   const name = document.getElementById('etName').value.trim();
@@ -1643,22 +1552,16 @@ document.getElementById('addTrainerForm').addEventListener('submit', async e=>{
 });
 
 /* ══════════════════════════════════════════════
-   PLANS — mobile card UI (full width rows)
+   PLANS
    ══════════════════════════════════════════════ */
 function loadPlans() {
   const wrap = document.getElementById('plansListWrap');
   if (!wrap) return;
-  
-  // Ensure we have plans (fallback to default if empty)
-  if (!gymPlans.length) {
-    gymPlans = [...DEFAULT_PLANS];
-  }
-  
+  if (!gymPlans.length) gymPlans = [...DEFAULT_PLANS];
   if (!gymPlans.length) {
     wrap.innerHTML = '<div class="empty"><div class="ei">💎</div><p>No plans yet. Add your first plan!</p></div>';
     return;
   }
-  
   const plans = gymPlans.map(p => {
     let disc = p.price, discInfo = null;
     for (const d of gymDisc) {
@@ -1677,9 +1580,7 @@ function loadPlans() {
     }
     return { ...p, disc: Math.round(disc), discInfo };
   });
-  
   const durClr = m => m <= 1 ? '#1A8C8C' : m <= 3 ? '#27AE60' : m <= 6 ? '#F39C12' : '#8E44AD';
-  
   wrap.innerHTML = plans.map((p, idx) => `
     <div style="background:#fff;border-radius:16px;margin-bottom:10px;
       box-shadow:0 2px 10px rgba(0,0,0,.06);overflow:hidden;
@@ -1784,17 +1685,15 @@ function removePlan(name) {
 }
 
 /* ══════════════════════════════════════════════
-   DISCOUNTS — mobile card UI
+   DISCOUNTS
    ══════════════════════════════════════════════ */
 function renderDiscounts() {
   const wrap = document.getElementById('discTable');
   if (!wrap) return;
-  
   if (!gymDisc.length) {
     wrap.innerHTML = '<div class="empty"><div class="ei">🏷️</div><p>No discounts yet. Add one!</p></div>';
     return;
   }
-  
   wrap.innerHTML = gymDisc.map((d, i) => {
     const expired = d.validUntil && new Date(d.validUntil) < new Date();
     const valStr  = d.type === 'percentage' ? `${d.value}% OFF` : `₹${d.value.toLocaleString('en-IN')} OFF`;
@@ -1849,7 +1748,7 @@ function removeDiscount(i) {
   gymDisc.splice(i,1); saveServerProfile(); renderDiscounts(); toast('Discount removed');
 }
 
-/* ── SMART PAYMENTS / RENEWALS ── */
+/* ── PAYMENTS / RENEWALS ── */
 async function loadPayments() {
   const container = document.getElementById('payList');
   try {
@@ -1858,7 +1757,6 @@ async function loadPayments() {
     const members = await res.json();
     const today   = new Date();
     today.setHours(0,0,0,0);
-    
     const in14Days = new Date(today);
     in14Days.setDate(today.getDate() + 14);
     in14Days.setHours(23,59,59,999);
@@ -1887,7 +1785,18 @@ async function loadPayments() {
 }
 
 function openPaymentFor(m, isNew = false) {
-  curPayMember = {id: m._id || m.id, name: m.name, expiryDate: m.expiryDate, isNew: isNew, originalData: m};
+  // ── FIX: normalise id — member objects can use _id or id ──
+  const memberId = m._id || m.id;
+  curPayMember = {
+    id: memberId,
+    _id: memberId,
+    name: m.name,
+    expiryDate: m.expiryDate,
+    isNew: isNew,
+    originalData: m,
+    // carry the chosen payment date from Add Member form
+    _chosenPaymentDate: m._chosenPaymentDate || null
+  };
 
   const mhdr = document.querySelector('#paymentModal .mhdr .mtitle');
   if(mhdr) mhdr.textContent = isNew ? '💳 Complete Payment' : '💳 Renew Plan';
@@ -1901,7 +1810,6 @@ function openPaymentFor(m, isNew = false) {
     document.getElementById('payPlan').parentElement.style.display = 'block';
     document.getElementById('payPtEnabled').closest('.pt-box').style.display = 'block';
 
-    // Show & init renewal date fields
     const payDatesRow = document.getElementById('payDatesRow');
     if (payDatesRow) payDatesRow.style.display = 'block';
     const startEl  = document.getElementById('payStartDate');
@@ -1925,7 +1833,6 @@ function openPaymentFor(m, isNew = false) {
 
   recalcPayment();
 
-  // Reset payment method UI
   curPayMethod = null;
   ['Upi','Cash','Card'].forEach(m => {
     const btn = document.getElementById(`pm${m}`);
@@ -1953,7 +1860,6 @@ function updateRenewalDates() {
   const expiryEl = document.getElementById('payExpiryDate');
   if (!startEl || !expiryEl) return;
   if (!startEl.value) {
-    // Default start: today (or member's current expiry if future)
     const today = new Date();
     today.setHours(0,0,0,0);
     let startDefault = today;
@@ -1982,8 +1888,6 @@ function updateRenewalExpiry() {
 
 function selectPayMethod(method) {
   curPayMethod = method;
-
-  // Style active button
   ['upi','cash','card'].forEach(m => {
     const btn = document.getElementById(`pm${m.charAt(0).toUpperCase()+m.slice(1)}`);
     if (!btn) return;
@@ -1997,13 +1901,10 @@ function selectPayMethod(method) {
       btn.style.color       = '#4A6464';
     }
   });
-
-  // Show/hide panels
   document.getElementById('payUpiPanel').style.display  = method === 'upi'  ? 'block' : 'none';
   document.getElementById('payCashPanel').style.display = method === 'cash' ? 'block' : 'none';
   document.getElementById('payCardPanel').style.display = method === 'card' ? 'block' : 'none';
 
-  // Enable confirm button
   const btn = document.getElementById('confirmPayBtn');
   if (btn) {
     btn.disabled = false;
@@ -2017,21 +1918,21 @@ function recalcPayment() {
   if(!curPayMember) return;
   const isNew = curPayMember.isNew;
   const m = curPayMember.originalData;
-  
+
   let planName, planAmt, ptAmt, admAmt;
-  
+
   if (isNew) {
     planName = m.plan;
-    planAmt = m.planPrice; 
-    ptAmt = m.ptEnabled ? (m.ptFee || 0) : 0;
-    admAmt = m.admissionWaived ? 0 : (m.admissionFee || 0);
+    planAmt  = m.planPrice;
+    ptAmt    = m.ptEnabled ? (m.ptFee || 0) : 0;
+    admAmt   = m.admissionWaived ? 0 : (m.admissionFee || 0);
   } else {
     const planSel = document.getElementById('payPlan');
     planName = planSel.value;
-    planAmt = parseInt(planSel.options[planSel.selectedIndex]?.getAttribute('data-price')) || getPlanPrice(planName);
+    planAmt  = parseInt(planSel.options[planSel.selectedIndex]?.getAttribute('data-price')) || getPlanPrice(planName);
     const isPt = document.getElementById('payPtEnabled').checked;
-    ptAmt = isPt ? (parseFloat(document.getElementById('payPtFee').value)||0) : 0;
-    admAmt = 0; 
+    ptAmt    = isPt ? (parseFloat(document.getElementById('payPtFee').value)||0) : 0;
+    admAmt   = 0;
   }
 
   const total = planAmt + ptAmt + admAmt;
@@ -2039,16 +1940,15 @@ function recalcPayment() {
   let rows = `
     <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:var(--tx2);font-size:.82rem">Member</span><strong style="font-size:.82rem">${esc(curPayMember.name)}</strong></div>
     <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">Plan Fee (${esc(planName)})</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(planAmt).toLocaleString('en-IN')}</span></div>`;
-  
+
   if(admAmt > 0) rows += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">🎟️ Admission</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(admAmt).toLocaleString('en-IN')}</span></div>`;
-  if(ptAmt > 0) rows += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">💪 PT Fee</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(ptAmt).toLocaleString('en-IN')}</span></div>`;
-  
+  if(ptAmt > 0)  rows += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">💪 PT Fee</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(ptAmt).toLocaleString('en-IN')}</span></div>`;
+
   rows += `<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1.5px solid var(--border);margin-top:6px"><span style="font-weight:800;font-size:.88rem">Total</span><strong style="color:var(--g);font-size:1.05rem">₹${total.toLocaleString('en-IN')}</strong></div>`;
 
   document.getElementById('payInfo').innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r3);padding:12px;margin-bottom:.6rem">${rows}</div>`;
 
-  // Rebuild UPI QR whenever total changes
-  const upiId = gymCfg.upiId || 'your-upi@bank';
+  const upiId   = gymCfg.upiId   || 'your-upi@bank';
   const upiName = gymCfg.upiName || 'GymPro';
   const dispUpi = document.getElementById('dispUpi');
   const payQR   = document.getElementById('payQR');
@@ -2058,14 +1958,13 @@ function recalcPayment() {
     payQR.src = `https://api.qrserver.com/v1/create-qr-code/?size=158x158&data=${encodeURIComponent(upiUrl)}`;
   }
 
-  // Store total for confirmPayment
   curPayTotal = total;
 }
 
+/* ── FIX: cancelPayment uses _id safely ── */
 async function cancelPayment() {
   if (curPayMember && curPayMember.isNew) {
-    // Member was saved to DB — delete them since payment was not completed
-    const id   = curPayMember.id;
+    const id   = curPayMember._id || curPayMember.id;
     const name = curPayMember.name;
     try {
       await fetch(`${API}/${id}`, { method: 'DELETE', headers: hdrs() });
@@ -2081,28 +1980,33 @@ async function cancelPayment() {
   closeModal('paymentModal');
 }
 
+/* ── FIX: confirmPayment — safe id resolution + robust GET ── */
 async function confirmPayment() {
   if (!curPayMember) return;
   if (!curPayMethod) { toast('Please select a payment method','error'); return; }
 
-  const method = curPayMethod;
-  const total  = curPayTotal || 0;
+  const method   = curPayMethod;
+  const total    = curPayTotal || 0;
+  // ── FIX: always resolve memberId safely ──
+  const memberId = curPayMember._id || curPayMember.id;
 
   if (curPayMember.isNew) {
+    // Use the payment date chosen in the Add Member form
+    const chosenDate = curPayMember._chosenPaymentDate;
     const payEntry = {
-      amount: total,
-      date: new Date(),
-      method: method,
+      amount:    total,
+      date:      chosenDate ? new Date(chosenDate) : new Date(),
+      method:    method,
       receiptNo: 'REC-' + Date.now()
     };
     const btn = document.getElementById('confirmPayBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
     try {
-      await fetch(`${API}/${curPayMember.id}`, {
+      await fetch(`${API}/${memberId}`, {
         method: 'PUT', headers: hdrs(),
         body: JSON.stringify({
-          paymentHistory: [payEntry],
-          lastPaymentDate: new Date()
+          paymentHistory:  [payEntry],
+          lastPaymentDate: chosenDate ? new Date(chosenDate) : new Date()
         })
       });
       const methodLabel = { upi:'📱 UPI', cash:'💵 Cash', card:'💳 Card' }[method] || method;
@@ -2116,18 +2020,16 @@ async function confirmPayment() {
     return;
   }
 
-  // Renewal
-  const planName = document.getElementById('payPlan').value;
-  const planAmt  = getPlanPrice(planName);
-  const isPt     = document.getElementById('payPtEnabled').checked;
-  const ptAmt    = isPt ? (parseFloat(document.getElementById('payPtFee').value)||0) : 0;
-  const ptTrainer= isPt ? document.getElementById('payPtTrainer').value : '';
+  // ── Renewal flow ──
+  const planName  = document.getElementById('payPlan').value;
+  const planAmt   = getPlanPrice(planName);
+  const isPt      = document.getElementById('payPtEnabled').checked;
+  const ptAmt     = isPt ? (parseFloat(document.getElementById('payPtFee').value)||0) : 0;
+  const ptTrainer = isPt ? document.getElementById('payPtTrainer').value : '';
 
-  // Use the date fields set by the user
   const startDateEl  = document.getElementById('payStartDate');
   const expiryDateEl = document.getElementById('payExpiryDate');
   const newExpiry = expiryDateEl && expiryDateEl.value ? expiryDateEl.value : (() => {
-    // Fallback: compute from current expiry
     let baseDate = new Date();
     baseDate.setHours(0,0,0,0);
     if (curPayMember.expiryDate) {
@@ -2140,9 +2042,9 @@ async function confirmPayment() {
   })();
 
   const payEntry = {
-    amount: total,
-    date: new Date(),
-    method: method,
+    amount:    total,
+    date:      new Date(),
+    method:    method,
     receiptNo: 'REC-' + Date.now()
   };
 
@@ -2150,22 +2052,39 @@ async function confirmPayment() {
   if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
 
   try {
-    // Get current member to append payment history
-    const memRes = await fetch(`${API}/${curPayMember.id}`, { headers: hdrs() });
-    const mem    = memRes.ok ? await memRes.json() : {};
-    const history = [...(mem.paymentHistory || []), payEntry];
+    // ── FIX: wrap GET in try/catch so a cold-start timeout doesn't kill the renewal ──
+    let history = [payEntry];
+    try {
+      const memRes = await fetch(`${API}/${memberId}`, { headers: hdrs() });
+      if (memRes.ok) {
+        const mem = await memRes.json();
+        history = [...(mem.paymentHistory || []), payEntry];
+      }
+    } catch(fetchErr) {
+      console.warn('Could not fetch payment history, starting fresh:', fetchErr);
+    }
 
     const payload = {
-      plan: planName, planPrice: planAmt,
-      ptEnabled: isPt, ptFee: ptAmt, ptTrainer,
-      expiryDate: newExpiry, status: 'Active',
+      plan:            planName,
+      planPrice:       planAmt,
+      ptEnabled:       isPt,
+      ptFee:           ptAmt,
+      ptTrainer,
+      expiryDate:      newExpiry,
+      status:          'Active',
       lastPaymentDate: new Date(),
-      paymentHistory: history
+      paymentHistory:  history
     };
 
-    await fetch(`${API}/${curPayMember.id}`, {
+    // ── FIX: use memberId (not curPayMember.id which may be undefined) ──
+    const putRes = await fetch(`${API}/${memberId}`, {
       method: 'PUT', headers: hdrs(), body: JSON.stringify(payload)
     });
+
+    if (!putRes.ok) {
+      const errBody = await putRes.json().catch(() => ({}));
+      throw new Error(errBody.error || `HTTP ${putRes.status}`);
+    }
 
     const methodLabel = { upi:'📱 UPI', cash:'💵 Cash', card:'💳 Card' }[method] || method;
     const expiryDisplay = new Date(newExpiry).toLocaleDateString('en-IN');
@@ -2174,46 +2093,43 @@ async function confirmPayment() {
     curPayMember = null; curPayMethod = null;
     loadDashboard(); loadPayments(); loadAllMembers();
   } catch(e) {
-    toast('Network error', 'error');
+    console.error('confirmPayment error:', e);
+    toast(`Network error: ${e.message}`, 'error');
     if (btn) { btn.disabled = false; btn.textContent = '✅ Confirm Payment'; }
   }
 }
 
 /* ── SETTINGS ── */
 function loadSettings() {
-  const upiIdEl = document.getElementById('sUpiId');
-  const upiNameEl = document.getElementById('sUpiName');
+  const upiIdEl  = document.getElementById('sUpiId');
+  const upiNameEl= document.getElementById('sUpiName');
   const admFeeEl = document.getElementById('sAdmFee');
-  const ptFeeEl = document.getElementById('sPtFee');
-  
-  if (upiIdEl) upiIdEl.value = gymCfg.upiId || '';
-  if (upiNameEl) upiNameEl.value = gymCfg.upiName || '';
-  if (admFeeEl) admFeeEl.value = gymCfg.admissionFee != null ? gymCfg.admissionFee : '';
-  if (ptFeeEl) ptFeeEl.value = gymCfg.ptFee != null ? gymCfg.ptFee : '';
+  const ptFeeEl  = document.getElementById('sPtFee');
+  if (upiIdEl)   upiIdEl.value   = gymCfg.upiId        || '';
+  if (upiNameEl) upiNameEl.value = gymCfg.upiName       || '';
+  if (admFeeEl)  admFeeEl.value  = gymCfg.admissionFee != null ? gymCfg.admissionFee : '';
+  if (ptFeeEl)   ptFeeEl.value   = gymCfg.ptFee        != null ? gymCfg.ptFee        : '';
 }
 
 async function saveSettings() {
-  const upiId = document.getElementById('sUpiId')?.value.trim() || '';
-  const upiName = document.getElementById('sUpiName')?.value.trim() || '';
-  const admissionFee = parseFloat(document.getElementById('sAdmFee')?.value) || 0;
-  const ptFee = parseFloat(document.getElementById('sPtFee')?.value) || 0;
-  
-  gymCfg.upiId = upiId;
-  gymCfg.upiName = upiName;
-  gymCfg.admissionFee = admissionFee;
-  gymCfg.ptFee = ptFee;
-  
+  const upiId       = document.getElementById('sUpiId')?.value.trim()    || '';
+  const upiName     = document.getElementById('sUpiName')?.value.trim()  || '';
+  const admissionFee= parseFloat(document.getElementById('sAdmFee')?.value) || 0;
+  const ptFee       = parseFloat(document.getElementById('sPtFee')?.value)  || 0;
+  gymCfg.upiId       = upiId;
+  gymCfg.upiName     = upiName;
+  gymCfg.admissionFee= admissionFee;
+  gymCfg.ptFee       = ptFee;
   await saveServerProfile();
   toast('Settings saved & synced!', 'success');
 }
 
-/* ── INIT & OFFLINE LOGIC ── */
+/* ── INIT ── */
 window.addEventListener('DOMContentLoaded', async () => {
   if (!checkAuth()) return;
   setupCamera();
   setupEditPhoto();
 
-  // Attach instant input listeners for real-time calculation
   ['dValue', 'mPlan'].forEach(id => {
     if(document.getElementById(id)) document.getElementById(id).addEventListener('input', recalcPrice);
   });
@@ -2224,11 +2140,15 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('topDate').textContent =
     new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
-  
+
   document.getElementById('attDate').value = getLocalTodayStr();
-  
+
   if(document.getElementById('mStart')) {
     document.getElementById('mStart').value = getLocalTodayStr();
+  }
+  // ── NEW: set payment date default on page load ──
+  if(document.getElementById('mPaymentDate')) {
+    document.getElementById('mPaymentDate').value = getLocalTodayStr();
   }
 
   await loadServerProfile();
@@ -2241,19 +2161,14 @@ window.addEventListener('DOMContentLoaded', async () => {
       `<div class="u-name">👤 ${esc(u.name)}</div><div class="u-role">${u.role==='admin'?'Administrator':'Staff Member'}</div>`;
   } catch(e){}
 
-  // populatePlanSelect AFTER server profile loaded (gymPlans now has custom plans)
   populatePlanSelect();
   populatePlanSelect('ePlan');
   recalcPrice();
   loadDashboard();
-  // If user lands directly on plans/discounts page (rare), refresh them
   loadPlans();
 
-  // Warm up the Render server (free tier sleeps after 15 min)
-  // Do a lightweight health-check ping first so Render wakes up
   fetch(`${BASE}/health`, {headers:hdrs()}).catch(()=>{});
 
-  // Pre-load trainers into dropdowns (with timeout)
   (async () => {
     try {
       const ctrl = new AbortController();
@@ -2272,7 +2187,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       });
     } catch(e) { console.log('Trainer pre-load:', e.message); }
   })();
-  
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js').catch(err => {
@@ -2282,7 +2197,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// Offline Detection Listeners
 window.addEventListener('online', () => {
   document.getElementById('offline-banner').style.display = 'none';
   loadDashboard();
