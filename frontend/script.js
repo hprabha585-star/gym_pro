@@ -1937,16 +1937,19 @@ async function loadPayments() {
 }
 
 function openPaymentFor(m, isNew = false) {
-  curPayMember = {id: m._id || m.id, name: m.name, expiryDate: m.expiryDate, isNew: isNew, originalData: m};
+  curPayMember = {id: m._id || m.id, name: m.name, expiryDate: m.expiryDate, isNew: isNew, originalData: m, _chosenPaymentDate: m._chosenPaymentDate || null};
 
   const mhdr = document.querySelector('#paymentModal .mhdr .mtitle');
   if(mhdr) mhdr.textContent = isNew ? '💳 Complete Payment' : '💳 Renew Plan';
+
+  const payDiscBox = document.getElementById('payDiscBox');
 
   if (isNew) {
     document.getElementById('payPlan').parentElement.style.display = 'none';
     document.getElementById('payPtEnabled').closest('.pt-box').style.display = 'none';
     const payDatesRow = document.getElementById('payDatesRow');
     if (payDatesRow) payDatesRow.style.display = 'none';
+    if (payDiscBox) payDiscBox.style.display = 'none';
   } else {
     document.getElementById('payPlan').parentElement.style.display = 'block';
     document.getElementById('payPtEnabled').closest('.pt-box').style.display = 'block';
@@ -1954,13 +1957,22 @@ function openPaymentFor(m, isNew = false) {
     // Show & init renewal date fields
     const payDatesRow = document.getElementById('payDatesRow');
     if (payDatesRow) payDatesRow.style.display = 'block';
+    if (payDiscBox) payDiscBox.style.display = 'block';
+
     const startEl  = document.getElementById('payStartDate');
     const expiryEl = document.getElementById('payExpiryDate');
     if (startEl)  startEl.value  = '';
     if (expiryEl) expiryEl.value = '';
     // Default payment date to today
-    const payDateEl = document.getElementById('payPaymentDate');
+    const payDateEl = document.getElementById('payRenewalPayDate');
     if (payDateEl) payDateEl.value = getLocalTodayStr();
+
+    // Reset discount fields for each new renewal
+    const payDV = document.getElementById('payDValue');
+    const payDR = document.getElementById('payDReason');
+    if (payDV) payDV.value = '';
+    if (payDR) payDR.value = '';
+    document.querySelectorAll('input[name="payDType"]').forEach(r => r.checked = r.value === 'none');
 
     populatePlanSelect('payPlan');
     document.getElementById('payPlan').value = m.plan || gymPlans[0].name;
@@ -2071,7 +2083,7 @@ function recalcPayment() {
   const isNew = curPayMember.isNew;
   const m = curPayMember.originalData;
   
-  let planName, planAmt, ptAmt, admAmt;
+  let planName, planAmt, ptAmt, admAmt, discSaved = 0;
   
   if (isNew) {
     planName = m.plan;
@@ -2089,6 +2101,7 @@ function recalcPayment() {
     if (rdType === 'percentage' && rdVal > 0) planAmt = Math.round(origAmt - origAmt * Math.min(rdVal,100) / 100);
     else if (rdType === 'fixed' && rdVal > 0) planAmt = Math.max(0, Math.round(origAmt - rdVal));
     else planAmt = origAmt;
+    discSaved = origAmt - planAmt;
     const isPt = document.getElementById('payPtEnabled').checked;
     ptAmt = isPt ? (parseFloat(document.getElementById('payPtFee').value)||0) : 0;
     admAmt = 0;
@@ -2100,6 +2113,7 @@ function recalcPayment() {
     <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="color:var(--tx2);font-size:.82rem">Member</span><strong style="font-size:.82rem">${esc(curPayMember.name)}</strong></div>
     <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">Plan Fee (${esc(planName)})</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(planAmt).toLocaleString('en-IN')}</span></div>`;
   
+  if(discSaved > 0) rows += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#27AE60;font-size:.82rem">🏷️ Discount Saved</span><span style="font-size:.85rem;font-weight:700;color:#27AE60">-₹${Math.round(discSaved).toLocaleString('en-IN')}</span></div>`;
   if(admAmt > 0) rows += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">🎟️ Admission</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(admAmt).toLocaleString('en-IN')}</span></div>`;
   if(ptAmt > 0) rows += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">💪 PT Fee</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(ptAmt).toLocaleString('en-IN')}</span></div>`;
   
@@ -2212,6 +2226,7 @@ async function confirmPayment() {
   const rdType   = document.querySelector('input[name="payDType"]:checked')?.value || 'none';
   const rdRawVal = (document.getElementById('payDValue')?.value || '').replace(/,/g,'').trim();
   const rdVal    = rdRawVal === '' ? 0 : (parseFloat(rdRawVal) || 0);
+  const rdReason = document.getElementById('payDReason')?.value?.trim() || '';
   let planAmt = origPlanAmt;
   if (rdType === 'percentage' && rdVal > 0) planAmt = Math.round(origPlanAmt - origPlanAmt * Math.min(rdVal,100) / 100);
   else if (rdType === 'fixed' && rdVal > 0) planAmt = Math.max(0, Math.round(origPlanAmt - rdVal));
@@ -2260,7 +2275,7 @@ async function confirmPayment() {
         ptEnabled: isPt, ptFee: ptAmt, ptTrainer,
         expiryDate: newExpiry, status: 'Active',
         lastPaymentDate: chosenPayDate,
-        discountType: rdType, discountValue: rdVal
+        discountType: rdType, discountValue: rdVal, discountReason: rdReason
       })
     });
 
