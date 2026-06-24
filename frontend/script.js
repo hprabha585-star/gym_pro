@@ -32,10 +32,86 @@ let curPayMethod = null;
 let curPayTotal  = 0;
 let curStream    = null;
 
+let allMembersCache = [];
+let dashMembersCache = [];
+
 /* ── AUTH HELPERS ── */
-const hdrs = () => ({ 'Content-Type':'application/json', 'Authorization':`Bearer ${localStorage.getItem('token')}` });
-const checkAuth = () => { if (!localStorage.getItem('token')) { location.href='/login.html'; return false; } return true; };
-function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); location.href='/login.html'; }
+const hdrs = () => ({ 
+  'Content-Type':'application/json', 
+  'Authorization':`Bearer ${localStorage.getItem('token')}` 
+});
+
+const checkAuth = () => { 
+  if (!localStorage.getItem('token')) { 
+    location.href='/login.html'; 
+    return false; 
+  } 
+  return true; 
+};
+
+function logout() { 
+  localStorage.removeItem('token'); 
+  localStorage.removeItem('user'); 
+  location.href='/login.html'; 
+}
+
+/* ── TOAST ── */
+function toast(msg, type='') {
+  const el = document.getElementById('toast');
+  if (!el) { console.log('Toast:', msg); return; }
+  el.textContent = msg; 
+  el.className = `toast show ${type}`;
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => { el.className = 'toast'; }, 3200);
+}
+
+/* ── ESCAPE ── */
+const esc = s => String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const fmt = d => {
+  if(!d) return '—';
+  const p = d.split('T')[0].split('-');
+  if(p.length===3) return new Date(p[0], p[1]-1, p[2]).toLocaleDateString('en-IN');
+  return new Date(d).toLocaleDateString('en-IN');
+};
+
+function getLocalTodayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+/* ── PLAN HELPERS ── */
+const getPlanPrice  = n => (gymPlans.find(p=>p.name===n)||{}).price  || 0;
+const getPlanMonths = n => (gymPlans.find(p=>p.name===n)||{}).months || 1;
+
+/* ── AVATAR ── */
+const avClr = n => ['#5B4CFF','#0EA669','#E53E3E','#D97706','#0369A1','#7C3AED'][(n.charCodeAt(0)||0)%6];
+
+function av(name) {
+  const i = (name||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
+  const bg = avClr(name);
+  return `<div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,${bg},${bg}CC);display:inline-flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.13)">${esc(i)}</div>`;
+}
+
+function avImg(m) {
+  if (m.photo?.startsWith('data:image')) return `<img src="${m.photo}" alt="${esc(m.name)}" style="width:52px;height:52px;border-radius:14px;object-fit:cover;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.13)">`;
+  return av(m.name);
+}
+
+function badge(status) {
+  const m = {Active:'b-active',Trial:'b-trial',Inactive:'b-inactive',Expired:'b-expired'};
+  return `<span class="badge ${m[status]||'b-inactive'}">${esc(status)}</span>`;
+}
+
+function sortByExpiry(members) {
+  return [...members].sort((a,b) => {
+    const aA = a.status==='Active'||a.status==='Trial';
+    const bA = b.status==='Active'||b.status==='Trial';
+    if (aA && !bA) return -1;
+    if (!aA && bA) return 1;
+    return new Date(a.expiryDate) - new Date(b.expiryDate);
+  });
+}
 
 /* ── PROFILE SYNC ── */
 async function loadServerProfile() {
@@ -53,9 +129,6 @@ async function loadServerProfile() {
     populatePlanSelect();
     populatePlanSelect('ePlan');
     populatePlanSelect('payPlan');
-    if (document.getElementById('page-plans')?.classList.contains('active')) loadPlans();
-    if (document.getElementById('page-discounts')?.classList.contains('active')) renderDiscounts();
-    if (document.getElementById('page-settings')?.classList.contains('active')) loadSettings();
   } catch(e) {
     const cached = localStorage.getItem('gymProfile_cache');
     if (cached) {
@@ -66,8 +139,7 @@ async function loadServerProfile() {
         if (d.disc) gymDisc = d.disc;
         populatePlanSelect();
         populatePlanSelect('ePlan');
-        if (document.getElementById('page-plans')?.classList.contains('active')) loadPlans();
-        if (document.getElementById('page-discounts')?.classList.contains('active')) renderDiscounts();
+        populatePlanSelect('payPlan');
       } catch(_) {}
     }
   }
@@ -84,143 +156,74 @@ async function saveServerProfile() {
   }
 }
 
-/* ── PLAN HELPERS ── */
-const getPlanPrice  = n => (gymPlans.find(p=>p.name===n)||{}).price  || 0;
-const getPlanMonths = n => (gymPlans.find(p=>p.name===n)||{}).months || 1;
-
-/* ── TOAST & UTILS ── */
-function toast(msg, type='') {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.className = `toast show ${type}`;
-  setTimeout(() => { el.className = 'toast'; }, 3200);
-}
-
-const esc = s => String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-// TIMEZONE FIX: Strictly parses YYYY-MM-DD as local date
-const fmt = d => {
-  if(!d) return '—';
-  const p = d.split('T')[0].split('-');
-  if(p.length===3) return new Date(p[0], p[1]-1, p[2]).toLocaleDateString('en-IN');
-  return new Date(d).toLocaleDateString('en-IN');
-};
-
-const avClr = n => ['#5B4CFF','#0EA669','#E53E3E','#D97706','#0369A1','#7C3AED'][(n.charCodeAt(0)||0)%6];
-
-function av(name) {
-  const i = (name||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
-  const bg = avClr(name);
-  return `<div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,${bg},${bg}CC);display:inline-flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.13)">${esc(i)}</div>`;
-}
-function avImg(m) {
-  if (m.photo?.startsWith('data:image')) return `<img src="${m.photo}" alt="${esc(m.name)}" style="width:52px;height:52px;border-radius:14px;object-fit:cover;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.13)">`;
-  return av(m.name);
-}
-function badge(status) {
-  const m = {Active:'b-active',Trial:'b-trial',Inactive:'b-inactive',Expired:'b-expired'};
-  return `<span class="badge ${m[status]||'b-inactive'}">${esc(status)}</span>`;
-}
-function gBadge(g) {
-  if (!g) return '<span style="font-size:.72rem;color:var(--tx3)">—</span>';
-  const m = {Male:'b-male',Female:'b-female',Other:'b-other'};
-  return `<span class="badge ${m[g]||'b-other'}">${esc(g)}</span>`;
-}
-
-// ✅ FIX: expiry color — red ≤3d, orange 4-7d, green 8d+
-function expCell(expiryDate, status) {
-  if (!expiryDate) return '—';
-  const p = expiryDate.split('T')[0].split('-');
-  const expDate = new Date(p[0], p[1]-1, p[2]);
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  const days = Math.ceil((expDate - today) / 86400000);
-
-  if (status !== 'Active' && status !== 'Trial')
-    return `<span class="exp-txt g">${fmt(expiryDate)}</span>`;
-  if (days <= 0)
-    return `<div class="exp-cell"><div class="exp-dot r"></div><div><div class="exp-txt r">${fmt(expiryDate)}</div><div class="exp-txt r">Expired</div></div></div>`;
-  if (days <= 3)
-    return `<div class="exp-cell"><div class="exp-dot r"></div><div><div class="exp-txt r">${fmt(expiryDate)}</div><div class="exp-txt r">${days}d left</div></div></div>`;
-  if (days <= 7)
-    return `<div class="exp-cell"><div class="exp-dot y"></div><div><div class="exp-txt y">${fmt(expiryDate)}</div><div class="exp-txt y">${days}d left</div></div></div>`;
-  return `<div class="exp-cell"><div class="exp-dot g"></div><span class="exp-txt g">${fmt(expiryDate)}</span></div>`;
-}
-
-function sortByExpiry(members) {
-  return [...members].sort((a,b) => {
-    const aA = a.status==='Active'||a.status==='Trial';
-    const bA = b.status==='Active'||b.status==='Trial';
-    if (aA && !bA) return -1;
-    if (!aA && bA) return 1;
-    return new Date(a.expiryDate) - new Date(b.expiryDate);
-  });
-}
-
-/* ═══════════════════════════════════════════════════════
-   ANDROID WEBVIEW — External App Launchers
-   ═══════════════════════════════════════════════════════ */
-function dialPhone(phone) {
-  window.location.href = 'tel:' + String(phone).replace(/[^0-9+]/g,'');
-}
-
-function openWhatsApp(phone) {
-  const clean = String(phone).replace(/[^0-9]/g, '');
-  const num   = clean.startsWith('91') ? clean : '91' + clean;
-  const url   = 'https://wa.me/' + num;
-  const isAndroidWebView = /wv/.test(navigator.userAgent) ||
-    (/Android/i.test(navigator.userAgent) && /Version\//.test(navigator.userAgent));
-  if (isAndroidWebView) {
-    window.location.href = url;
-  } else {
-    window.open(url, '_blank');
-  }
-}
-
 /* ── SIDEBAR & NAV ── */
 function toggleSidebar() {
   const sb = document.getElementById('sidebar');
   const ov = document.getElementById('overlay');
+  if (!sb) return;
   const isOpen = sb.classList.contains('open');
   if (isOpen) {
     sb.classList.remove('open');
-    ov.classList.remove('show');
+    if (ov) ov.classList.remove('show');
   } else {
     sb.classList.add('open');
-    ov.classList.add('show');
+    if (ov) ov.classList.add('show');
   }
 }
+
 function closeSidebar() {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('overlay').classList.remove('show');
-}
-function updateBNav(id) {
-  document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
-  if (id !== 'none') document.getElementById(`bn-${id}`)?.classList.add('active');
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('overlay');
+  if (sb) sb.classList.remove('open');
+  if (ov) ov.classList.remove('show');
 }
 
-function loadSubscriptionPage() {
-  console.log('Subscription page not implemented');
-  toast('Subscription features coming soon', 'info');
+function updateBNav(id) {
+  document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
+  if (id !== 'none') {
+    const el = document.getElementById(`bn-${id}`);
+    if (el) el.classList.add('active');
+  }
 }
 
 function showPage(page, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(l => l.classList.remove('active'));
-  document.getElementById(`page-${page}`).classList.add('active');
+  const target = document.getElementById(`page-${page}`);
+  if (target) target.classList.add('active');
   if (btn) btn.classList.add('active');
-  const titles = {dashboard:'Dashboard',members:'Members',attendance:'Attendance',trainers:'Trainers',plans:'Plans',discounts:'Discounts',payments:'Payments',settings:'Settings',subscription:'Subscription'};
-  document.getElementById('pageTitle').textContent = titles[page] || page;
+  
+  const titles = {
+    dashboard:'Dashboard',
+    members:'Members',
+    attendance:'Attendance',
+    trainers:'Trainers',
+    plans:'Plans',
+    discounts:'Discounts',
+    payments:'Payments',
+    revenue:'Revenue',
+    settings:'Settings'
+  };
+  const titleEl = document.getElementById('pageTitle');
+  if (titleEl) titleEl.textContent = titles[page] || page;
+  
   closeSidebar();
-  const loaders = {dashboard:loadDashboard,members:loadAllMembers,attendance:loadAttendance,trainers:loadTrainers,plans:loadPlans,discounts:renderDiscounts,payments:loadPayments,settings:loadSettings,subscription:loadSubscriptionPage};
+  
+  const loaders = {
+    dashboard: loadDashboard,
+    members: loadAllMembers,
+    attendance: loadAttendance,
+    trainers: loadTrainers,
+    plans: loadPlans,
+    discounts: renderDiscounts,
+    payments: loadPayments,
+    revenue: loadRevenuePage,
+    settings: loadSettings
+  };
   if (loaders[page]) loaders[page]();
 }
 
 /* ── MODALS ── */
-function getLocalTodayStr() {
-  const d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-}
-
 function _setModalHeight(modalEl) {
   const mbox = modalEl.querySelector('.mbox');
   if (!mbox) return;
@@ -238,6 +241,8 @@ const openModal = id => {
   if (id === 'addMemberModal') {
     const startInput = document.getElementById('mStart');
     if (startInput) { startInput.value = getLocalTodayStr(); onPlanChange(); }
+    const payDate = document.getElementById('mPaymentDate');
+    if (payDate) payDate.value = getLocalTodayStr();
   }
   const mbox = el.querySelector('.mbox');
   if (mbox) mbox.scrollTop = 0;
@@ -260,133 +265,7 @@ document.addEventListener('click', e => {
   }
 });
 
-/* ── CAMERA ── */
-function setupCamera() {
-  const vid  = document.getElementById('camVideo'),
-        can  = document.getElementById('camCanvas'),
-        prev = document.getElementById('photoPreview'),
-        pd   = document.getElementById('photoData'),
-        clr  = document.getElementById('clearPhotoBtn');
-
-  document.getElementById('openCamBtn').onclick = async () => {
-    const camInput = document.getElementById('photoFile');
-    camInput.setAttribute('capture', 'environment');
-    camInput.setAttribute('accept', 'image/*');
-    const openModalEl = document.querySelector('.modal.open');
-    window._presCamModalId = openModalEl ? openModalEl.id : null;
-    const isAndroid = /Android/i.test(navigator.userAgent);
-    if (isAndroid || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      camInput.click();
-      return;
-    }
-    try {
-      curStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
-      vid.srcObject = curStream;
-      openModal('cameraModal');
-    } catch(e) {
-      camInput.click();
-    }
-  };
-  document.getElementById('captureBtn').onclick = () => {
-    can.width = vid.videoWidth; can.height = vid.videoHeight;
-    can.getContext('2d').drawImage(vid,0,0);
-    const d = can.toDataURL('image/jpeg',.75);
-    prev.src = d; pd.value = d; clr.style.display = 'inline-flex';
-    closeModal('cameraModal');
-    if (curStream) curStream.getTracks().forEach(t => t.stop());
-  };
-  document.getElementById('closeCamBtn').onclick = () => {
-    closeModal('cameraModal');
-    if (curStream) curStream.getTracks().forEach(t => t.stop());
-  };
-  document.getElementById('uploadBtn').onclick = () => document.getElementById('photoFile').click();
-  document.getElementById('photoFile').onchange = e => {
-    const f = e.target.files[0];
-    if (!f) return;
-    prev.style.opacity = '0.5';
-    const r = new FileReader();
-    r.onload = ev => {
-      const result = ev.target.result;
-      if (!result) { prev.style.opacity='1'; return; }
-      prev.src     = result;
-      prev.style.opacity = '1';
-      pd.value     = result;
-      clr.style.display = 'inline-flex';
-      const modalId = window._presCamModalId ||
-        (document.getElementById('editMemberModal') ? 'editMemberModal' : 'addMemberModal');
-      const modal = document.getElementById(modalId);
-      if (modal && !modal.classList.contains('open')) {
-        modal.classList.add('open');
-        _setModalHeight(modal);
-        const mbox = modal.querySelector('.mbox');
-        if (mbox) setTimeout(() => { mbox.scrollTop = 0; }, 50);
-      }
-      window._presCamModalId = null;
-    };
-    r.onerror = () => { prev.style.opacity = '1'; toast('Photo error — try Upload', 'error'); };
-    r.readAsDataURL(f);
-    setTimeout(() => { e.target.value = ''; }, 400);
-  };
-  clr.onclick = resetPhoto;
-}
-
-function resetPhoto() {
-  document.getElementById('photoPreview').src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%235B4CFF33'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
-  document.getElementById('photoData').value = '';
-  document.getElementById('clearPhotoBtn').style.display = 'none';
-  document.getElementById('photoFile').value = '';
-}
-
-/* ── EDIT MEMBER PHOTO BUTTONS ── */
-function setupEditPhoto() {
-  const ePrev = document.getElementById('ePhotoPreview');
-  const ePD   = document.getElementById('ePhotoData');
-  const eClr  = document.getElementById('eClearPhotoBtn');
-  const eFile = document.getElementById('ePhotoFile');
-
-  document.getElementById('eUploadBtn').onclick = () => eFile.click();
-  document.getElementById('eOpenCamBtn').onclick = async () => {
-    eFile.setAttribute('capture', 'environment');
-    eFile.setAttribute('accept', 'image/*');
-    const isAndroid = /Android/i.test(navigator.userAgent);
-    if (isAndroid || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      eFile.click(); return;
-    }
-    try {
-      curStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
-      document.getElementById('camVideo').srcObject = curStream;
-      window._editPhotoMode = true;
-      openModal('cameraModal');
-    } catch(e) { eFile.click(); }
-  };
-  eFile.onchange = ev => {
-    const f = ev.target.files[0];
-    if (!f) return;
-    ePrev.style.opacity = '0.5';
-    const r = new FileReader();
-    r.onload = e2 => {
-      const result = e2.target.result;
-      if (!result) { ePrev.style.opacity='1'; return; }
-      ePrev.src = result;
-      ePrev.style.opacity = '1';
-      ePD.value = result;
-      eClr.style.display = 'inline-flex';
-      const modal = document.getElementById('editMemberModal');
-      if (modal && !modal.classList.contains('open')) {
-        modal.classList.add('open'); _setModalHeight(modal);
-      }
-    };
-    r.onerror = () => { ePrev.style.opacity='1'; toast('Photo error','error'); };
-    r.readAsDataURL(f);
-    setTimeout(() => { ev.target.value=''; }, 400);
-  };
-  eClr.onclick = () => {
-    ePrev.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231A8C8C22'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
-    ePD.value = ''; eClr.style.display = 'none'; eFile.value = '';
-  };
-}
-
-/* ── SMART PLAN SELECT ── */
+/* ── PLAN SELECT ── */
 function populatePlanSelect(selId='mPlan') {
   const sel = document.getElementById(selId);
   if (!sel) return;
@@ -410,6 +289,7 @@ function populatePlanSelect(selId='mPlan') {
 
   const dp = document.getElementById('discPlan');
   if (dp) dp.innerHTML = gymPlans.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
+  
   if (selId==='mPlan') recalcPrice();
   if (selId==='ePlan') recalcEditPrice();
 }
@@ -418,8 +298,9 @@ function togglePT(detailId) {
   const chk = detailId === 'mPtDetails' ? document.getElementById('mPtEnabled') :
               detailId === 'ePtDetails' ? document.getElementById('ePtEnabled') :
               document.getElementById('payPtEnabled');
-  if(document.getElementById(detailId)) {
-    document.getElementById(detailId).style.display = chk.checked ? 'block' : 'none';
+  const el = document.getElementById(detailId);
+  if (el && chk) {
+    el.style.display = chk.checked ? 'block' : 'none';
   }
 }
 
@@ -433,8 +314,10 @@ function recalcPrice() {
   let final = orig;
   if (dType==='percentage' && dVal>0) final = Math.round(orig - orig*Math.min(dVal,100)/100);
   else if (dType==='fixed' && dVal>0)  final = Math.max(0, Math.round(orig-dVal));
-  document.getElementById('origPrice').textContent  = `₹${orig.toLocaleString('en-IN')}`;
-  document.getElementById('finalPrice').textContent = `₹${final.toLocaleString('en-IN')}`;
+  const origEl = document.getElementById('origPrice');
+  const finalEl = document.getElementById('finalPrice');
+  if (origEl) origEl.textContent = `₹${orig.toLocaleString('en-IN')}`;
+  if (finalEl) finalEl.textContent = `₹${final.toLocaleString('en-IN')}`;
 }
 
 function recalcEditPrice() {
@@ -447,11 +330,12 @@ function recalcEditPrice() {
   let final = orig;
   if (dType==='percentage' && dVal>0) final = Math.round(orig - orig*Math.min(dVal,100)/100);
   else if (dType==='fixed' && dVal>0)  final = Math.max(0, Math.round(orig-dVal));
-  document.getElementById('eOrigPrice').textContent  = `₹${orig.toLocaleString('en-IN')}`;
-  document.getElementById('eFinalPrice').textContent = `₹${final.toLocaleString('en-IN')}`;
+  const origEl = document.getElementById('eOrigPrice');
+  const finalEl = document.getElementById('eFinalPrice');
+  if (origEl) origEl.textContent = `₹${orig.toLocaleString('en-IN')}`;
+  if (finalEl) finalEl.textContent = `₹${final.toLocaleString('en-IN')}`;
 }
 
-// TIMEZONE FIX: Uses strictly local dates
 function onPlanChange() {
   const sel = document.getElementById('mPlan');
   if (!sel || !sel.options[sel.selectedIndex]) return;
@@ -467,34 +351,130 @@ function onPlanChange() {
   }
 
   sd.setMonth(sd.getMonth() + months);
-  document.getElementById('mExpiry').value = sd.getFullYear() + '-' + String(sd.getMonth()+1).padStart(2,'0') + '-' + String(sd.getDate()).padStart(2,'0');
-
+  const expiryEl = document.getElementById('mExpiry');
+  if (expiryEl) {
+    expiryEl.value = sd.getFullYear() + '-' + String(sd.getMonth()+1).padStart(2,'0') + '-' + String(sd.getDate()).padStart(2,'0');
+  }
   recalcPrice();
 }
 
 function addCondition(containerId) {
   const c = document.getElementById(containerId);
+  if (!c) return;
   const row = document.createElement('div');
   row.className = 'cond-row';
   row.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;align-items:center';
   row.innerHTML = `
-    <select class="cType" style="flex:1;min-width:120px;background:var(--card);border:1.5px solid var(--border2);border-radius:var(--r3);color:var(--tx);font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;padding:8px 10px;min-height:38px">
+    <select class="cType" style="flex:1;min-width:120px;background:var(--card);border:1.5px solid var(--border2);border-radius:10px;color:var(--tx);font-family:inherit;font-size:.82rem;padding:8px 10px;min-height:38px">
       <option value="">Condition</option><option>Diabetes</option><option>Asthma</option><option>High Blood Pressure</option><option>Heart Condition</option><option>Knee Injury</option><option>Other</option>
     </select>
-    <select class="cSev" style="flex:1;min-width:90px;background:var(--card);border:1.5px solid var(--border2);border-radius:var(--r3);color:var(--tx);font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;padding:8px 10px;min-height:38px">
+    <select class="cSev" style="flex:1;min-width:90px;background:var(--card);border:1.5px solid var(--border2);border-radius:10px;color:var(--tx);font-family:inherit;font-size:.82rem;padding:8px 10px;min-height:38px">
       <option>Mild</option><option>Moderate</option><option>Severe</option>
     </select>
-    <input type="text" class="cNote" placeholder="Notes" style="flex:2;min-width:100px;background:var(--card);border:1.5px solid var(--border2);border-radius:var(--r3);color:var(--tx);font-family:'Plus Jakarta Sans',sans-serif;font-size:.82rem;padding:8px 10px;min-height:38px">
+    <input type="text" class="cNote" placeholder="Notes" style="flex:2;min-width:100px;background:var(--card);border:1.5px solid var(--border2);border-radius:10px;color:var(--tx);font-family:inherit;font-size:.82rem;padding:8px 10px;min-height:38px">
     <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>`;
   c.appendChild(row);
 }
 
-/* ── DASHBOARD FILTERS ── */
-let dashMembersCache = [];
+/* ── REVENUE CALCULATION ── */
+function getMonthKey(date) {
+  const d = new Date(date);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
 
-// ✅ FIX: expiry color in dashboard table — red ≤3d, orange 4-7d, green 8d+
+function calculateRevenue(members) {
+  const revenue = {
+    planTotal: 0,
+    admissionTotal: 0,
+    ptTotal: 0,
+    onlineTotal: 0,
+    cashTotal: 0,
+    grandTotal: 0,
+    months: {}
+  };
+
+  const today = new Date();
+  const monthKeys = [];
+  for (let i = 0; i < 3; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    monthKeys.push(key);
+    revenue.months[key] = {
+      plan: 0, admission: 0, pt: 0, online: 0, cash: 0, total: 0
+    };
+  }
+
+  members.forEach(m => {
+    const history = m.paymentHistory || [];
+    history.forEach(p => {
+      if (!p.date) return;
+      const key = getMonthKey(p.date);
+      const amt = p.amount || 0;
+      const method = p.method || 'cash';
+      
+      if (monthKeys.includes(key)) {
+        revenue.months[key].total += amt;
+        if (method === 'cash') {
+          revenue.months[key].cash += amt;
+          revenue.cashTotal += amt;
+        } else {
+          revenue.months[key].online += amt;
+          revenue.onlineTotal += amt;
+        }
+        if (p.type === 'admission') {
+          revenue.months[key].admission += amt;
+          revenue.admissionTotal += amt;
+        } else if (p.type === 'pt') {
+          revenue.months[key].pt += amt;
+          revenue.ptTotal += amt;
+        } else {
+          revenue.months[key].plan += amt;
+          revenue.planTotal += amt;
+        }
+      }
+    });
+  });
+
+  revenue.grandTotal = revenue.planTotal + revenue.admissionTotal + revenue.ptTotal;
+  return revenue;
+}
+
+/* ── DASHBOARD ── */
+function renderRevenueDashboard(revenue) {
+  const today = new Date();
+  const monthLabels = [];
+  for (let i = 0; i < 3; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    monthLabels.push(d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }));
+  }
+  const monthKeys = [];
+  for (let i = 0; i < 3; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    monthKeys.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+  }
+
+  monthKeys.forEach((key, idx) => {
+    const monthData = revenue.months[key] || { total: 0 };
+    const labelEl = document.getElementById(`revMonth${idx+1}Label`);
+    const amountEl = document.getElementById(`revMonth${idx+1}`);
+    if (labelEl) labelEl.textContent = monthLabels[idx] || `Month ${idx+1}`;
+    if (amountEl) amountEl.textContent = `₹${monthData.total.toLocaleString('en-IN')}`;
+  });
+
+  const els = ['revPlanTotal','revAdmissionTotal','revPTTotal','revOnlineTotal','revCashTotal','revGrandTotal'];
+  const vals = [
+    revenue.planTotal, revenue.admissionTotal, revenue.ptTotal,
+    revenue.onlineTotal, revenue.cashTotal, revenue.grandTotal
+  ];
+  els.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = `₹${vals[i].toLocaleString('en-IN')}`;
+  });
+}
+
 function renderDashTable(membersList) {
   const tbody = document.getElementById('dashBody');
+  if (!tbody) return;
   if (!membersList.length) {
     tbody.innerHTML = '<tr><td colspan="2"><div class="empty"><p>No members found in this timeframe.</p></div></td></tr>';
     return;
@@ -502,32 +482,25 @@ function renderDashTable(membersList) {
   tbody.innerHTML = membersList.map(m => {
     let expLabel = '\u2014', expColor = '#8AABAB';
     if (m.expiryDate) {
-      const p   = m.expiryDate.split('T')[0].split('-');
+      const p = m.expiryDate.split('T')[0].split('-');
       const exp = new Date(+p[0], +p[1]-1, +p[2]);
       const today = new Date(); today.setHours(0,0,0,0);
-      const days  = Math.ceil((exp - today) / 86400000);
+      const days = Math.ceil((exp - today) / 86400000);
       expLabel = exp.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
-      // ✅ red ≤3d, orange 4-7d, green 8d+
       expColor = days <= 0 ? '#E74C3C' : days <= 3 ? '#E74C3C' : days <= 7 ? '#F39C12' : '#27AE60';
     }
     const stClr = {Active:'#27AE60',Trial:'#2980B9',Inactive:'#95A5A6',Expired:'#E74C3C'};
-    const stBg  = {Active:'#E8F8EF',Trial:'#E3F2FD',Inactive:'#F3F4F6',Expired:'#FEECEB'};
+    const stBg = {Active:'#E8F8EF',Trial:'#E3F2FD',Inactive:'#F3F4F6',Expired:'#FEECEB'};
     const sc = stClr[m.status] || '#95A5A6';
-    const sb = stBg[m.status]  || '#F3F4F6';
-    const gc = {Male:'#1565C0',Female:'#AD1457',Other:'#6A1B9A'};
-    const gb = {Male:'#E3F2FD',Female:'#FCE4EC',Other:'#F3E5F5'};
-    const genderPill = m.gender
-      ? `<span style="background:${gb[m.gender]||'#F3F4F6'};color:${gc[m.gender]||'#555'};padding:2px 9px;border-radius:20px;font-size:.62rem;font-weight:800">${esc(m.gender)}</span>`
-      : '';
+    const sb = stBg[m.status] || '#F3F4F6';
     return `<tr onclick="openEditMember('${m._id}')" style="cursor:pointer;border-bottom:1px solid #F0F5F5">
       <td style="padding:12px 8px 12px 12px;vertical-align:middle">
         <div style="display:flex;align-items:center;gap:14px">
-          ${_memberAvatar(m)}
+          ${avImg(m)}
           <div style="min-width:0;display:flex;flex-direction:column;justify-content:center">
             <div style="font-weight:800;font-size:.92rem;color:#1A2E2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px">${esc(m.name)}</div>
             <div style="font-size:.72rem;color:#8AABAB;margin-top:2px">${esc(m.phone||'')}</div>
             <div style="margin-top:4px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-              ${genderPill}
               <span style="font-size:.68rem;color:#4A6464;font-weight:600">${esc(m.plan||'')}</span>
             </div>
           </div>
@@ -564,52 +537,40 @@ function filterDash(days) {
   renderDashTable(filtered);
 }
 
-/* ✅ FIX: Dashboard revenue — cumulative (adds across renewals, not replace) */
+function _fillExtraDashTiles(members) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const parseExp = m => {
+    if (!m.expiryDate) return new Date(0);
+    const [y, mo, d] = m.expiryDate.split('T')[0].split('-');
+    return new Date(+y, +mo - 1, +d);
+  };
+  const daysLeft = m => Math.ceil((parseExp(m) - today) / 86400000);
+  const active = members.filter(m => m.status === 'Active' || m.status === 'Trial');
+
+  const el = id => document.getElementById(id);
+  if (el('statExpToday')) el('statExpToday').textContent = active.filter(m => daysLeft(m) === 0).length;
+  if (el('statExp3')) el('statExp3').textContent = active.filter(m => { const d = daysLeft(m); return d >= 1 && d <= 3; }).length;
+  if (el('statExp7')) el('statExp7').textContent = active.filter(m => { const d = daysLeft(m); return d >= 4 && d <= 7; }).length;
+  if (el('statExp15')) el('statExp15').textContent = active.filter(m => { const d = daysLeft(m); return d >= 8 && d <= 15; }).length;
+  const d = new Date();
+  if (el('dashTodayLabel')) el('dashTodayLabel').textContent = `Today — ${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+}
+
 async function loadDashboard() {
   try {
     const res = await fetch(API, {headers:hdrs()});
     if (res.status===401) { logout(); return; }
     const members = await res.json();
-    const sorted  = sortByExpiry(members);
+    const sorted = sortByExpiry(members);
+    allMembersCache = members;
 
-    document.getElementById('statTotal').textContent  = members.length;
-    document.getElementById('statActive').textContent = members.filter(m=>m.status==='Active').length;
+    const totalEl = document.getElementById('statTotal');
+    const activeEl = document.getElementById('statActive');
+    if (totalEl) totalEl.textContent = members.length;
+    if (activeEl) activeEl.textContent = members.filter(m=>m.status==='Active').length;
 
-    let monthly=0, admission=0, pt=0, online=0, offline=0;
-
-    members.forEach(m => {
-      const history = m.paymentHistory || [];
-
-      if (history.length > 0) {
-        // ✅ Sum ALL historical payments — each renewal ADDS to total, not replaces
-        history.forEach(p => {
-          const amt = p.amount || 0;
-          monthly += amt;
-          if (p.method === 'cash') offline += amt;
-          else if (p.method === 'upi' || p.method === 'card') online += amt;
-        });
-      } else {
-        // Fallback: member has no payment history yet (old records)
-        monthly += (m.planPrice > 0 ? m.planPrice : getPlanPrice(m.plan));
-      }
-    });
-
-    // Admission & PT tracked separately (one-time / monthly)
-    members.forEach(m => {
-      if (!m.admissionWaived) admission += (m.admissionFee || 0);
-      if (m.ptEnabled)        pt        += (m.ptFee || 0);
-    });
-
-    const total = monthly + admission + pt;
-    const fmtR  = v => v >= 1000 ? `₹${(v/1000).toFixed(1)}k` : `₹${v}`;
-    document.getElementById('statRev').textContent  = fmtR(Math.round(total));
-    document.getElementById('revM').textContent     = `₹${Math.round(monthly).toLocaleString('en-IN')}`;
-    document.getElementById('revA').textContent     = `₹${Math.round(admission).toLocaleString('en-IN')}`;
-    document.getElementById('revPT').textContent    = `₹${Math.round(pt).toLocaleString('en-IN')}`;
-    const revOnlineEl = document.getElementById('revOnline');
-    const revCashEl   = document.getElementById('revCash');
-    if (revOnlineEl) revOnlineEl.textContent = fmtR(Math.round(online));
-    if (revCashEl)   revCashEl.textContent   = fmtR(Math.round(offline));
+    const revenue = calculateRevenue(members);
+    renderRevenueDashboard(revenue);
 
     const today = new Date();
     today.setHours(0,0,0,0);
@@ -625,25 +586,30 @@ async function loadDashboard() {
     });
 
     const banner = document.getElementById('alertBanner');
-    if (!due.length) {
-      banner.className = 'banner green';
-      banner.innerHTML = '<div class="banner-text"><h3>✅ All Good!</h3><p>No payments due this week</p></div>';
-    } else {
-      banner.className = 'banner amber';
-      banner.innerHTML = `<div class="banner-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due</h3><p>Expiring within 7 days</p></div>
-        <button class="btn btn-ghost btn-sm" onclick="showPage('payments',document.querySelector('[data-page=payments]'));updateBNav('none')">View →</button>`;
+    if (banner) {
+      if (!due.length) {
+        banner.className = 'banner green';
+        banner.innerHTML = '<div class="banner-text"><h3>✅ All Good!</h3><p>No payments due this week</p></div>';
+      } else {
+        banner.className = 'banner amber';
+        banner.innerHTML = `<div class="banner-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due</h3><p>Expiring within 7 days</p></div>
+          <button class="btn btn-ghost btn-sm" onclick="showPage('payments',document.querySelector('[data-page=payments]'));updateBNav('none')">View →</button>`;
+      }
     }
 
     dashMembersCache = sorted;
     renderDashTable(sorted.slice(0,8));
+    _fillExtraDashTiles(members);
 
-  } catch(e) { toast('Error loading dashboard','error'); }
+  } catch(e) { 
+    console.error('Dashboard error:', e);
+    toast('Error loading dashboard','error'); 
+  }
 }
 
-/* ── ALL MEMBERS ── */
-let _allMembersCache = [];
+/* ── MEMBERS ── */
 let _memberStatusFilter = 'all';
-let _memberSearchQuery  = '';
+let _memberSearchQuery = '';
 
 function _avColor(name) {
   const colors = ['#1A8C8C','#27AE60','#E74C3C','#F39C12','#8E44AD','#2980B9','#D35400','#16A085'];
@@ -659,17 +625,10 @@ function _memberAvatar(m) {
   return `<div style="width:90px;height:90px;border-radius:16px;background:linear-gradient(135deg,${bg},${bg}CC);display:flex;align-items:center;justify-content:center;font-size:1.9rem;font-weight:800;color:#fff;flex-shrink:0;border:3px solid rgba(255,255,255,.4);box-shadow:0 4px 14px rgba(0,0,0,.18)">${esc(initials)}</div>`;
 }
 
-function _getDueAmount(m) {
-  return m.planPrice || 0;
-}
-
 function _renderMemberCard(m, idx) {
-  const due      = _getDueAmount(m);
-  const dueColor = due > 0 ? '#E74C3C' : '#27AE60';
-
   let expiryStr = '—';
   if (m.expiryDate) {
-    const p   = m.expiryDate.split('T')[0].split('-');
+    const p = m.expiryDate.split('T')[0].split('-');
     const exp = new Date(+p[0], +p[1]-1, +p[2]);
     expiryStr = exp.toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'});
   }
@@ -677,18 +636,13 @@ function _renderMemberCard(m, idx) {
   const stClr = {Active:'#27AE60',Trial:'#2980B9',Inactive:'#95A5A6',Expired:'#E74C3C'};
   const stripColor = stClr[m.status] || '#95A5A6';
 
-  const safeName  = esc(m.name);
+  const safeName = esc(m.name);
   const safePhone = esc(m.phone || '—');
-  const safePlan  = esc(m.plan  || '—');
-  const safeId    = esc(m._id);
+  const safePlan = esc(m.plan || '—');
+  const safeId = esc(m._id);
 
   return `
-  <div class="member-card-item" style="
-    background:#fff; border-radius:14px; margin-bottom:10px;
-    box-shadow:0 2px 10px rgba(0,0,0,.07), 0 1px 3px rgba(0,0,0,.04);
-    overflow:hidden; border-left:4px solid ${stripColor};
-    animation:pageIn .2s ${idx*0.04}s both;
-  ">
+  <div class="member-card-item" style="background:#fff; border-radius:14px; margin-bottom:10px; box-shadow:0 2px 10px rgba(0,0,0,.07), 0 1px 3px rgba(0,0,0,.04); overflow:hidden; border-left:4px solid ${stripColor}; animation:pageIn .2s ${idx*0.04}s both;">
     <div style="display:flex;align-items:stretch;gap:12px;padding:12px 12px 8px;position:relative">
       ${_memberAvatar(m)}
       <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center">
@@ -714,54 +668,21 @@ function _renderMemberCard(m, idx) {
           <span style="font-weight:700;color:#4A6464">${m.lastPaymentDate ? new Date(m.lastPaymentDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</span>
         </div>
       </div>
-      <button onclick="event.stopPropagation();delMember('${safeId}','${safeName.replace(/'/g,"\\'")}')"
-        style="position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;background:#FEECEB;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#E74C3C;flex-shrink:0">
-        🗑
-      </button>
+      <button onclick="event.stopPropagation();delMember('${safeId}','${safeName.replace(/'/g,"\\'")}')" style="position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;background:#FEECEB;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#E74C3C;flex-shrink:0">🗑</button>
     </div>
-
-    <div style="
-      display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;
-      padding:6px 8px;border-top:1px solid #F0F5F5;
-      background:linear-gradient(90deg,#E8F8EF 0%,#fff 70%);
-      gap:0;
-    ">
-      <button onclick="openEditMember('${safeId}')"
-        style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:54px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0">
-        <span style="font-size:1rem">🪪</span>
-        <span style="font-size:.52rem;font-weight:700;color:#8AABAB">ID Card</span>
-      </button>
-      <button onclick="dialPhone('${esc(m.phone)}')"
-        style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:54px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0">
-        <span style="font-size:1rem">📞</span>
-        <span style="font-size:.52rem;font-weight:700;color:#8AABAB">Call</span>
-      </button>
-      <button onclick="openWhatsApp('${esc(m.phone)}')"
-        style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:54px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0">
-        <span style="font-size:1rem">💬</span>
-        <span style="font-size:.52rem;font-weight:700;color:#8AABAB">Whatsapp</span>
-      </button>
-      <button onclick="openMemberAttendance('${safeId}','${safeName}')"
-        style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:58px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0">
-        <span style="font-size:1rem">📅</span>
-        <span style="font-size:.52rem;font-weight:700;color:#8AABAB">Attendance</span>
-      </button>
-      <button onclick="openPaymentFor({id:'${safeId}',name:'${safeName}',plan:'${safePlan}',expiryDate:'${m.expiryDate||''}',planPrice:${m.planPrice||0},ptEnabled:${!!m.ptEnabled},ptFee:${m.ptFee||0}})"
-        style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:62px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0">
-        <span style="font-size:1rem">🔄</span>
-        <span style="font-size:.52rem;font-weight:700;color:#8AABAB">Renew Plan</span>
-      </button>
-      <button onclick="openEditMember('${safeId}')"
-        style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:48px;padding:5px 8px;border:none;background:transparent;cursor:pointer;flex-shrink:0">
-        <span style="font-size:1rem">✏️</span>
-        <span style="font-size:.52rem;font-weight:700;color:#8AABAB">Edit</span>
-      </button>
+    <div style="display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:6px 8px;border-top:1px solid #F0F5F5;background:linear-gradient(90deg,#E8F8EF 0%,#fff 70%);gap:0;">
+      <button onclick="openEditMember('${safeId}')" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:54px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0"><span style="font-size:1rem">🪪</span><span style="font-size:.52rem;font-weight:700;color:#8AABAB">ID Card</span></button>
+      <button onclick="dialPhone('${esc(m.phone)}')" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:54px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0"><span style="font-size:1rem">📞</span><span style="font-size:.52rem;font-weight:700;color:#8AABAB">Call</span></button>
+      <button onclick="openWhatsApp('${esc(m.phone)}')" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:54px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0"><span style="font-size:1rem">💬</span><span style="font-size:.52rem;font-weight:700;color:#8AABAB">Whatsapp</span></button>
+      <button onclick="openMemberAttendance('${safeId}','${safeName}')" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:58px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0"><span style="font-size:1rem">📅</span><span style="font-size:.52rem;font-weight:700;color:#8AABAB">Attendance</span></button>
+      <button onclick="openPaymentFor({id:'${safeId}',name:'${safeName}',plan:'${safePlan}',expiryDate:'${m.expiryDate||''}',planPrice:${m.planPrice||0},ptEnabled:${!!m.ptEnabled},ptFee:${m.ptFee||0},admissionFee:${m.admissionFee||0},admissionWaived:${!!m.admissionWaived}})" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:62px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0"><span style="font-size:1rem">🔄</span><span style="font-size:.52rem;font-weight:700;color:#8AABAB">Renew Plan</span></button>
+      <button onclick="openEditMember('${safeId}')" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:48px;padding:5px 8px;border:none;background:transparent;cursor:pointer;flex-shrink:0"><span style="font-size:1rem">✏️</span><span style="font-size:.52rem;font-weight:700;color:#8AABAB">Edit</span></button>
     </div>
   </div>`;
 }
 
 function _applyMembersFilters() {
-  let list = _allMembersCache;
+  let list = allMembersCache;
   if (_memberStatusFilter !== 'all')
     list = list.filter(m => m.status === _memberStatusFilter);
   if (_memberSearchQuery)
@@ -798,7 +719,7 @@ async function loadAllMembers() {
     const res = await fetch(API, {headers:hdrs()});
     if (res.status===401) { logout(); return; }
     const members = await res.json();
-    _allMembersCache = sortByExpiry(members);
+    allMembersCache = sortByExpiry(members);
     _applyMembersFilters();
   } catch(e) {
     wrap.innerHTML = '<div class="empty"><p style="color:#E74C3C">Error loading members</p></div>';
@@ -812,16 +733,6 @@ async function delMember(id, name) {
     if (res.ok) { toast(`${name} deleted`,'success'); loadAllMembers(); loadDashboard(); }
     else toast('Error deleting','error');
   } catch(e) { toast('Network error','error'); }
-}
-
-async function confirmDeleteAll() {
-  const v = prompt('Type DELETE ALL to confirm removing every member:');
-  if (v !== 'DELETE ALL') return;
-  try {
-    const members = await fetch(API,{headers:hdrs()}).then(r=>r.json());
-    for (const m of members) await fetch(`${API}/${m._id}`,{method:'DELETE',headers:hdrs()});
-    toast('All members deleted'); loadAllMembers(); loadDashboard();
-  } catch(e) { toast('Error','error'); }
 }
 
 /* ── EDIT MEMBER ── */
@@ -861,7 +772,7 @@ async function openEditMember(id) {
     document.getElementById('eWaive').value   = member.admissionWaived ? 'yes' : 'no';
 
     const ptEn = !!member.ptEnabled;
-    document.getElementById('ePtEnabled').checked      = ptEn;
+    document.getElementById('ePtEnabled').checked = ptEn;
     document.getElementById('ePtDetails').style.display = ptEn ? 'block' : 'none';
     document.getElementById('ePtFee').value  = member.ptFee   || '';
     document.getElementById('ePtNotes').value= member.ptNotes || '';
@@ -871,14 +782,14 @@ async function openEditMember(id) {
       Object.entries(trainerMap).map(([tid,tname]) => `<option value="${esc(tid)}">${esc(tname)}</option>`).join('');
     ePtSel.value = member.ptTrainer || '';
 
-    document.getElementById('eEcName').value = member.emergencyContact?.name         || '';
-    document.getElementById('eEcPhone').value= member.emergencyContact?.phone        || '';
-    document.getElementById('eEcRel').value  = member.emergencyContact?.relationship || '';
+    document.getElementById('eEcName').value = member.emergencyContact?.name || '';
+    document.getElementById('eEcPhone').value = member.emergencyContact?.phone || '';
+    document.getElementById('eEcRel').value = member.emergencyContact?.relationship || '';
     document.getElementById('eNotes').value = member.medicalNotes || '';
 
     const ePrev = document.getElementById('ePhotoPreview');
-    const ePD   = document.getElementById('ePhotoData');
-    const eClr  = document.getElementById('eClearPhotoBtn');
+    const ePD = document.getElementById('ePhotoData');
+    const eClr = document.getElementById('eClearPhotoBtn');
     if (member.photo && member.photo.startsWith('data:image')) {
       ePrev.src = member.photo;
       ePD.value = member.photo;
@@ -894,55 +805,56 @@ async function openEditMember(id) {
   } catch(e) { toast('Error loading member','error'); console.error(e); }
 }
 
-document.getElementById('editMemberForm').addEventListener('submit', async e => {
+document.getElementById('editMemberForm')?.addEventListener('submit', async e => {
   e.preventDefault();
-  const id    = document.getElementById('editMemberId').value;
+  const id = document.getElementById('editMemberId').value;
   const phone = document.getElementById('ePhone').value.trim();
   if (!/^\d{10}$/.test(phone)) { toast('Enter valid 10-digit phone','error'); return; }
 
-  const sel       = document.getElementById('ePlan');
+  const sel = document.getElementById('ePlan');
   const origPrice = parseInt(sel.options[sel.selectedIndex]?.getAttribute('data-price')) || getPlanPrice(sel.value);
-  const dType     = document.querySelector('input[name="edType"]:checked')?.value || 'none';
-  const rawDVal   = (document.getElementById('edValue').value||'').replace(/,/g,'').trim();
-  const dVal      = rawDVal==='' ? 0 : (parseFloat(rawDVal)||0);
-  let finalPrice  = origPrice;
+  const dType = document.querySelector('input[name="edType"]:checked')?.value || 'none';
+  const rawDVal = (document.getElementById('edValue').value||'').replace(/,/g,'').trim();
+  const dVal = rawDVal==='' ? 0 : (parseFloat(rawDVal)||0);
+  let finalPrice = origPrice;
   if (dType==='percentage' && dVal>0) finalPrice = Math.round(origPrice - origPrice*Math.min(dVal,100)/100);
-  else if (dType==='fixed' && dVal>0)  finalPrice = Math.max(0, Math.round(origPrice-dVal));
+  else if (dType==='fixed' && dVal>0) finalPrice = Math.max(0, Math.round(origPrice-dVal));
 
-  const admFee    = parseFloat(document.getElementById('eAdmFee').value||0) || 0;
+  const admFee = parseFloat(document.getElementById('eAdmFee').value||0) || 0;
   const admWaived = document.getElementById('eWaive').value==='yes';
   const ptEnabled = document.getElementById('ePtEnabled').checked;
-  const ptFee     = parseFloat(document.getElementById('ePtFee').value||0) || 0;
+  const ptFee = parseFloat(document.getElementById('ePtFee').value||0) || 0;
 
   const data = {
-    name:    document.getElementById('eName').value.trim(),
+    name: document.getElementById('eName').value.trim(),
     phone,
-    email:   document.getElementById('eEmail').value.trim(),
-    age:     document.getElementById('eAge').value !== '' ? parseInt(document.getElementById('eAge').value,10) : null,
-    gender:  document.getElementById('eGender').value,
-    plan:    sel.value,
-    planPrice:       finalPrice,
-    discountType:    dType,
-    discountValue:   dVal,
-    discountReason:  document.getElementById('edReason').value.trim(),
-    admissionFee:    admFee,
+    email: document.getElementById('eEmail').value.trim(),
+    age: document.getElementById('eAge').value !== '' ? parseInt(document.getElementById('eAge').value,10) : null,
+    gender: document.getElementById('eGender').value,
+    plan: sel.value,
+    planPrice: finalPrice,
+    discountType: dType,
+    discountValue: dVal,
+    discountReason: document.getElementById('edReason').value.trim(),
+    admissionFee: admFee,
     admissionWaived: admWaived,
     ptEnabled,
-    ptFee:     ptEnabled ? ptFee : 0,
+    ptFee: ptEnabled ? ptFee : 0,
     ptTrainer: ptEnabled ? document.getElementById('ePtTrainer').value : '',
-    ptNotes:   ptEnabled ? document.getElementById('ePtNotes').value.trim() : '',
+    ptNotes: ptEnabled ? document.getElementById('ePtNotes').value.trim() : '',
     expiryDate: document.getElementById('eExpiry').value,
-    status:    document.getElementById('eStatus').value,
+    status: document.getElementById('eStatus').value,
     emergencyContact: {
-      name:         document.getElementById('eEcName').value.trim(),
-      phone:        document.getElementById('eEcPhone').value.trim(),
+      name: document.getElementById('eEcName').value.trim(),
+      phone: document.getElementById('eEcPhone').value.trim(),
       relationship: document.getElementById('eEcRel').value.trim()
     },
     medicalNotes: document.getElementById('eNotes').value.trim(),
     photo: document.getElementById('ePhotoData').value || ''
   };
 
-  const btn = e.submitter; btn.disabled=true; btn.textContent='Saving…';
+  const btn = e.submitter; 
+  if (btn) { btn.disabled=true; btn.textContent='Saving…'; }
   try {
     const res = await fetch(`${API}/${id}`, {method:'PUT', headers:hdrs(), body:JSON.stringify(data)});
     if (res.ok) {
@@ -953,30 +865,33 @@ document.getElementById('editMemberForm').addEventListener('submit', async e => 
       const err = await res.json(); toast(err.error||'Could not update','error');
     }
   } catch(err) { toast('Network error','error'); }
-  btn.disabled=false; btn.textContent='Save Changes';
+  if (btn) { btn.disabled=false; btn.textContent='Save Changes'; }
 });
 
 /* ── ADD MEMBER SUBMIT ── */
-document.getElementById('addMemberForm').addEventListener('submit', async e => {
+document.getElementById('addMemberForm')?.addEventListener('submit', async e => {
   e.preventDefault();
   const phone=document.getElementById('mPhone').value.trim();
   if(!/^\d{10}$/.test(phone)){toast('Enter valid 10-digit phone','error');return;}
   const gender=document.getElementById('mGender').value;
   if(!gender){toast('Select gender','error');return;}
 
-  const sel       = document.getElementById('mPlan');
+  const sel = document.getElementById('mPlan');
   const origPrice = parseInt(sel.options[sel.selectedIndex].getAttribute('data-price'))||0;
-  const dType     = document.querySelector('input[name="dType"]:checked')?.value||'none';
-  const dVal      = parseFloat(document.getElementById('dValue').value)||0;
-  let finalPrice  = origPrice;
+  const dType = document.querySelector('input[name="dType"]:checked')?.value||'none';
+  const dVal = parseFloat(document.getElementById('dValue').value)||0;
+  let finalPrice = origPrice;
   if(dType==='percentage'&&dVal>0) finalPrice=Math.round(origPrice-origPrice*Math.min(dVal,100)/100);
   else if(dType==='fixed'&&dVal>0) finalPrice=Math.max(0,Math.round(origPrice-dVal));
 
   const ageRaw = document.getElementById('mAge').value.trim();
-  const age    = ageRaw!=='' ? parseInt(ageRaw,10) : null;
-  const admFee    = parseFloat(document.getElementById('mAdmFee').value||0) || gymCfg.admissionFee || 0;
+  const age = ageRaw!=='' ? parseInt(ageRaw,10) : null;
+  const admFee = parseFloat(document.getElementById('mAdmFee').value||0) || gymCfg.admissionFee || 0;
   const ptEnabled = document.getElementById('mPtEnabled').checked;
-  const ptFee     = parseFloat(document.getElementById('mPtFee').value||0) || gymCfg.ptFee || 0;
+  const ptFee = parseFloat(document.getElementById('mPtFee').value||0) || gymCfg.ptFee || 0;
+
+  const paymentDate = document.getElementById('mPaymentDate').value;
+  if (!paymentDate) { toast('Please select a payment date','error'); return; }
 
   const conditions=[];
   document.querySelectorAll('#condContainer .cond-row').forEach(row=>{
@@ -985,30 +900,32 @@ document.getElementById('addMemberForm').addEventListener('submit', async e => {
   });
 
   const data={
-    name:    document.getElementById('mName').value.trim(),
+    name: document.getElementById('mName').value.trim(),
     phone, email: document.getElementById('mEmail').value.trim(),
     age, gender,
-    photo:   document.getElementById('photoData').value||'',
-    plan:    sel.value,
-    planPrice:       finalPrice,
-    discountType:    dType,
-    discountValue:   dVal,
-    discountReason:  document.getElementById('dReason').value.trim(),
-    admissionFee:    admFee,
+    photo: document.getElementById('photoData').value||'',
+    plan: sel.value,
+    planPrice: finalPrice,
+    discountType: dType,
+    discountValue: dVal,
+    discountReason: document.getElementById('dReason').value.trim(),
+    admissionFee: admFee,
     admissionWaived: document.getElementById('mWaive').value==='yes',
     ptEnabled,
-    ptFee:     ptEnabled?ptFee:0,
+    ptFee: ptEnabled?ptFee:0,
     ptTrainer: ptEnabled?document.getElementById('mPtTrainer').value:'',
-    ptNotes:   ptEnabled?document.getElementById('mPtNotes').value.trim():'',
+    ptNotes: ptEnabled?document.getElementById('mPtNotes').value.trim():'',
     joinDate: document.getElementById('mStart').value,
     expiryDate: document.getElementById('mExpiry').value,
-    status:    document.getElementById('mStatus').value,
+    status: document.getElementById('mStatus').value,
     emergencyContact:{name:document.getElementById('mEcName').value.trim(),phone:document.getElementById('mEcPhone').value.trim(),relationship:document.getElementById('mEcRel').value.trim()},
     healthConditions:conditions,
-    medicalNotes: document.getElementById('mNotes').value.trim()
+    medicalNotes: document.getElementById('mNotes').value.trim(),
+    paymentDate: paymentDate
   };
 
-  const btn=e.submitter; btn.disabled=true; btn.textContent='Adding…';
+  const btn = e.submitter; 
+  if (btn) { btn.disabled=true; btn.textContent='Adding…'; }
   try{
     const res=await fetch(API,{method:'POST',headers:hdrs(),body:JSON.stringify(data)});
     if(res.ok){
@@ -1019,24 +936,200 @@ document.getElementById('addMemberForm').addEventListener('submit', async e => {
       document.getElementById('mPtEnabled').checked=false;
       document.getElementById('mPtDetails').style.display='none';
       resetPhoto();
-      if(document.getElementById('mStart')) {
-        document.getElementById('mStart').value = getLocalTodayStr();
-      }
+      if(document.getElementById('mStart')) document.getElementById('mStart').value = getLocalTodayStr();
       onPlanChange();
       toast(`${added.name} added!`,'success');
       loadDashboard();
       loadAllMembers();
-      openPaymentFor(added, true);
+      
+      openPaymentFor({
+        id: added._id,
+        name: added.name,
+        plan: added.plan,
+        expiryDate: added.expiryDate,
+        planPrice: added.planPrice,
+        ptEnabled: added.ptEnabled,
+        ptFee: added.ptFee,
+        admissionFee: added.admissionFee,
+        admissionWaived: added.admissionWaived,
+        paymentDate: paymentDate
+      }, true);
     }else{
       const err=await res.json(); toast(err.error||'Could not add member','error');
     }
   }catch(err){toast('Network error','error');}
-  btn.disabled=false; btn.textContent='Add Member';
+  if (btn) { btn.disabled=false; btn.textContent='Add Member'; }
 });
 
-/* ══════════════════════════════════════════════════════
-   ATTENDANCE
-   ══════════════════════════════════════════════════════ */
+/* ── CAMERA ── */
+function setupCamera() {
+  const vid = document.getElementById('camVideo'),
+        can = document.getElementById('camCanvas'),
+        prev = document.getElementById('photoPreview'),
+        pd = document.getElementById('photoData'),
+        clr = document.getElementById('clearPhotoBtn');
+
+  const openCamBtn = document.getElementById('openCamBtn');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const photoFile = document.getElementById('photoFile');
+  const captureBtn = document.getElementById('captureBtn');
+  const closeCamBtn = document.getElementById('closeCamBtn');
+
+  if (openCamBtn) {
+    openCamBtn.onclick = async () => {
+      photoFile.setAttribute('capture', 'environment');
+      photoFile.setAttribute('accept', 'image/*');
+      const openModalEl = document.querySelector('.modal.open');
+      window._presCamModalId = openModalEl ? openModalEl.id : null;
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      if (isAndroid || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        photoFile.click();
+        return;
+      }
+      try {
+        curStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+        vid.srcObject = curStream;
+        openModal('cameraModal');
+      } catch(e) {
+        photoFile.click();
+      }
+    };
+  }
+
+  if (captureBtn) {
+    captureBtn.onclick = () => {
+      can.width = vid.videoWidth; can.height = vid.videoHeight;
+      can.getContext('2d').drawImage(vid,0,0);
+      const d = can.toDataURL('image/jpeg',.75);
+      prev.src = d; pd.value = d; 
+      if (clr) clr.style.display = 'inline-flex';
+      closeModal('cameraModal');
+      if (curStream) curStream.getTracks().forEach(t => t.stop());
+    };
+  }
+
+  if (closeCamBtn) {
+    closeCamBtn.onclick = () => {
+      closeModal('cameraModal');
+      if (curStream) curStream.getTracks().forEach(t => t.stop());
+    };
+  }
+
+  if (uploadBtn) {
+    uploadBtn.onclick = () => photoFile.click();
+  }
+
+  if (photoFile) {
+    photoFile.onchange = e => {
+      const f = e.target.files[0];
+      if (!f) return;
+      prev.style.opacity = '0.5';
+      const r = new FileReader();
+      r.onload = ev => {
+        const result = ev.target.result;
+        if (!result) { prev.style.opacity='1'; return; }
+        prev.src = result;
+        prev.style.opacity = '1';
+        pd.value = result;
+        if (clr) clr.style.display = 'inline-flex';
+        const modalId = window._presCamModalId ||
+          (document.getElementById('editMemberModal') ? 'editMemberModal' : 'addMemberModal');
+        const modal = document.getElementById(modalId);
+        if (modal && !modal.classList.contains('open')) {
+          modal.classList.add('open');
+          _setModalHeight(modal);
+          const mbox = modal.querySelector('.mbox');
+          if (mbox) setTimeout(() => { mbox.scrollTop = 0; }, 50);
+        }
+        window._presCamModalId = null;
+      };
+      r.onerror = () => { prev.style.opacity = '1'; toast('Photo error — try Upload', 'error'); };
+      r.readAsDataURL(f);
+      setTimeout(() => { e.target.value = ''; }, 400);
+    };
+  }
+
+  if (clr) {
+    clr.onclick = resetPhoto;
+  }
+}
+
+function resetPhoto() {
+  const prev = document.getElementById('photoPreview');
+  const pd = document.getElementById('photoData');
+  const clr = document.getElementById('clearPhotoBtn');
+  const file = document.getElementById('photoFile');
+  if (prev) prev.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%235B4CFF33'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+  if (pd) pd.value = '';
+  if (clr) clr.style.display = 'none';
+  if (file) file.value = '';
+}
+
+function setupEditPhoto() {
+  const ePrev = document.getElementById('ePhotoPreview');
+  const ePD = document.getElementById('ePhotoData');
+  const eClr = document.getElementById('eClearPhotoBtn');
+  const eFile = document.getElementById('ePhotoFile');
+
+  const eUploadBtn = document.getElementById('eUploadBtn');
+  const eOpenCamBtn = document.getElementById('eOpenCamBtn');
+
+  if (eUploadBtn) {
+    eUploadBtn.onclick = () => eFile.click();
+  }
+
+  if (eOpenCamBtn) {
+    eOpenCamBtn.onclick = async () => {
+      eFile.setAttribute('capture', 'environment');
+      eFile.setAttribute('accept', 'image/*');
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      if (isAndroid || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        eFile.click(); return;
+      }
+      try {
+        curStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+        document.getElementById('camVideo').srcObject = curStream;
+        window._editPhotoMode = true;
+        openModal('cameraModal');
+      } catch(e) { eFile.click(); }
+    };
+  }
+
+  if (eFile) {
+    eFile.onchange = ev => {
+      const f = ev.target.files[0];
+      if (!f) return;
+      ePrev.style.opacity = '0.5';
+      const r = new FileReader();
+      r.onload = e2 => {
+        const result = e2.target.result;
+        if (!result) { ePrev.style.opacity='1'; return; }
+        ePrev.src = result;
+        ePrev.style.opacity = '1';
+        ePD.value = result;
+        if (eClr) eClr.style.display = 'inline-flex';
+        const modal = document.getElementById('editMemberModal');
+        if (modal && !modal.classList.contains('open')) {
+          modal.classList.add('open'); _setModalHeight(modal);
+        }
+      };
+      r.onerror = () => { ePrev.style.opacity='1'; toast('Photo error','error'); };
+      r.readAsDataURL(f);
+      setTimeout(() => { ev.target.value=''; }, 400);
+    };
+  }
+
+  if (eClr) {
+    eClr.onclick = () => {
+      ePrev.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231A8C8C22'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+      ePD.value = ''; 
+      if (eClr) eClr.style.display = 'none'; 
+      eFile.value = '';
+    };
+  }
+}
+
+/* ── ATTENDANCE ── */
 const _attCache = {};
 
 function attKey(date) {
@@ -1086,17 +1179,13 @@ async function _ensureAttLoaded() {
   return _attFetchPromise;
 }
 
-function _invalidateAttCache() {
-  _attFetched = false;
-  _attFetchPromise = null;
-}
-
 async function loadAttendance() {
   const dateEl = document.getElementById('attDate');
-  const date   = dateEl.value || getLocalTodayStr();
-  dateEl.value = date;
-  const tbody  = document.getElementById('attBody');
-  tbody.innerHTML = '<tr><td colspan="2"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div><tr></tr>';
+  const date = dateEl?.value || getLocalTodayStr();
+  if (dateEl) dateEl.value = date;
+  const tbody = document.getElementById('attBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="2"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr>';
 
   try {
     const [mRes] = await Promise.all([
@@ -1105,13 +1194,16 @@ async function loadAttendance() {
     ]);
     if (mRes.status === 401) { logout(); return; }
     const members = await mRes.json();
-    const active  = members.filter(m => m.status === 'Active' || m.status === 'Trial');
+    const active = members.filter(m => m.status === 'Active' || m.status === 'Trial');
     const todayAtt = _attCache[date] || {};
     const pCount = Object.values(todayAtt).filter(s => s === 'Present').length;
-    document.getElementById('attTotal').textContent   = active.length;
-    document.getElementById('attPresent').textContent = pCount;
-    document.getElementById('attPct').textContent     = active.length
-      ? `${Math.min(100, Math.round(pCount / active.length * 100))}%` : '0%';
+    
+    const totalEl = document.getElementById('attTotal');
+    const presentEl = document.getElementById('attPresent');
+    const pctEl = document.getElementById('attPct');
+    if (totalEl) totalEl.textContent = active.length;
+    if (presentEl) presentEl.textContent = pCount;
+    if (pctEl) pctEl.textContent = active.length ? `${Math.min(100, Math.round(pCount / active.length * 100))}%` : '0%';
 
     if (!active.length) {
       tbody.innerHTML = '<tr><td colspan="2"><div class="empty"><p>No active members</p></div></td></tr>';
@@ -1119,7 +1211,7 @@ async function loadAttendance() {
     }
 
     tbody.innerHTML = active.map(m => {
-      const st  = todayAtt[m._id] || 'Absent';
+      const st = todayAtt[m._id] || 'Absent';
       const isP = st === 'Present';
       return `<tr style="background:${isP ? '#F5FFFB' : '#fff'};border-bottom:1px solid #F0F5F5">
         <td style="padding:10px 6px 10px 12px;vertical-align:middle">
@@ -1136,7 +1228,7 @@ async function loadAttendance() {
           <div id="ab-${m._id}" style="display:inline-block;padding:4px 11px;border-radius:20px;font-size:.72rem;font-weight:800;margin-bottom:6px;background:${isP?'#E8F8EF':'#FEECEB'};color:${isP?'#27AE60':'#E74C3C'}">${st}</div>
           <div style="display:flex;gap:5px;justify-content:flex-end">
             <button onclick="markAtt('${m._id}','${date}','Present')" style="padding:6px 12px;border-radius:20px;border:none;background:#E8F8EF;color:#27AE60;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;min-height:36px;-webkit-tap-highlight-color:transparent">✓ P</button>
-            <button onclick="markAtt('${m._id}','${date}','Absent')"  style="padding:6px 12px;border-radius:20px;border:none;background:#FEECEB;color:#E74C3C;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;min-height:36px;-webkit-tap-highlight-color:transparent">✗ A</button>
+            <button onclick="markAtt('${m._id}','${date}','Absent')" style="padding:6px 12px;border-radius:20px;border:none;background:#FEECEB;color:#E74C3C;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;min-height:36px;-webkit-tap-highlight-color:transparent">✗ A</button>
           </div>
          </td>
        </tr>`;
@@ -1153,18 +1245,21 @@ async function markAtt(memberId, date, status) {
   if (badge) {
     badge.textContent = status;
     badge.style.background = status === 'Present' ? '#E8F8EF' : '#FEECEB';
-    badge.style.color       = status === 'Present' ? '#27AE60' : '#E74C3C';
+    badge.style.color = status === 'Present' ? '#27AE60' : '#E74C3C';
     const row = badge.closest('tr');
     if (row) row.style.background = status === 'Present' ? '#F5FFFB' : '#fff';
   }
   if (!_attCache[date]) _attCache[date] = {};
   _attCache[date][memberId] = status;
   localStorage.setItem(attKey(date), JSON.stringify(_attCache[date]));
-  const activeTotal = parseInt(document.getElementById('attTotal').textContent) || 0;
+  
+  const activeTotal = parseInt(document.getElementById('attTotal')?.textContent) || 0;
   const present = Object.values(_attCache[date]).filter(s => s === 'Present').length;
-  document.getElementById('attPresent').textContent = present;
-  document.getElementById('attPct').textContent = activeTotal
-    ? `${Math.min(100, Math.round(present / activeTotal * 100))}%` : '0%';
+  const presentEl = document.getElementById('attPresent');
+  const pctEl = document.getElementById('attPct');
+  if (presentEl) presentEl.textContent = present;
+  if (pctEl) pctEl.textContent = activeTotal ? `${Math.min(100, Math.round(present / activeTotal * 100))}%` : '0%';
+  
   try {
     const res = await fetch(`${BASE}/attendance`, {
       method: 'POST', headers: hdrs(),
@@ -1181,11 +1276,12 @@ async function markAtt(memberId, date, status) {
 }
 
 async function markAllPresent() {
-  const date = document.getElementById('attDate').value || getLocalTodayStr();
+  const dateEl = document.getElementById('attDate');
+  const date = dateEl?.value || getLocalTodayStr();
   if (!confirm(`Mark ALL active members Present for ${fmt(date)}?`)) return;
   try {
     const members = await fetch(API, { headers: hdrs() }).then(r => r.json());
-    const active  = members.filter(m => m.status === 'Active' || m.status === 'Trial');
+    const active = members.filter(m => m.status === 'Active' || m.status === 'Trial');
     for (const m of active) {
       await markAtt(m._id, date, 'Present');
     }
@@ -1194,15 +1290,18 @@ async function markAllPresent() {
   } catch(e) { toast('Error marking attendance', 'error'); }
 }
 
+/* ── MEMBER ATTENDANCE VIEW ── */
 async function openMemberAttendance(memberId, memberName) {
-  document.getElementById('memberAttTitle').textContent = '📅 ' + memberName;
-  document.getElementById('memberAttSubtitle').textContent = 'Attendance Records & Analysis';
+  const titleEl = document.getElementById('memberAttTitle');
+  const subtitleEl = document.getElementById('memberAttSubtitle');
+  if (titleEl) titleEl.textContent = '📅 ' + memberName;
+  if (subtitleEl) subtitleEl.textContent = 'Attendance Records & Analysis';
   openModal('memberAttModal');
 
-  const calWrap  = document.getElementById('memberAttCal');
+  const calWrap = document.getElementById('memberAttCal');
   const statWrap = document.getElementById('memberAttStat');
-  calWrap.innerHTML  = '<div style="text-align:center;padding:20px;color:#8AABAB;font-size:.84rem">⏳ Loading…</div>';
-  statWrap.innerHTML = '';
+  if (calWrap) calWrap.innerHTML = '<div style="text-align:center;padding:20px;color:#8AABAB;font-size:.84rem">⏳ Loading…</div>';
+  if (statWrap) statWrap.innerHTML = '';
 
   await _ensureAttLoaded();
 
@@ -1216,7 +1315,7 @@ async function openMemberAttendance(memberId, memberName) {
 
   const allDates = Object.keys(records).sort();
   const totalPresent = allDates.filter(d => records[d] === 'Present').length;
-  const totalMarked  = allDates.length;
+  const totalMarked = allDates.length;
 
   const months = {};
   allDates.forEach(d => {
@@ -1238,6 +1337,7 @@ async function openMemberAttendance(memberId, memberName) {
   const todayStr = today.toISOString().split('T')[0];
   const daysInMonth = (y,m) => new Date(y, m, 0).getDate();
 
+  if (!calWrap) return;
   if (monthKeys.length === 0) {
     calWrap.innerHTML = `
       <div style="text-align:center;padding:28px 16px;background:#F0F5F5;border-radius:16px">
@@ -1249,7 +1349,6 @@ async function openMemberAttendance(memberId, memberName) {
   }
 
   const overallPct = totalMarked > 0 ? Math.round(totalPresent/totalMarked*100) : 0;
-  const summClr = overallPct >= 70 ? '#27AE60' : overallPct >= 40 ? '#F39C12' : '#E74C3C';
   calWrap.innerHTML = `
     <div style="background:#1A8C8C;border-radius:16px;padding:16px;margin-bottom:16px;color:#fff;display:flex;align-items:center;justify-content:space-between">
       <div>
@@ -1268,14 +1367,14 @@ async function openMemberAttendance(memberId, memberName) {
   let calHTML = calWrap.innerHTML;
   monthKeys.forEach(key => {
     const [y, m] = key.split('-');
-    const label  = monthNames[parseInt(m)-1] + ' ' + y;
-    const total  = daysInMonth(parseInt(y), parseInt(m));
+    const label = monthNames[parseInt(m)-1] + ' ' + y;
+    const total = daysInMonth(parseInt(y), parseInt(m));
     const presentDays = months[key].filter(d => records[d]==='Present').length;
-    const absentDays  = months[key].filter(d => records[d]==='Absent').length;
+    const absentDays = months[key].filter(d => records[d]==='Absent').length;
     const isCurrent = key === todayStr.slice(0,7);
     const elapsed = isCurrent ? today.getDate() : total;
-    const pct  = elapsed > 0 ? Math.round(presentDays/elapsed*100) : 0;
-    const clr  = pct >= 70 ? '#27AE60' : pct >= 40 ? '#F39C12' : '#E74C3C';
+    const pct = elapsed > 0 ? Math.round(presentDays/elapsed*100) : 0;
+    const clr = pct >= 70 ? '#27AE60' : pct >= 40 ? '#F39C12' : '#E74C3C';
 
     const firstDay = new Date(parseInt(y), parseInt(m)-1, 1).getDay();
     const startOffset = firstDay === 0 ? 6 : firstDay - 1;
@@ -1287,9 +1386,9 @@ async function openMemberAttendance(memberId, memberName) {
     for (let i = 0; i < startOffset; i++) cells += '<div></div>';
     for (let day = 1; day <= total; day++) {
       const dStr = y+'-'+m+'-'+String(day).padStart(2,'0');
-      const st   = records[dStr];
+      const st = records[dStr];
       let bg = '#F0F5F5', clrD = '#C0C0C0';
-      if (st === 'Present')  { bg = '#D4EDDA'; clrD = '#27AE60'; }
+      if (st === 'Present') { bg = '#D4EDDA'; clrD = '#27AE60'; }
       else if (st === 'Absent') { bg = '#FEECEB'; clrD = '#E74C3C'; }
       const isToday = dStr === todayStr;
       cells += `<div style="aspect-ratio:1;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:${isToday?'800':'600'};color:${clrD};border:${isToday?'2px solid #1A8C8C':'1px solid transparent'};cursor:default">${day}</div>`;
@@ -1341,9 +1440,9 @@ async function renderMemberAttendanceStats(memberId) {
       }
     });
 
-    const today  = new Date();
-    const curY   = today.getFullYear();
-    const curM   = String(today.getMonth() + 1).padStart(2, '0');
+    const today = new Date();
+    const curY = today.getFullYear();
+    const curM = String(today.getMonth() + 1).padStart(2, '0');
     const curKey = `${curY}-${curM}`;
     const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const daysInMonth = (y, m) => new Date(y, m, 0).getDate();
@@ -1368,9 +1467,9 @@ async function renderMemberAttendanceStats(memberId) {
       <div style="display:flex;flex-direction:column;gap:10px">`;
 
     keys.forEach(key => {
-      const [y, m]    = key.split('-');
-      const label     = `${monthNames[parseInt(m)-1]} ${y}`;
-      const present   = monthlyStats[key];
+      const [y, m] = key.split('-');
+      const label = `${monthNames[parseInt(m)-1]} ${y}`;
+      const present = monthlyStats[key];
       const isCurrent = key === curKey;
       if (isCurrent) {
         const daysInCur = today.getDate();
@@ -1392,8 +1491,8 @@ async function renderMemberAttendanceStats(memberId) {
           </div>`;
       } else {
         const total = daysInMonth(parseInt(y), parseInt(m));
-        const pct   = Math.round(present / total * 100);
-        const clr   = pct >= 70 ? '#27AE60' : pct >= 40 ? '#F39C12' : '#E74C3C';
+        const pct = Math.round(present / total * 100);
+        const clr = pct >= 70 ? '#27AE60' : pct >= 40 ? '#F39C12' : '#E74C3C';
         html += `
           <div style="background:#F0F5F5;border:1px solid #E0ECEC;border-radius:14px;padding:12px 14px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -1420,9 +1519,7 @@ async function renderMemberAttendanceStats(memberId) {
   }
 }
 
-/* ══════════════════════════════════════════════
-   TRAINERS
-   ══════════════════════════════════════════════ */
+/* ── TRAINERS ── */
 async function loadTrainers() {
   const wrap = document.getElementById('trainersListWrap');
   if (!wrap) return;
@@ -1477,19 +1574,19 @@ async function loadTrainers() {
 async function openEditTrainerModal(id) {
   try {
     const t = await fetch(`${TAPI}/${id}`,{headers:hdrs()}).then(r=>r.json());
-    document.getElementById('etId').value        = id;
-    document.getElementById('etName').value      = t.name;
-    document.getElementById('etPhone').value     = t.phone;
+    document.getElementById('etId').value = id;
+    document.getElementById('etName').value = t.name;
+    document.getElementById('etPhone').value = t.phone;
     document.getElementById('etSpecialty').value = t.specialty;
-    document.getElementById('etStatus').value    = t.status;
+    document.getElementById('etStatus').value = t.status;
     openModal('editTrainerModal');
   } catch(e) { toast('Error loading trainer','error'); }
 }
 
 async function saveEditTrainer() {
-  const id   = document.getElementById('etId').value;
+  const id = document.getElementById('etId').value;
   const name = document.getElementById('etName').value.trim();
-  const phone= document.getElementById('etPhone').value.trim();
+  const phone = document.getElementById('etPhone').value.trim();
   const spec = document.getElementById('etSpecialty').value.trim();
   const stat = document.getElementById('etStatus').value;
   if (!name||!phone||!spec) { toast('Fill all fields','error'); return; }
@@ -1509,23 +1606,34 @@ async function delTrainer(id,name) {
   }catch(e){toast('Error','error');}
 }
 
-document.getElementById('addTrainerForm').addEventListener('submit', async e=>{
+document.getElementById('addTrainerForm')?.addEventListener('submit', async e => {
   e.preventDefault();
-  const phone=document.getElementById('tPhone').value.trim();
+  const phone = document.getElementById('tPhone').value.trim();
   if(!/^\d{10}$/.test(phone)){toast('Enter valid 10-digit phone','error');return;}
-  const data={name:document.getElementById('tName').value.trim(),phone,specialty:document.getElementById('tSpecialty').value.trim(),status:document.getElementById('tStatus').value};
-  const btn=e.submitter; btn.disabled=true; btn.textContent='Adding…';
+  const data = {
+    name: document.getElementById('tName').value.trim(),
+    phone,
+    specialty: document.getElementById('tSpecialty').value.trim(),
+    status: document.getElementById('tStatus').value
+  };
+  const btn = e.submitter; 
+  if (btn) { btn.disabled=true; btn.textContent='Adding…'; }
   try{
-    const res=await fetch(TAPI,{method:'POST',headers:hdrs(),body:JSON.stringify(data)});
-    if(res.ok){closeModal('addTrainerModal');e.target.reset();toast('Trainer added!','success');loadTrainers();}
-    else{const err=await res.json();toast(err.error||'Could not add trainer','error');}
-  }catch(e){toast('Network error','error');}
-  btn.disabled=false; btn.textContent='Add Trainer';
+    const res = await fetch(TAPI,{method:'POST',headers:hdrs(),body:JSON.stringify(data)});
+    if(res.ok){
+      closeModal('addTrainerModal');
+      e.target.reset();
+      toast('Trainer added!','success');
+      loadTrainers();
+    } else {
+      const err=await res.json();
+      toast(err.error||'Could not add trainer','error');
+    }
+  } catch(e){ toast('Network error','error'); }
+  if (btn) { btn.disabled=false; btn.textContent='Add Trainer'; }
 });
 
-/* ══════════════════════════════════════════════
-   PLANS
-   ══════════════════════════════════════════════ */
+/* ── PLANS ── */
 function loadPlans() {
   const wrap = document.getElementById('plansListWrap');
   if (!wrap) return;
@@ -1580,15 +1688,18 @@ function selectPlan(name) {
 }
 
 function addGymPlan() {
-  const name   = document.getElementById('newPlanName').value.trim();
-  const price  = parseFloat(document.getElementById('newPlanPrice').value);
+  const name = document.getElementById('newPlanName').value.trim();
+  const price = parseFloat(document.getElementById('newPlanPrice').value);
   const months = parseInt(document.getElementById('newPlanMonths').value);
   if(!name||!price||!months){toast('Fill all fields','error');return;}
   if(gymPlans.find(p=>p.name===name)){toast('Plan already exists','error');return;}
   gymPlans.push({name,price,months});
   saveServerProfile();
   closeModal('addPlanModal');
-  ['newPlanName','newPlanPrice','newPlanMonths'].forEach(id=>document.getElementById(id).value='');
+  ['newPlanName','newPlanPrice','newPlanMonths'].forEach(id=>{
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
   populatePlanSelect(); loadPlans(); toast('Plan added!','success');
 }
 
@@ -1596,17 +1707,17 @@ function openEditPlan(name) {
   const plan = gymPlans.find(p=>p.name===name);
   if (!plan) return;
   document.getElementById('editPlanOrigName').value = name;
-  document.getElementById('editPlanName').value     = plan.name;
-  document.getElementById('editPlanPrice').value    = plan.price;
-  document.getElementById('editPlanMonths').value   = plan.months;
+  document.getElementById('editPlanName').value = plan.name;
+  document.getElementById('editPlanPrice').value = plan.price;
+  document.getElementById('editPlanMonths').value = plan.months;
   openModal('editPlanModal');
 }
 
 function saveEditPlan() {
   const origName = document.getElementById('editPlanOrigName').value;
-  const newName  = document.getElementById('editPlanName').value.trim();
-  const price    = parseFloat(document.getElementById('editPlanPrice').value);
-  const months   = parseInt(document.getElementById('editPlanMonths').value);
+  const newName = document.getElementById('editPlanName').value.trim();
+  const price = parseFloat(document.getElementById('editPlanPrice').value);
+  const months = parseInt(document.getElementById('editPlanMonths').value);
   if (!newName||!price||!months) { toast('Fill all fields','error'); return; }
   const idx = gymPlans.findIndex(p=>p.name===origName);
   if (newName!==origName && gymPlans.find(p=>p.name===newName)) { toast('Another plan with this name exists','error'); return; }
@@ -1622,9 +1733,7 @@ function removePlan(name) {
   saveServerProfile(); populatePlanSelect(); loadPlans(); toast('Plan removed');
 }
 
-/* ══════════════════════════════════════════════
-   DISCOUNTS
-   ══════════════════════════════════════════════ */
+/* ── DISCOUNTS ── */
 function renderDiscounts() {
   const wrap = document.getElementById('discTable');
   if (!wrap) return;
@@ -1634,7 +1743,7 @@ function renderDiscounts() {
   }
   wrap.innerHTML = gymDisc.map((d, i) => {
     const expired = d.validUntil && new Date(d.validUntil) < new Date();
-    const valStr  = d.type === 'percentage' ? `${d.value}% OFF` : `₹${d.value.toLocaleString('en-IN')} OFF`;
+    const valStr = d.type === 'percentage' ? `${d.value}% OFF` : `₹${d.value.toLocaleString('en-IN')} OFF`;
     return `
     <div style="background:#fff;border-radius:16px;margin-bottom:10px;box-shadow:0 2px 10px rgba(0,0,0,.06);overflow:hidden;border-left:4px solid ${expired ? '#95A5A6' : '#F39C12'}">
       <div style="padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px">
@@ -1653,34 +1762,48 @@ function renderDiscounts() {
 }
 
 function toggleDiscPlan() {
-  document.getElementById('discPlanGroup').style.display=document.getElementById('discApplies').value==='specific'?'block':'none';
+  const group = document.getElementById('discPlanGroup');
+  const applies = document.getElementById('discApplies');
+  if (group && applies) {
+    group.style.display = applies.value === 'specific' ? 'block' : 'none';
+  }
 }
 
 function addDiscount() {
-  const name=document.getElementById('discName').value.trim();
-  const val=parseFloat(document.getElementById('discVal').value);
+  const name = document.getElementById('discName').value.trim();
+  const val = parseFloat(document.getElementById('discVal').value);
   if(!name||!val||val<=0){toast('Fill all required fields','error');return;}
-  const type=document.getElementById('discType').value;
+  const type = document.getElementById('discType').value;
   if(type==='percentage'&&val>100){toast('Percentage cannot exceed 100%','error');return;}
-  const appliesTo=document.getElementById('discApplies').value;
-  gymDisc.push({name,type,value:val,appliesTo,planName:appliesTo==='specific'?document.getElementById('discPlan').value:null,validUntil:document.getElementById('discExpiry').value||null});
+  const appliesTo = document.getElementById('discApplies').value;
+  gymDisc.push({
+    name, type, value: val, appliesTo,
+    planName: appliesTo === 'specific' ? document.getElementById('discPlan').value : null,
+    validUntil: document.getElementById('discExpiry').value || null
+  });
   saveServerProfile();
-  closeModal('addDiscountModal'); renderDiscounts(); toast('Discount added','success');
+  closeModal('addDiscountModal');
+  renderDiscounts();
+  toast('Discount added','success');
 }
 
 function removeDiscount(i) {
   if(!confirm('Remove this discount?'))return;
-  gymDisc.splice(i,1); saveServerProfile(); renderDiscounts(); toast('Discount removed');
+  gymDisc.splice(i,1);
+  saveServerProfile();
+  renderDiscounts();
+  toast('Discount removed');
 }
 
 /* ── PAYMENTS ── */
 async function loadPayments() {
   const container = document.getElementById('payList');
+  if (!container) return;
   try {
     const res = await fetch(API,{headers:hdrs()});
     if(res.status===401){logout();return;}
     const members = await res.json();
-    const today   = new Date();
+    const today = new Date();
     today.setHours(0,0,0,0);
     const in14Days = new Date(today);
     in14Days.setDate(today.getDate() + 14);
@@ -1695,8 +1818,11 @@ async function loadPayments() {
 
     due.sort((a,b) => new Date(a.expiryDate) - new Date(b.expiryDate));
 
-    if(!due.length){container.innerHTML='<div class="empty"><div class="ei">✅</div><p>No payments due in 14 days!</p></div>';return;}
-    container.innerHTML=due.map(m=>{
+    if(!due.length){
+      container.innerHTML = '<div class="empty"><div class="ei">✅</div><p>No payments due in 14 days!</p></div>';
+      return;
+    }
+    container.innerHTML = due.map(m => {
       const p = m.expiryDate.split('T')[0].split('-');
       const expDate = new Date(p[0], p[1]-1, p[2]);
       const d = Math.ceil((expDate - today)/86400000);
@@ -1706,12 +1832,99 @@ async function loadPayments() {
         <button class="btn btn-success btn-sm" onclick='openPaymentFor(${JSON.stringify(m).replace(/'/g,"&#39;")})'>Renew</button>
       </div>`;
     }).join('');
-  }catch(e){container.innerHTML='<div class="empty"><p style="color:var(--gr)">Error</p></div>';}
+  } catch(e) {
+    container.innerHTML = '<div class="empty"><p style="color:var(--gr)">Error</p></div>';
+  }
 }
 
-/* ══════════════════════════════════════════════════════
-   PAYMENT / RENEWAL MODAL
-   ══════════════════════════════════════════════════════ */
+/* ── REVENUE PAGE ── */
+async function loadRevenuePage() {
+  const container = document.getElementById('revenueDetailed');
+  if (!container) return;
+  try {
+    const res = await fetch(API, {headers:hdrs()});
+    if (res.status===401) { logout(); return; }
+    const members = await res.json();
+    const revenue = calculateRevenue(members);
+    
+    const today = new Date();
+    const monthLabels = [];
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      monthLabels.push(d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }));
+    }
+    const monthKeys = [];
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      monthKeys.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+    }
+
+    let html = `
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+        ${monthKeys.map((key, idx) => {
+          const data = revenue.months[key] || { total: 0, plan: 0, admission: 0, pt: 0, online: 0, cash: 0 };
+          return `
+            <div style="background:#F8FFFE;border:1px solid #E0ECEC;border-radius:14px;padding:12px;text-align:center">
+              <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.4px">${monthLabels[idx]}</div>
+              <div style="font-size:1.2rem;font-weight:800;color:#1A8C8C;margin:6px 0">₹${data.total.toLocaleString('en-IN')}</div>
+              <div style="font-size:.6rem;color:#4A6464;font-weight:600">
+                Plan: ₹${data.plan.toLocaleString('en-IN')} | PT: ₹${data.pt.toLocaleString('en-IN')} | Adm: ₹${data.admission.toLocaleString('en-IN')}
+              </div>
+              <div style="font-size:.6rem;color:#4A6464;font-weight:600;margin-top:3px">
+                📱 ₹${data.online.toLocaleString('en-IN')} | 💵 ₹${data.cash.toLocaleString('en-IN')}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      
+      <div style="background:#1A8C8C;border-radius:14px;padding:16px;color:#fff">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center">
+          <div>
+            <div style="font-size:.6rem;opacity:.7;text-transform:uppercase;letter-spacing:.5px">Total Revenue</div>
+            <div style="font-size:1.4rem;font-weight:800">₹${revenue.grandTotal.toLocaleString('en-IN')}</div>
+          </div>
+          <div>
+            <div style="font-size:.6rem;opacity:.7;text-transform:uppercase;letter-spacing:.5px">Online</div>
+            <div style="font-size:1.1rem;font-weight:800">₹${revenue.onlineTotal.toLocaleString('en-IN')}</div>
+          </div>
+          <div>
+            <div style="font-size:.6rem;opacity:.7;text-transform:uppercase;letter-spacing:.5px">Cash</div>
+            <div style="font-size:1.1rem;font-weight:800">₹${revenue.cashTotal.toLocaleString('en-IN')}</div>
+          </div>
+        </div>
+      </div>
+      
+      <div style="background:#fff;border:1px solid #E0ECEC;border-radius:14px;padding:14px;margin-top:12px">
+        <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Payment History (All Time)</div>
+        ${members.filter(m => (m.paymentHistory || []).length).map(m => {
+          const history = m.paymentHistory || [];
+          return `
+            <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #F0F5F5">
+              <div style="font-weight:700;font-size:.82rem;color:#1A2E2E">${esc(m.name)}</div>
+              ${history.map(p => `
+                <div style="display:flex;justify-content:space-between;font-size:.7rem;color:#4A6464;padding:2px 0;padding-left:12px">
+                  <span>₹${(p.amount||0).toLocaleString('en-IN')}</span>
+                  <span>${p.date ? new Date(p.date).toLocaleDateString('en-IN') : '—'}</span>
+                  <span>
+                    <span class="payment-method-badge ${p.method === 'upi' ? 'pm-upi' : p.method === 'cash' ? 'pm-cash' : 'pm-card'}">${(p.method||'cash').toUpperCase()}</span>
+                  </span>
+                  ${p.type ? `<span style="font-size:.6rem;color:#8AABAB">${p.type}</span>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+    
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = '<div class="empty"><p style="color:#E74C3C">Error loading revenue data</p></div>';
+  }
+}
+
+/* ── PAYMENT MODAL ── */
 function openPaymentFor(m, isNew = false) {
   curPayMember = {id: m._id || m.id, name: m.name, expiryDate: m.expiryDate, isNew: isNew, originalData: m};
 
@@ -1721,45 +1934,55 @@ function openPaymentFor(m, isNew = false) {
   const payDiscBox = document.getElementById('payDiscBox');
 
   if (isNew) {
-    document.getElementById('payPlanRow').style.display = 'none';
-    document.getElementById('payPtEnabled').closest('.pt-box').style.display = 'none';
-    const payDatesRow = document.getElementById('payDatesRow');
-    if (payDatesRow) payDatesRow.style.display = 'none';
+    const planRow = document.getElementById('payPlanRow');
+    const ptBox = document.getElementById('payPtEnabled')?.closest('.pt-box');
+    const datesRow = document.getElementById('payDatesRow');
+    if (planRow) planRow.style.display = 'none';
+    if (ptBox) ptBox.style.display = 'none';
+    if (datesRow) datesRow.style.display = 'none';
     if (payDiscBox) payDiscBox.style.display = 'none';
+    
+    const payDateEl = document.getElementById('payRenewalPayDate');
+    if (payDateEl) payDateEl.value = m.paymentDate || getLocalTodayStr();
   } else {
-    document.getElementById('payPlanRow').style.display = 'block';
-    document.getElementById('payPtEnabled').closest('.pt-box').style.display = 'block';
-
-    const payDatesRow = document.getElementById('payDatesRow');
-    if (payDatesRow) payDatesRow.style.display = 'block';
+    const planRow = document.getElementById('payPlanRow');
+    const ptBox = document.getElementById('payPtEnabled')?.closest('.pt-box');
+    const datesRow = document.getElementById('payDatesRow');
+    if (planRow) planRow.style.display = 'block';
+    if (ptBox) ptBox.style.display = 'block';
+    if (datesRow) datesRow.style.display = 'block';
     if (payDiscBox) payDiscBox.style.display = 'block';
 
-    // Default payment date to today
     const payDateEl = document.getElementById('payRenewalPayDate');
     if (payDateEl) payDateEl.value = getLocalTodayStr();
 
     populatePlanSelect('payPlan');
-    document.getElementById('payPlan').value = m.plan || gymPlans[0]?.name || '';
+    const planSel = document.getElementById('payPlan');
+    if (planSel) planSel.value = m.plan || gymPlans[0]?.name || '';
 
     const ptEn = !!m.ptEnabled;
-    document.getElementById('payPtEnabled').checked = ptEn;
-    document.getElementById('payPtDetails').style.display = ptEn ? 'block' : 'none';
-    document.getElementById('payPtFee').value = m.ptFee || gymCfg.ptFee || 0;
+    const ptCheck = document.getElementById('payPtEnabled');
+    if (ptCheck) ptCheck.checked = ptEn;
+    const ptDetails = document.getElementById('payPtDetails');
+    if (ptDetails) ptDetails.style.display = ptEn ? 'block' : 'none';
+    const ptFeeEl = document.getElementById('payPtFee');
+    if (ptFeeEl) ptFeeEl.value = m.ptFee || gymCfg.ptFee || 0;
 
-    document.getElementById('payPtTrainer').innerHTML =
-      document.getElementById('ePtTrainer').innerHTML || '<option value="">Select Trainer</option>';
-    document.getElementById('payPtTrainer').value = m.ptTrainer || '';
+    const ptTrainerEl = document.getElementById('payPtTrainer');
+    if (ptTrainerEl) {
+      ptTrainerEl.innerHTML = document.getElementById('ePtTrainer')?.innerHTML || '<option value="">Select Trainer</option>';
+      ptTrainerEl.value = m.ptTrainer || '';
+    }
 
-    // ✅ Reset discount fields
     const payDV = document.getElementById('payDiscValue');
     const payDR = document.getElementById('payDiscReason');
     if (payDV) payDV.value = '';
     if (payDR) payDR.value = '';
     document.querySelectorAll('input[name="payDType"]').forEach(r => r.checked = r.value === 'none');
 
-    const startEl  = document.getElementById('payStartDate');
+    const startEl = document.getElementById('payStartDate');
     const expiryEl = document.getElementById('payExpiryDate');
-    if (startEl)  startEl.value  = '';
+    if (startEl) startEl.value = '';
     if (expiryEl) expiryEl.value = '';
 
     updateRenewalDates();
@@ -1773,8 +1996,8 @@ function openPaymentFor(m, isNew = false) {
     const btn = document.getElementById(`pm${n}`);
     if (!btn) return;
     btn.style.borderColor = '#E0ECEC';
-    btn.style.background  = '#fff';
-    btn.style.color       = '#4A6464';
+    btn.style.background = '#fff';
+    btn.style.color = '#4A6464';
   });
   ['payUpiPanel','payCashPanel','payCardPanel'].forEach(id => {
     const el = document.getElementById(id);
@@ -1791,7 +2014,7 @@ function openPaymentFor(m, isNew = false) {
 }
 
 function updateRenewalDates() {
-  const startEl  = document.getElementById('payStartDate');
+  const startEl = document.getElementById('payStartDate');
   const expiryEl = document.getElementById('payExpiryDate');
   if (!startEl || !expiryEl) return;
   if (!startEl.value) {
@@ -1808,12 +2031,12 @@ function updateRenewalDates() {
 }
 
 function updateRenewalExpiry() {
-  const startEl  = document.getElementById('payStartDate');
+  const startEl = document.getElementById('payStartDate');
   const expiryEl = document.getElementById('payExpiryDate');
   if (!startEl || !expiryEl || !startEl.value) return;
-  const planSel  = document.getElementById('payPlan');
+  const planSel = document.getElementById('payPlan');
   const planName = planSel ? planSel.value : '';
-  const months   = getPlanMonths(planName);
+  const months = getPlanMonths(planName);
   const p = startEl.value.split('-');
   const d = new Date(+p[0], +p[1]-1, +p[2]);
   d.setMonth(d.getMonth() + months);
@@ -1827,17 +2050,21 @@ function selectPayMethod(method) {
     if (!btn) return;
     if (m === method) {
       btn.style.borderColor = '#1A8C8C';
-      btn.style.background  = '#F0FAFA';
-      btn.style.color       = '#1A8C8C';
+      btn.style.background = '#F0FAFA';
+      btn.style.color = '#1A8C8C';
     } else {
       btn.style.borderColor = '#E0ECEC';
-      btn.style.background  = '#fff';
-      btn.style.color       = '#4A6464';
+      btn.style.background = '#fff';
+      btn.style.color = '#4A6464';
     }
   });
-  document.getElementById('payUpiPanel').style.display  = method === 'upi'  ? 'block' : 'none';
-  document.getElementById('payCashPanel').style.display = method === 'cash' ? 'block' : 'none';
-  document.getElementById('payCardPanel').style.display = method === 'card' ? 'block' : 'none';
+  const upiPanel = document.getElementById('payUpiPanel');
+  const cashPanel = document.getElementById('payCashPanel');
+  const cardPanel = document.getElementById('payCardPanel');
+  if (upiPanel) upiPanel.style.display = method === 'upi' ? 'block' : 'none';
+  if (cashPanel) cashPanel.style.display = method === 'cash' ? 'block' : 'none';
+  if (cardPanel) cardPanel.style.display = method === 'card' ? 'block' : 'none';
+  
   const btn = document.getElementById('confirmPayBtn');
   if (btn) {
     btn.disabled = false;
@@ -1847,7 +2074,6 @@ function selectPayMethod(method) {
   }
 }
 
-/* ✅ FIX: recalcPayment with discount support */
 function recalcPayment() {
   if (!curPayMember) return;
   const isNew = curPayMember.isNew;
@@ -1857,38 +2083,35 @@ function recalcPayment() {
 
   if (isNew) {
     planName = m.plan;
-    planAmt  = m.planPrice;
-    ptAmt    = m.ptEnabled ? (m.ptFee || 0) : 0;
-    admAmt   = m.admissionWaived ? 0 : (m.admissionFee || 0);
+    planAmt = m.planPrice || 0;
+    ptAmt = m.ptEnabled ? (m.ptFee || 0) : 0;
+    admAmt = m.admissionWaived ? 0 : (m.admissionFee || 0);
   } else {
     const planSel = document.getElementById('payPlan');
     planName = planSel.value;
-    const baseAmt = parseInt(planSel.options[planSel.selectedIndex]?.getAttribute('data-price'))
-                    || getPlanPrice(planName);
+    const baseAmt = parseInt(planSel.options[planSel.selectedIndex]?.getAttribute('data-price')) || getPlanPrice(planName);
 
-    // ✅ Apply renewal discount
     const dType = document.querySelector('input[name="payDType"]:checked')?.value || 'none';
     const rawDV = (document.getElementById('payDiscValue')?.value || '').replace(/,/g,'').trim();
-    const dVal  = rawDV === '' ? 0 : (parseFloat(rawDV) || 0);
+    const dVal = rawDV === '' ? 0 : (parseFloat(rawDV) || 0);
     planAmt = baseAmt;
     if (dType === 'percentage' && dVal > 0)
       planAmt = Math.max(0, Math.round(baseAmt - baseAmt * Math.min(dVal, 100) / 100));
     else if (dType === 'fixed' && dVal > 0)
       planAmt = Math.max(0, Math.round(baseAmt - dVal));
 
-    const isPt = document.getElementById('payPtEnabled').checked;
-    ptAmt  = isPt ? (parseFloat(document.getElementById('payPtFee').value) || 0) : 0;
+    const isPt = document.getElementById('payPtEnabled')?.checked || false;
+    ptAmt = isPt ? (parseFloat(document.getElementById('payPtFee')?.value) || 0) : 0;
     admAmt = 0;
   }
 
   const total = planAmt + ptAmt + admAmt;
 
-  // ✅ Show discount info in summary
   let discRow = '';
   if (!isNew) {
     const dType = document.querySelector('input[name="payDType"]:checked')?.value || 'none';
     const rawDV = (document.getElementById('payDiscValue')?.value || '').replace(/,/g,'').trim();
-    const dVal  = rawDV === '' ? 0 : (parseFloat(rawDV) || 0);
+    const dVal = rawDV === '' ? 0 : (parseFloat(rawDV) || 0);
     const planSel = document.getElementById('payPlan');
     const baseAmt = parseInt(planSel?.options[planSel?.selectedIndex]?.getAttribute('data-price')) || getPlanPrice(planName);
     if (dType !== 'none' && dVal > 0) {
@@ -1912,21 +2135,23 @@ function recalcPayment() {
     ${discRow}`;
 
   if (admAmt > 0) rows += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">🎟️ Admission</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(admAmt).toLocaleString('en-IN')}</span></div>`;
-  if (ptAmt > 0)  rows += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">💪 PT Fee</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(ptAmt).toLocaleString('en-IN')}</span></div>`;
+  if (ptAmt > 0) rows += `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2);font-size:.82rem">💪 PT Fee</span><span style="font-size:.85rem;font-weight:700">₹${Math.round(ptAmt).toLocaleString('en-IN')}</span></div>`;
 
   rows += `<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1.5px solid var(--border);margin-top:6px">
     <span style="font-weight:800;font-size:.88rem">Total</span>
     <strong style="color:var(--g);font-size:1.05rem">₹${total.toLocaleString('en-IN')}</strong>
   </div>`;
 
-  document.getElementById('payInfo').innerHTML =
-    `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r3);padding:12px;margin-bottom:.6rem">${rows}</div>`;
+  const infoEl = document.getElementById('payInfo');
+  if (infoEl) {
+    infoEl.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r3);padding:12px;margin-bottom:.6rem">${rows}</div>`;
+  }
 
   // UPI QR
-  const upiId   = gymCfg.upiId   || 'your-upi@bank';
+  const upiId = gymCfg.upiId || 'your-upi@bank';
   const upiName = gymCfg.upiName || 'GymPro';
   const dispUpi = document.getElementById('dispUpi');
-  const payQR   = document.getElementById('payQR');
+  const payQR = document.getElementById('payQR');
   if (dispUpi) dispUpi.textContent = upiId;
   if (payQR) {
     const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(upiName)}&am=${total}&cu=INR`;
@@ -1937,7 +2162,7 @@ function recalcPayment() {
 
 async function cancelPayment() {
   if (curPayMember && curPayMember.isNew) {
-    const id   = curPayMember.id;
+    const id = curPayMember.id;
     const name = curPayMember.name;
     try {
       await fetch(`${API}/${id}`, { method: 'DELETE', headers: hdrs() });
@@ -1958,19 +2183,50 @@ async function confirmPayment() {
   if (!curPayMethod) { toast('Please select a payment method','error'); return; }
 
   const method = curPayMethod;
-  const total  = curPayTotal || 0;
+  const total = curPayTotal || 0;
+  const paymentDate = document.getElementById('payRenewalPayDate')?.value || getLocalTodayStr();
 
   if (curPayMember.isNew) {
     const payEntry = {
-      amount: total, date: new Date(),
-      method: method, receiptNo: 'REC-' + Date.now()
+      amount: total,
+      date: new Date(paymentDate),
+      method: method,
+      receiptNo: 'REC-' + Date.now(),
+      type: 'plan'
     };
+    
+    const entries = [payEntry];
+    const m = curPayMember.originalData;
+    if (!m.admissionWaived && m.admissionFee > 0) {
+      entries.push({
+        amount: m.admissionFee,
+        date: new Date(paymentDate),
+        method: method,
+        receiptNo: 'REC-ADM-' + Date.now(),
+        type: 'admission'
+      });
+    }
+    if (m.ptEnabled && m.ptFee > 0) {
+      entries.push({
+        amount: m.ptFee,
+        date: new Date(paymentDate),
+        method: method,
+        receiptNo: 'REC-PT-' + Date.now(),
+        type: 'pt'
+      });
+    }
+
     const btn = document.getElementById('confirmPayBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
     try {
       await fetch(`${API}/${curPayMember.id}`, {
         method: 'PUT', headers: hdrs(),
-        body: JSON.stringify({ paymentHistory: [payEntry], lastPaymentDate: new Date() })
+        body: JSON.stringify({
+          paymentHistory: entries,
+          lastPaymentDate: new Date(paymentDate),
+          lastPaymentMethod: method,
+          lastPaymentAmount: total
+        })
       });
       const methodLabel = { upi:'📱 UPI', cash:'💵 Cash', card:'💳 Card' }[method] || method;
       toast(`✅ Member added — ${methodLabel} payment confirmed!`, 'success');
@@ -1980,27 +2236,24 @@ async function confirmPayment() {
     closeModal('paymentModal');
     curPayMember = null; curPayMethod = null;
     loadDashboard(); loadAllMembers();
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Confirm Payment'; }
     return;
   }
 
   // Renewal
-  const planSel   = document.getElementById('payPlan');
-  const planName  = planSel.value;
-  const isPt      = document.getElementById('payPtEnabled').checked;
-  const ptAmt     = isPt ? (parseFloat(document.getElementById('payPtFee').value)||0) : 0;
-  const ptTrainer = isPt ? document.getElementById('payPtTrainer').value : '';
+  const planSel = document.getElementById('payPlan');
+  const planName = planSel.value;
+  const isPt = document.getElementById('payPtEnabled')?.checked || false;
+  const ptAmt = isPt ? (parseFloat(document.getElementById('payPtFee')?.value) || 0) : 0;
+  const ptTrainer = isPt ? document.getElementById('payPtTrainer')?.value || '' : '';
 
-  // ✅ Get discount data for renewal
-  const renewDType   = document.querySelector('input[name="payDType"]:checked')?.value || 'none';
-  const renewDVal    = parseFloat((document.getElementById('payDiscValue')?.value||'').replace(/,/g,'')) || 0;
+  const renewDType = document.querySelector('input[name="payDType"]:checked')?.value || 'none';
+  const renewDVal = parseFloat((document.getElementById('payDiscValue')?.value||'').replace(/,/g,'')) || 0;
   const renewDReason = document.getElementById('payDiscReason')?.value?.trim() || '';
 
-  const startDateEl  = document.getElementById('payStartDate');
   const expiryDateEl = document.getElementById('payExpiryDate');
-  const payDateEl    = document.getElementById('payRenewalPayDate');
-  const chosenPayDate = payDateEl && payDateEl.value ? new Date(payDateEl.value) : new Date();
+  const chosenPayDate = paymentDate ? new Date(paymentDate) : new Date();
 
-  // ✅ Use user-chosen expiry (editable field) or fallback compute
   const newExpiry = expiryDateEl && expiryDateEl.value ? expiryDateEl.value : (() => {
     let baseDate = new Date(); baseDate.setHours(0,0,0,0);
     if (curPayMember.expiryDate) {
@@ -2013,26 +2266,33 @@ async function confirmPayment() {
   })();
 
   const payEntry = {
-    amount: total, date: chosenPayDate,
-    method: method, receiptNo: 'REC-' + Date.now()
+    amount: total,
+    date: chosenPayDate,
+    method: method,
+    receiptNo: 'REC-' + Date.now(),
+    type: 'plan'
   };
 
   const btn = document.getElementById('confirmPayBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
 
   try {
-    // ✅ Save renewal with discount info
     const res = await fetch(`${API}/${curPayMember.id}`, {
       method: 'PUT', headers: hdrs(),
       body: JSON.stringify({
         plan: planName,
-        planPrice: curPayTotal,       // final price after discount
-        discountType:   renewDType,
-        discountValue:  renewDVal,
+        planPrice: curPayTotal,
+        discountType: renewDType,
+        discountValue: renewDVal,
         discountReason: renewDReason,
-        ptEnabled: isPt, ptFee: ptAmt, ptTrainer,
-        expiryDate: newExpiry, status: 'Active',
-        lastPaymentDate: chosenPayDate
+        ptEnabled: isPt,
+        ptFee: ptAmt,
+        ptTrainer: ptTrainer,
+        expiryDate: newExpiry,
+        status: 'Active',
+        lastPaymentDate: chosenPayDate,
+        lastPaymentMethod: method,
+        lastPaymentAmount: total
       })
     });
 
@@ -2041,19 +2301,26 @@ async function confirmPayment() {
       throw new Error(err.error || err.message || `Server error ${res.status}`);
     }
 
-    // ✅ Append to payment history (cumulative — does NOT replace)
     try {
-      const ctrl = new AbortController();
-      const tid  = setTimeout(()=>ctrl.abort(), 5000);
-      const memRes = await fetch(`${API}/${curPayMember.id}`, { headers: hdrs(), signal: ctrl.signal });
-      clearTimeout(tid);
+      const memRes = await fetch(`${API}/${curPayMember.id}`, { headers: hdrs() });
       const mem = memRes.ok ? await memRes.json() : {};
       const history = [...(mem.paymentHistory || []), payEntry];
+      
+      if (isPt && ptAmt > 0) {
+        history.push({
+          amount: ptAmt,
+          date: chosenPayDate,
+          method: method,
+          receiptNo: 'REC-PT-' + Date.now(),
+          type: 'pt'
+        });
+      }
+      
       await fetch(`${API}/${curPayMember.id}`, {
         method: 'PUT', headers: hdrs(),
         body: JSON.stringify({ paymentHistory: history })
       });
-    } catch(e2) { /* non-critical — core renewal already saved */ }
+    } catch(e2) { /* non-critical */ }
 
     const methodLabel = { upi:'📱 UPI', cash:'💵 Cash', card:'💳 Card' }[method] || method;
     const expiryDisplay = new Date(newExpiry).toLocaleDateString('en-IN');
@@ -2069,25 +2336,45 @@ async function confirmPayment() {
 
 /* ── SETTINGS ── */
 function loadSettings() {
-  const upiIdEl   = document.getElementById('sUpiId');
+  const upiIdEl = document.getElementById('sUpiId');
   const upiNameEl = document.getElementById('sUpiName');
-  const admFeeEl  = document.getElementById('sAdmFee');
-  const ptFeeEl   = document.getElementById('sPtFee');
-  if (upiIdEl)   upiIdEl.value   = gymCfg.upiId   || '';
-  if (upiNameEl) upiNameEl.value = gymCfg.upiName  || '';
-  if (admFeeEl)  admFeeEl.value  = gymCfg.admissionFee != null ? gymCfg.admissionFee : '';
-  if (ptFeeEl)   ptFeeEl.value   = gymCfg.ptFee    != null ? gymCfg.ptFee : '';
+  const admFeeEl = document.getElementById('sAdmFee');
+  const ptFeeEl = document.getElementById('sPtFee');
+  if (upiIdEl) upiIdEl.value = gymCfg.upiId || '';
+  if (upiNameEl) upiNameEl.value = gymCfg.upiName || '';
+  if (admFeeEl) admFeeEl.value = gymCfg.admissionFee != null ? gymCfg.admissionFee : '';
+  if (ptFeeEl) ptFeeEl.value = gymCfg.ptFee != null ? gymCfg.ptFee : '';
 }
 
 async function saveSettings() {
-  const upiId       = document.getElementById('sUpiId')?.value.trim()    || '';
-  const upiName     = document.getElementById('sUpiName')?.value.trim()   || '';
-  const admissionFee= parseFloat(document.getElementById('sAdmFee')?.value)  || 0;
-  const ptFee       = parseFloat(document.getElementById('sPtFee')?.value)    || 0;
-  gymCfg.upiId = upiId; gymCfg.upiName = upiName;
-  gymCfg.admissionFee = admissionFee; gymCfg.ptFee = ptFee;
+  const upiId = document.getElementById('sUpiId')?.value.trim() || '';
+  const upiName = document.getElementById('sUpiName')?.value.trim() || '';
+  const admissionFee = parseFloat(document.getElementById('sAdmFee')?.value) || 0;
+  const ptFee = parseFloat(document.getElementById('sPtFee')?.value) || 0;
+  gymCfg.upiId = upiId; 
+  gymCfg.upiName = upiName;
+  gymCfg.admissionFee = admissionFee; 
+  gymCfg.ptFee = ptFee;
   await saveServerProfile();
   toast('Settings saved & synced!', 'success');
+}
+
+/* ── EXTERNAL ACTIONS ── */
+function dialPhone(phone) {
+  window.location.href = 'tel:' + String(phone).replace(/[^0-9+]/g,'');
+}
+
+function openWhatsApp(phone) {
+  const clean = String(phone).replace(/[^0-9]/g, '');
+  const num = clean.startsWith('91') ? clean : '91' + clean;
+  const url = 'https://wa.me/' + num;
+  const isAndroidWebView = /wv/.test(navigator.userAgent) ||
+    (/Android/i.test(navigator.userAgent) && /Version\//.test(navigator.userAgent));
+  if (isAndroidWebView) {
+    window.location.href = url;
+  } else {
+    window.open(url, '_blank');
+  }
 }
 
 /* ── INIT ── */
@@ -2097,29 +2384,41 @@ window.addEventListener('DOMContentLoaded', async () => {
   setupEditPhoto();
 
   ['dValue', 'mPlan'].forEach(id => {
-    if(document.getElementById(id)) document.getElementById(id).addEventListener('input', recalcPrice);
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', recalcPrice);
   });
-  if(document.getElementById('mStart')) document.getElementById('mStart').addEventListener('input', onPlanChange);
+  const startEl = document.getElementById('mStart');
+  if (startEl) startEl.addEventListener('input', onPlanChange);
   ['edValue', 'ePlan'].forEach(id => {
-    if(document.getElementById(id)) document.getElementById(id).addEventListener('input', recalcEditPrice);
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', recalcEditPrice);
   });
 
-  document.getElementById('topDate').textContent =
-    new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
-
-  document.getElementById('attDate').value = getLocalTodayStr();
-  if(document.getElementById('mStart')) {
-    document.getElementById('mStart').value = getLocalTodayStr();
+  const dateEl = document.getElementById('topDate');
+  if (dateEl) {
+    dateEl.textContent = new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
   }
+
+  const attDate = document.getElementById('attDate');
+  if (attDate) attDate.value = getLocalTodayStr();
+  
+  const mStart = document.getElementById('mStart');
+  if (mStart) mStart.value = getLocalTodayStr();
+  
+  const mPaymentDate = document.getElementById('mPaymentDate');
+  if (mPaymentDate) mPaymentDate.value = getLocalTodayStr();
 
   await loadServerProfile();
 
-  if (gymCfg.admissionFee) document.getElementById('mAdmFee').value = gymCfg.admissionFee;
+  const admFeeEl = document.getElementById('mAdmFee');
+  if (admFeeEl && gymCfg.admissionFee) admFeeEl.value = gymCfg.admissionFee;
 
   try {
     const u = JSON.parse(localStorage.getItem('user')||'{}');
-    if (u.name) document.getElementById('sbUser').innerHTML =
-      `<div class="u-name">👤 ${esc(u.name)}</div><div class="u-role">${u.role==='admin'?'Administrator':'Staff Member'}</div>`;
+    const sbUser = document.getElementById('sbUser');
+    if (sbUser && u.name) {
+      sbUser.innerHTML = `<div class="u-name">👤 ${esc(u.name)}</div><div class="u-role">${u.role==='admin'?'Administrator':'Staff Member'}</div>`;
+    }
   } catch(e){}
 
   populatePlanSelect();
@@ -2133,8 +2432,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   (async () => {
     try {
       const ctrl = new AbortController();
-      const tid  = setTimeout(() => ctrl.abort(), 20000);
-      const res  = await fetch(TAPI, {headers:hdrs(), signal:ctrl.signal});
+      const tid = setTimeout(() => ctrl.abort(), 20000);
+      const res = await fetch(TAPI, {headers:hdrs(), signal:ctrl.signal});
       clearTimeout(tid);
       if (!res.ok) return;
       const trainers = await res.json();
@@ -2144,7 +2443,8 @@ window.addEventListener('DOMContentLoaded', async () => {
         trainers.filter(t=>t.status==='Active')
           .map(t=>`<option value="${esc(t._id)}">${esc(t.name)} — ${esc(t.specialty)}</option>`).join('');
       ['mPtTrainer','ePtTrainer','payPtTrainer'].forEach(id=>{
-        const el=document.getElementById(id); if(el) el.innerHTML=opts;
+        const el = document.getElementById(id); 
+        if (el) el.innerHTML = opts;
       });
     } catch(e) { console.log('Trainer pre-load:', e.message); }
   })();
@@ -2159,15 +2459,18 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 window.addEventListener('online', () => {
-  document.getElementById('offline-banner').style.display = 'none';
+  const banner = document.getElementById('offline-banner');
+  if (banner) banner.style.display = 'none';
   loadDashboard();
   loadAllMembers();
 });
 
 window.addEventListener('offline', () => {
-  document.getElementById('offline-banner').style.display = 'block';
+  const banner = document.getElementById('offline-banner');
+  if (banner) banner.style.display = 'block';
 });
 
 if (!navigator.onLine) {
-  document.getElementById('offline-banner').style.display = 'block';
+  const banner = document.getElementById('offline-banner');
+  if (banner) banner.style.display = 'block';
 }
