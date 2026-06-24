@@ -11,6 +11,66 @@
   <title>GymPro</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* Additional styles for revenue dashboard */
+    .rev-month-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .rev-month-card {
+      background: #F8FFFE;
+      border-radius: 12px;
+      padding: 10px 8px;
+      text-align: center;
+      border: 1px solid #E0ECEC;
+    }
+    .rev-month-label {
+      font-size: .6rem;
+      font-weight: 800;
+      color: #8AABAB;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    .rev-month-amount {
+      font-size: .95rem;
+      font-weight: 800;
+      color: #1A8C8C;
+      margin-top: 3px;
+    }
+    .rev-breakdown {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 8px;
+      font-size: .7rem;
+    }
+    .rev-breakdown span {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      border-bottom: 1px dashed #F0F5F5;
+    }
+    .payment-method-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: .6rem;
+      font-weight: 700;
+    }
+    .pm-upi { background: #E3F2FD; color: #1565C0; }
+    .pm-cash { background: #E8F8EF; color: #27AE60; }
+    .pm-card { background: #F3E5F5; color: #6A1B9A; }
+    .payment-history-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid #F0F5F5;
+      font-size: .75rem;
+    }
+    .payment-history-item:last-child { border-bottom: none; }
+  </style>
 </head>
 <body>
 
@@ -53,6 +113,9 @@
     </button>
     <button class="nav-btn" onclick="showPage('payments',this);updateBNav('none')" data-page="payments">
       <span class="ni">💰</span>Payments
+    </button>
+    <button class="nav-btn" onclick="showPage('revenue',this);updateBNav('none')" data-page="revenue">
+      <span class="ni">📈</span>Revenue
     </button>
     <button class="nav-btn" onclick="showPage('settings',this);updateBNav('none')" data-page="settings">
       <span class="ni">⚙️</span>Settings
@@ -130,43 +193,37 @@
       </div>
     </div>
 
+    <!-- Revenue Summary -->
     <div style="background:#fff;border:1px solid #E0ECEC;border-radius:18px;padding:16px;margin-bottom:10px">
-      <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">Financial Summary</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-        <div style="text-align:center">
-          <div style="font-size:.6rem;color:#8AABAB;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">📅 Monthly</div>
-          <div style="font-size:1rem;font-weight:800;color:#1A8C8C" id="revM">—</div>
+      <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">Revenue Summary</div>
+      
+      <!-- Last 3 Months Revenue -->
+      <div class="rev-month-grid" id="revMonthGrid">
+        <div class="rev-month-card">
+          <div class="rev-month-label" id="revMonth1Label">Month 1</div>
+          <div class="rev-month-amount" id="revMonth1">₹0</div>
         </div>
-        <div style="text-align:center;border-left:1px solid #F0F5F5;border-right:1px solid #F0F5F5">
-          <div style="font-size:.6rem;color:#8AABAB;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">🎟️ Admission</div>
-          <div style="font-size:1rem;font-weight:800;color:#27AE60" id="revA">—</div>
+        <div class="rev-month-card">
+          <div class="rev-month-label" id="revMonth2Label">Month 2</div>
+          <div class="rev-month-amount" id="revMonth2">₹0</div>
         </div>
-        <div style="text-align:center">
-          <div style="font-size:.6rem;color:#8AABAB;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">💪 Training</div>
-          <div style="font-size:1rem;font-weight:800;color:#F39C12" id="revPT">—</div>
+        <div class="rev-month-card">
+          <div class="rev-month-label" id="revMonth3Label">Month 3</div>
+          <div class="rev-month-amount" id="revMonth3">₹0</div>
         </div>
       </div>
-      <div style="margin-top:12px;padding-top:12px;border-top:1px solid #F0F5F5;display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:.78rem;font-weight:700;color:#4A6464">Total Revenue</span>
-        <span style="font-size:1.05rem;font-weight:800;color:#1A8C8C" id="statRev">—</span>
-      </div>
-      <div style="margin-top:10px;padding-top:10px;border-top:1px solid #F0F5F5;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div style="background:#EFF6FF;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:8px">
-          <div style="width:32px;height:32px;border-radius:10px;background:#DBEAFE;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">📱</div>
-          <div>
-            <div style="font-size:.58rem;color:#2563EB;font-weight:800;text-transform:uppercase;letter-spacing:.4px">Online</div>
-            <div style="font-size:.95rem;font-weight:800;color:#1D4ED8" id="revOnline">—</div>
-            <div style="font-size:.58rem;color:#93C5FD;font-weight:700">UPI + Card</div>
-          </div>
-        </div>
-        <div style="background:#F0FDF4;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:8px">
-          <div style="width:32px;height:32px;border-radius:10px;background:#DCFCE7;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">💵</div>
-          <div>
-            <div style="font-size:.58rem;color:#16A34A;font-weight:800;text-transform:uppercase;letter-spacing:.4px">Cash</div>
-            <div style="font-size:.95rem;font-weight:800;color:#15803D" id="revCash">—</div>
-            <div style="font-size:.58rem;color:#86EFAC;font-weight:700">In-person</div>
-          </div>
-        </div>
+
+      <!-- Breakdown -->
+      <div class="rev-breakdown">
+        <span><span>💪 Plan Fees</span><span id="revPlanTotal">₹0</span></span>
+        <span><span>🎟️ Admission</span><span id="revAdmissionTotal">₹0</span></span>
+        <span><span>🏋️ PT Fees</span><span id="revPTTotal">₹0</span></span>
+        <span><span>📱 Online (UPI+Card)</span><span id="revOnlineTotal">₹0</span></span>
+        <span><span>💵 Cash</span><span id="revCashTotal">₹0</span></span>
+        <span style="font-weight:800;border-bottom:2px solid #1A8C8C;padding-top:6px;margin-top:4px">
+          <span>Total Revenue</span>
+          <span id="revGrandTotal" style="color:#1A8C8C;font-size:.9rem">₹0</span>
+        </span>
       </div>
     </div>
 
@@ -390,6 +447,16 @@
       <div class="card-head"><span class="card-title">Due Payments</span></div>
       <div id="payList">
         <div class="empty"><div class="ei">⏳</div><p>Loading…</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────────── REVENUE ──────────────── -->
+  <div id="page-revenue" class="page">
+    <div class="card">
+      <div class="card-head"><span class="card-title">📈 Revenue Dashboard</span></div>
+      <div style="padding:16px">
+        <div id="revenueDetailed"></div>
       </div>
     </div>
   </div>
@@ -620,10 +687,10 @@
           <input type="date" id="mExpiry" required>
         </div>
         <div class="form-group" style="grid-column:1/-1">
-          <label>💳 Payment Date</label>
-          <input type="date" id="mPaymentDate"
-            style="width:100%;padding:11px 14px;background:#fff;border:1.5px solid #D5D5DF;
-                   border-radius:14px;font-family:inherit;font-size:.88rem;font-weight:500;
+          <label>💳 Payment Date *</label>
+          <input type="date" id="mPaymentDate" required
+            style="width:100%;padding:11px 14px;background:#fff;border:1.5px solid #1A8C8C;
+                   border-radius:14px;font-family:inherit;font-size:.88rem;font-weight:600;
                    color:#1A2E2E;-webkit-appearance:none;appearance:none;box-sizing:border-box">
         </div>
       </div>
@@ -919,23 +986,22 @@
         </div>
         <div class="form-group" style="margin-bottom:0">
           <label>Expiry Date</label>
-          <!-- ✅ FIX: editable expiry date -->
           <input type="date" id="payExpiryDate"
             style="width:100%;padding:11px 14px;background:#fff;border:1.5px solid #1A8C8C;
                    border-radius:14px;font-family:inherit;font-size:.88rem;font-weight:600;
                    color:#1A2E2E;-webkit-appearance:none;appearance:none;box-sizing:border-box">
         </div>
         <div class="form-group" style="grid-column:1/-1;margin-bottom:0">
-          <label>💳 Payment Date</label>
-          <input type="date" id="payRenewalPayDate"
-            style="width:100%;padding:11px 14px;background:#fff;border:1.5px solid #D5D5DF;
-                   border-radius:14px;font-family:inherit;font-size:.88rem;font-weight:500;
+          <label>💳 Payment Date *</label>
+          <input type="date" id="payRenewalPayDate" required
+            style="width:100%;padding:11px 14px;background:#fff;border:1.5px solid #1A8C8C;
+                   border-radius:14px;font-family:inherit;font-size:.88rem;font-weight:600;
                    color:#1A2E2E;-webkit-appearance:none;appearance:none;box-sizing:border-box">
         </div>
       </div>
     </div>
 
-    <!-- ✅ NEW: Renewal Discount -->
+    <!-- Renewal Discount -->
     <div id="payDiscBox" style="background:#FEF9E7;border:1.5px solid #FBBF24;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:none">
       <div style="font-size:.72rem;font-weight:800;color:#D97706;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🏷️ Discount (Optional)</div>
       <div style="display:flex;gap:14px;margin-bottom:8px;flex-wrap:wrap">
@@ -988,7 +1054,7 @@
 
     <!-- Payment Method -->
     <div style="margin-bottom:12px">
-      <div style="font-size:.7rem;font-weight:800;color:#1A8C8C;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Payment Method</div>
+      <div style="font-size:.7rem;font-weight:800;color:#1A8C8C;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Payment Method *</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px" id="payMethodBtns">
         <button type="button" onclick="selectPayMethod('upi')" id="pmUpi"
           style="padding:10px 4px;border-radius:12px;border:2px solid #E0ECEC;background:#fff;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;transition:all .2s;color:#4A6464">
@@ -1039,66 +1105,6 @@
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
-
-<style>
-.member-filter-chip.active {
-  background: #1A8C8C !important;
-  color: #fff !important;
-  border-color: #1A8C8C !important;
-}
-:root {
-  --pl2: #F2FAFA;
-  --pl:  #C8E6E6;
-  --p:   #1A8C8C;
-  --g:   #27AE60;
-  --gr:  #E74C3C;
-  --am:  #F39C12;
-  --border2: #D5D5DF;
-}
-</style>
-
-<script>
-function _fillExtraDashTiles(members) {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const parseExp = m => {
-    if (!m.expiryDate) return new Date(0);
-    const [y, mo, d] = m.expiryDate.split('T')[0].split('-');
-    return new Date(+y, +mo - 1, +d);
-  };
-  const daysLeft = m => Math.ceil((parseExp(m) - today) / 86400000);
-  const active = members.filter(m => m.status === 'Active' || m.status === 'Trial');
-
-  const el = id => document.getElementById(id);
-  if (el('statExpToday')) el('statExpToday').textContent =
-    active.filter(m => daysLeft(m) === 0).length;
-  if (el('statExp3'))  el('statExp3').textContent  =
-    active.filter(m => { const d = daysLeft(m); return d >= 1 && d <= 3; }).length;
-  if (el('statExp7'))  el('statExp7').textContent  =
-    active.filter(m => { const d = daysLeft(m); return d >= 4 && d <= 7; }).length;
-  if (el('statExp15')) el('statExp15').textContent =
-    active.filter(m => { const d = daysLeft(m); return d >= 8 && d <= 15; }).length;
-  const d = new Date();
-  if (el('dashTodayLabel'))
-    el('dashTodayLabel').textContent =
-      `Today — ${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`;
-}
-
-(function () {
-  const _fetch = window.fetch;
-  window.fetch = async function (...args) {
-    const res = await _fetch(...args);
-    const url = typeof args[0] === 'string' ? args[0] : '';
-    if (url.includes('/api/members') && !url.match(/\/members\/[^/?]+($|\?)/) &&
-        (!args[1] || !args[1].method || args[1].method === 'GET')) {
-      const clone = res.clone();
-      clone.json().then(data => {
-        if (Array.isArray(data)) _fillExtraDashTiles(data);
-      }).catch(() => {});
-    }
-    return res;
-  };
-})();
-</script>
 
 <script src="script.js"></script>
 </body>
