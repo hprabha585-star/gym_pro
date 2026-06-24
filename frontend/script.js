@@ -32,6 +32,8 @@ let curPayMethod = null;
 let curPayTotal  = 0;
 let curStream    = null;
 
+let allMembersCache = [];
+
 /* ── AUTH HELPERS ── */
 const hdrs = () => ({ 'Content-Type':'application/json', 'Authorization':`Bearer ${localStorage.getItem('token')}` });
 const checkAuth = () => { if (!localStorage.getItem('token')) { location.href='/login.html'; return false; } return true; };
@@ -97,7 +99,6 @@ function toast(msg, type='') {
 
 const esc = s => String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-// TIMEZONE FIX: Strictly parses YYYY-MM-DD as local date
 const fmt = d => {
   if(!d) return '—';
   const p = d.split('T')[0].split('-');
@@ -126,7 +127,6 @@ function gBadge(g) {
   return `<span class="badge ${m[g]||'b-other'}">${esc(g)}</span>`;
 }
 
-// ✅ FIX: expiry color — red ≤3d, orange 4-7d, green 8d+
 function expCell(expiryDate, status) {
   if (!expiryDate) return '—';
   const p = expiryDate.split('T')[0].split('-');
@@ -156,24 +156,271 @@ function sortByExpiry(members) {
   });
 }
 
-/* ═══════════════════════════════════════════════════════
-   ANDROID WEBVIEW — External App Launchers
-   ═══════════════════════════════════════════════════════ */
-function dialPhone(phone) {
-  window.location.href = 'tel:' + String(phone).replace(/[^0-9+]/g,'');
+/* ── REVENUE CALCULATION ── */
+function getMonthKey(date) {
+  const d = new Date(date);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
 }
 
-function openWhatsApp(phone) {
-  const clean = String(phone).replace(/[^0-9]/g, '');
-  const num   = clean.startsWith('91') ? clean : '91' + clean;
-  const url   = 'https://wa.me/' + num;
-  const isAndroidWebView = /wv/.test(navigator.userAgent) ||
-    (/Android/i.test(navigator.userAgent) && /Version\//.test(navigator.userAgent));
-  if (isAndroidWebView) {
-    window.location.href = url;
-  } else {
-    window.open(url, '_blank');
+function calculateRevenue(members) {
+  const revenue = {
+    planTotal: 0,
+    admissionTotal: 0,
+    ptTotal: 0,
+    onlineTotal: 0,
+    cashTotal: 0,
+    grandTotal: 0,
+    // Last 3 months
+    months: {}
+  };
+
+  // Get last 3 months keys
+  const today = new Date();
+  const monthKeys = [];
+  for (let i = 0; i < 3; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    monthKeys.push(key);
+    revenue.months[key] = {
+      plan: 0, admission: 0, pt: 0, online: 0, cash: 0, total: 0
+    };
   }
+
+  members.forEach(m => {
+    const history = m.paymentHistory || [];
+    
+    history.forEach(p => {
+      if (!p.date) return;
+      const key = getMonthKey(p.date);
+      const amt = p.amount || 0;
+      const method = p.method || 'cash';
+      
+      // Check if this month is in last 3 months
+      if (monthKeys.includes(key)) {
+        revenue.months[key].total += amt;
+        if (method === 'cash') {
+          revenue.months[key].cash += amt;
+          revenue.cashTotal += amt;
+        } else {
+          revenue.months[key].online += amt;
+          revenue.onlineTotal += amt;
+        }
+        // Track by type if available
+        if (p.type === 'admission') {
+          revenue.months[key].admission += amt;
+          revenue.admissionTotal += amt;
+        } else if (p.type === 'pt') {
+          revenue.months[key].pt += amt;
+          revenue.ptTotal += amt;
+        } else {
+          revenue.months[key].plan += amt;
+          revenue.planTotal += amt;
+        }
+      }
+    });
+  });
+
+  revenue.grandTotal = revenue.planTotal + revenue.admissionTotal + revenue.ptTotal;
+  return revenue;
+}
+
+/* ── DASHBOARD ── */
+function renderRevenueDashboard(revenue) {
+  // Last 3 months
+  const monthLabels = [];
+  const today = new Date();
+  for (let i = 0; i < 3; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    monthLabels.push(d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }));
+  }
+
+  const monthKeys = [];
+  for (let i = 0; i < 3; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    monthKeys.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+  }
+
+  // Update month cards
+  monthKeys.forEach((key, idx) => {
+    const monthData = revenue.months[key] || { total: 0 };
+    const labelEl = document.getElementById(`revMonth${idx+1}Label`);
+    const amountEl = document.getElementById(`revMonth${idx+1}`);
+    if (labelEl) labelEl.textContent = monthLabels[idx] || `Month ${idx+1}`;
+    if (amountEl) amountEl.textContent = `₹${monthData.total.toLocaleString('en-IN')}`;
+  });
+
+  // Update breakdown
+  document.getElementById('revPlanTotal').textContent = `₹${revenue.planTotal.toLocaleString('en-IN')}`;
+  document.getElementById('revAdmissionTotal').textContent = `₹${revenue.admissionTotal.toLocaleString('en-IN')}`;
+  document.getElementById('revPTTotal').textContent = `₹${revenue.ptTotal.toLocaleString('en-IN')}`;
+  document.getElementById('revOnlineTotal').textContent = `₹${revenue.onlineTotal.toLocaleString('en-IN')}`;
+  document.getElementById('revCashTotal').textContent = `₹${revenue.cashTotal.toLocaleString('en-IN')}`;
+  document.getElementById('revGrandTotal').textContent = `₹${revenue.grandTotal.toLocaleString('en-IN')}`;
+}
+
+/* ── DASHBOARD ── */
+let dashMembersCache = [];
+
+function _fillExtraDashTiles(members) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const parseExp = m => {
+    if (!m.expiryDate) return new Date(0);
+    const [y, mo, d] = m.expiryDate.split('T')[0].split('-');
+    return new Date(+y, +mo - 1, +d);
+  };
+  const daysLeft = m => Math.ceil((parseExp(m) - today) / 86400000);
+  const active = members.filter(m => m.status === 'Active' || m.status === 'Trial');
+
+  const el = id => document.getElementById(id);
+  if (el('statExpToday')) el('statExpToday').textContent =
+    active.filter(m => daysLeft(m) === 0).length;
+  if (el('statExp3'))  el('statExp3').textContent  =
+    active.filter(m => { const d = daysLeft(m); return d >= 1 && d <= 3; }).length;
+  if (el('statExp7'))  el('statExp7').textContent  =
+    active.filter(m => { const d = daysLeft(m); return d >= 4 && d <= 7; }).length;
+  if (el('statExp15')) el('statExp15').textContent =
+    active.filter(m => { const d = daysLeft(m); return d >= 8 && d <= 15; }).length;
+  const d = new Date();
+  if (el('dashTodayLabel'))
+    el('dashTodayLabel').textContent =
+      `Today — ${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+}
+
+function renderDashTable(membersList) {
+  const tbody = document.getElementById('dashBody');
+  if (!membersList.length) {
+    tbody.innerHTML = '<tr><td colspan="2"><div class="empty"><p>No members found in this timeframe.</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = membersList.map(m => {
+    let expLabel = '\u2014', expColor = '#8AABAB';
+    if (m.expiryDate) {
+      const p   = m.expiryDate.split('T')[0].split('-');
+      const exp = new Date(+p[0], +p[1]-1, +p[2]);
+      const today = new Date(); today.setHours(0,0,0,0);
+      const days  = Math.ceil((exp - today) / 86400000);
+      expLabel = exp.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
+      expColor = days <= 0 ? '#E74C3C' : days <= 3 ? '#E74C3C' : days <= 7 ? '#F39C12' : '#27AE60';
+    }
+    const stClr = {Active:'#27AE60',Trial:'#2980B9',Inactive:'#95A5A6',Expired:'#E74C3C'};
+    const stBg  = {Active:'#E8F8EF',Trial:'#E3F2FD',Inactive:'#F3F4F6',Expired:'#FEECEB'};
+    const sc = stClr[m.status] || '#95A5A6';
+    const sb = stBg[m.status]  || '#F3F4F6';
+    const gc = {Male:'#1565C0',Female:'#AD1457',Other:'#6A1B9A'};
+    const gb = {Male:'#E3F2FD',Female:'#FCE4EC',Other:'#F3E5F5'};
+    const genderPill = m.gender
+      ? `<span style="background:${gb[m.gender]||'#F3F4F6'};color:${gc[m.gender]||'#555'};padding:2px 9px;border-radius:20px;font-size:.62rem;font-weight:800">${esc(m.gender)}</span>`
+      : '';
+    return `<tr onclick="openEditMember('${m._id}')" style="cursor:pointer;border-bottom:1px solid #F0F5F5">
+      <td style="padding:12px 8px 12px 12px;vertical-align:middle">
+        <div style="display:flex;align-items:center;gap:14px">
+          ${_memberAvatar(m)}
+          <div style="min-width:0;display:flex;flex-direction:column;justify-content:center">
+            <div style="font-weight:800;font-size:.92rem;color:#1A2E2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px">${esc(m.name)}</div>
+            <div style="font-size:.72rem;color:#8AABAB;margin-top:2px">${esc(m.phone||'')}</div>
+            <div style="margin-top:4px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+              ${genderPill}
+              <span style="font-size:.68rem;color:#4A6464;font-weight:600">${esc(m.plan||'')}</span>
+            </div>
+          </div>
+        </div>
+       </td>
+      <td style="padding:12px 12px 12px 6px;vertical-align:middle;text-align:right;white-space:nowrap">
+        <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end;margin-bottom:5px">
+          <span style="width:8px;height:8px;border-radius:50%;background:${expColor};flex-shrink:0"></span>
+          <span style="font-size:.78rem;font-weight:700;color:#1A2E2E">${expLabel}</span>
+        </div>
+        <span style="background:${sb};color:${sc};padding:3px 10px;border-radius:20px;font-size:.65rem;font-weight:800">${esc(m.status||'')}</span>
+       </td>
+     </tr>`;
+  }).join('');
+}
+
+function filterDash(days) {
+  if (days === 'all') {
+    renderDashTable(dashMembersCache.slice(0, 8));
+    return;
+  }
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const targetDate = new Date(today);
+  targetDate.setDate(today.getDate() + days);
+  targetDate.setHours(23,59,59,999);
+
+  const filtered = dashMembersCache.filter(m => {
+    if (m.status !== 'Active' && m.status !== 'Trial') return false;
+    const p = m.expiryDate.split('T')[0].split('-');
+    const exp = new Date(p[0], p[1]-1, p[2]);
+    return exp >= today && exp <= targetDate;
+  });
+  renderDashTable(filtered);
+}
+
+async function loadDashboard() {
+  try {
+    const res = await fetch(API, {headers:hdrs()});
+    if (res.status===401) { logout(); return; }
+    const members = await res.json();
+    const sorted  = sortByExpiry(members);
+    allMembersCache = members;
+
+    document.getElementById('statTotal').textContent  = members.length;
+    document.getElementById('statActive').textContent = members.filter(m=>m.status==='Active').length;
+
+    // Calculate revenue
+    const revenue = calculateRevenue(members);
+    renderRevenueDashboard(revenue);
+
+    // Dashboard alerts
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const in7Days = new Date(today);
+    in7Days.setDate(today.getDate() + 7);
+    in7Days.setHours(23,59,59,999);
+
+    const due = members.filter(m => {
+      if(m.status !== 'Active') return false;
+      const p = m.expiryDate.split('T')[0].split('-');
+      const exp = new Date(p[0], p[1]-1, p[2]);
+      return exp <= in7Days;
+    });
+
+    const banner = document.getElementById('alertBanner');
+    if (!due.length) {
+      banner.className = 'banner green';
+      banner.innerHTML = '<div class="banner-text"><h3>✅ All Good!</h3><p>No payments due this week</p></div>';
+    } else {
+      banner.className = 'banner amber';
+      banner.innerHTML = `<div class="banner-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due</h3><p>Expiring within 7 days</p></div>
+        <button class="btn btn-ghost btn-sm" onclick="showPage('payments',document.querySelector('[data-page=payments]'));updateBNav('none')">View →</button>`;
+    }
+
+    dashMembersCache = sorted;
+    renderDashTable(sorted.slice(0,8));
+    _fillExtraDashTiles(members);
+
+  } catch(e) { toast('Error loading dashboard','error'); }
+}
+
+/* ── TOAST ── */
+function toast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = `toast show ${type}`;
+  setTimeout(() => { el.className = 'toast'; }, 3200);
+}
+
+const esc = s => String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const fmt = d => {
+  if(!d) return '—';
+  const p = d.split('T')[0].split('-');
+  if(p.length===3) return new Date(p[0], p[1]-1, p[2]).toLocaleDateString('en-IN');
+  return new Date(d).toLocaleDateString('en-IN');
+};
+
+function getLocalTodayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
 /* ── SIDEBAR & NAV ── */
@@ -198,29 +445,19 @@ function updateBNav(id) {
   if (id !== 'none') document.getElementById(`bn-${id}`)?.classList.add('active');
 }
 
-function loadSubscriptionPage() {
-  console.log('Subscription page not implemented');
-  toast('Subscription features coming soon', 'info');
-}
-
 function showPage(page, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(l => l.classList.remove('active'));
   document.getElementById(`page-${page}`).classList.add('active');
   if (btn) btn.classList.add('active');
-  const titles = {dashboard:'Dashboard',members:'Members',attendance:'Attendance',trainers:'Trainers',plans:'Plans',discounts:'Discounts',payments:'Payments',settings:'Settings',subscription:'Subscription'};
+  const titles = {dashboard:'Dashboard',members:'Members',attendance:'Attendance',trainers:'Trainers',plans:'Plans',discounts:'Discounts',payments:'Payments',revenue:'Revenue',settings:'Settings'};
   document.getElementById('pageTitle').textContent = titles[page] || page;
   closeSidebar();
-  const loaders = {dashboard:loadDashboard,members:loadAllMembers,attendance:loadAttendance,trainers:loadTrainers,plans:loadPlans,discounts:renderDiscounts,payments:loadPayments,settings:loadSettings,subscription:loadSubscriptionPage};
+  const loaders = {dashboard:loadDashboard,members:loadAllMembers,attendance:loadAttendance,trainers:loadTrainers,plans:loadPlans,discounts:renderDiscounts,payments:loadPayments,revenue:loadRevenuePage,settings:loadSettings};
   if (loaders[page]) loaders[page]();
 }
 
 /* ── MODALS ── */
-function getLocalTodayStr() {
-  const d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-}
-
 function _setModalHeight(modalEl) {
   const mbox = modalEl.querySelector('.mbox');
   if (!mbox) return;
@@ -238,6 +475,9 @@ const openModal = id => {
   if (id === 'addMemberModal') {
     const startInput = document.getElementById('mStart');
     if (startInput) { startInput.value = getLocalTodayStr(); onPlanChange(); }
+    // Set payment date to today
+    const payDate = document.getElementById('mPaymentDate');
+    if (payDate) payDate.value = getLocalTodayStr();
   }
   const mbox = el.querySelector('.mbox');
   if (mbox) mbox.scrollTop = 0;
@@ -337,7 +577,7 @@ function resetPhoto() {
   document.getElementById('photoFile').value = '';
 }
 
-/* ── EDIT MEMBER PHOTO BUTTONS ── */
+/* ── EDIT MEMBER PHOTO ── */
 function setupEditPhoto() {
   const ePrev = document.getElementById('ePhotoPreview');
   const ePD   = document.getElementById('ePhotoData');
@@ -386,7 +626,7 @@ function setupEditPhoto() {
   };
 }
 
-/* ── SMART PLAN SELECT ── */
+/* ── PLAN SELECT ── */
 function populatePlanSelect(selId='mPlan') {
   const sel = document.getElementById(selId);
   if (!sel) return;
@@ -451,7 +691,6 @@ function recalcEditPrice() {
   document.getElementById('eFinalPrice').textContent = `₹${final.toLocaleString('en-IN')}`;
 }
 
-// TIMEZONE FIX: Uses strictly local dates
 function onPlanChange() {
   const sel = document.getElementById('mPlan');
   if (!sel || !sel.options[sel.selectedIndex]) return;
@@ -489,159 +728,7 @@ function addCondition(containerId) {
   c.appendChild(row);
 }
 
-/* ── DASHBOARD FILTERS ── */
-let dashMembersCache = [];
-
-// ✅ FIX: expiry color in dashboard table — red ≤3d, orange 4-7d, green 8d+
-function renderDashTable(membersList) {
-  const tbody = document.getElementById('dashBody');
-  if (!membersList.length) {
-    tbody.innerHTML = '<tr><td colspan="2"><div class="empty"><p>No members found in this timeframe.</p></div></td></tr>';
-    return;
-  }
-  tbody.innerHTML = membersList.map(m => {
-    let expLabel = '\u2014', expColor = '#8AABAB';
-    if (m.expiryDate) {
-      const p   = m.expiryDate.split('T')[0].split('-');
-      const exp = new Date(+p[0], +p[1]-1, +p[2]);
-      const today = new Date(); today.setHours(0,0,0,0);
-      const days  = Math.ceil((exp - today) / 86400000);
-      expLabel = exp.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
-      // ✅ red ≤3d, orange 4-7d, green 8d+
-      expColor = days <= 0 ? '#E74C3C' : days <= 3 ? '#E74C3C' : days <= 7 ? '#F39C12' : '#27AE60';
-    }
-    const stClr = {Active:'#27AE60',Trial:'#2980B9',Inactive:'#95A5A6',Expired:'#E74C3C'};
-    const stBg  = {Active:'#E8F8EF',Trial:'#E3F2FD',Inactive:'#F3F4F6',Expired:'#FEECEB'};
-    const sc = stClr[m.status] || '#95A5A6';
-    const sb = stBg[m.status]  || '#F3F4F6';
-    const gc = {Male:'#1565C0',Female:'#AD1457',Other:'#6A1B9A'};
-    const gb = {Male:'#E3F2FD',Female:'#FCE4EC',Other:'#F3E5F5'};
-    const genderPill = m.gender
-      ? `<span style="background:${gb[m.gender]||'#F3F4F6'};color:${gc[m.gender]||'#555'};padding:2px 9px;border-radius:20px;font-size:.62rem;font-weight:800">${esc(m.gender)}</span>`
-      : '';
-    return `<tr onclick="openEditMember('${m._id}')" style="cursor:pointer;border-bottom:1px solid #F0F5F5">
-      <td style="padding:12px 8px 12px 12px;vertical-align:middle">
-        <div style="display:flex;align-items:center;gap:14px">
-          ${_memberAvatar(m)}
-          <div style="min-width:0;display:flex;flex-direction:column;justify-content:center">
-            <div style="font-weight:800;font-size:.92rem;color:#1A2E2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px">${esc(m.name)}</div>
-            <div style="font-size:.72rem;color:#8AABAB;margin-top:2px">${esc(m.phone||'')}</div>
-            <div style="margin-top:4px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-              ${genderPill}
-              <span style="font-size:.68rem;color:#4A6464;font-weight:600">${esc(m.plan||'')}</span>
-            </div>
-          </div>
-        </div>
-       </td>
-      <td style="padding:12px 12px 12px 6px;vertical-align:middle;text-align:right;white-space:nowrap">
-        <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end;margin-bottom:5px">
-          <span style="width:8px;height:8px;border-radius:50%;background:${expColor};flex-shrink:0"></span>
-          <span style="font-size:.78rem;font-weight:700;color:#1A2E2E">${expLabel}</span>
-        </div>
-        <span style="background:${sb};color:${sc};padding:3px 10px;border-radius:20px;font-size:.65rem;font-weight:800">${esc(m.status||'')}</span>
-       </td>
-     </tr>`;
-  }).join('');
-}
-
-function filterDash(days) {
-  if (days === 'all') {
-    renderDashTable(dashMembersCache.slice(0, 8));
-    return;
-  }
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  const targetDate = new Date(today);
-  targetDate.setDate(today.getDate() + days);
-  targetDate.setHours(23,59,59,999);
-
-  const filtered = dashMembersCache.filter(m => {
-    if (m.status !== 'Active' && m.status !== 'Trial') return false;
-    const p = m.expiryDate.split('T')[0].split('-');
-    const exp = new Date(p[0], p[1]-1, p[2]);
-    return exp >= today && exp <= targetDate;
-  });
-  renderDashTable(filtered);
-}
-
-/* ✅ FIX: Dashboard revenue — cumulative (adds across renewals, not replace) */
-async function loadDashboard() {
-  try {
-    const res = await fetch(API, {headers:hdrs()});
-    if (res.status===401) { logout(); return; }
-    const members = await res.json();
-    const sorted  = sortByExpiry(members);
-
-    document.getElementById('statTotal').textContent  = members.length;
-    document.getElementById('statActive').textContent = members.filter(m=>m.status==='Active').length;
-
-    let monthly=0, admission=0, pt=0, online=0, offline=0;
-
-    members.forEach(m => {
-      const history = m.paymentHistory || [];
-
-      if (history.length > 0) {
-        // ✅ Sum ALL historical payments — each renewal ADDS to total, not replaces
-        history.forEach(p => {
-          const amt = p.amount || 0;
-          monthly += amt;
-          if (p.method === 'cash') offline += amt;
-          else if (p.method === 'upi' || p.method === 'card') online += amt;
-        });
-      } else {
-        // Fallback: member has no payment history yet (old records)
-        monthly += (m.planPrice > 0 ? m.planPrice : getPlanPrice(m.plan));
-      }
-    });
-
-    // Admission & PT tracked separately (one-time / monthly)
-    members.forEach(m => {
-      if (!m.admissionWaived) admission += (m.admissionFee || 0);
-      if (m.ptEnabled)        pt        += (m.ptFee || 0);
-    });
-
-    const total = monthly + admission + pt;
-    const fmtR  = v => v >= 1000 ? `₹${(v/1000).toFixed(1)}k` : `₹${v}`;
-    document.getElementById('statRev').textContent  = fmtR(Math.round(total));
-    document.getElementById('revM').textContent     = `₹${Math.round(monthly).toLocaleString('en-IN')}`;
-    document.getElementById('revA').textContent     = `₹${Math.round(admission).toLocaleString('en-IN')}`;
-    document.getElementById('revPT').textContent    = `₹${Math.round(pt).toLocaleString('en-IN')}`;
-    const revOnlineEl = document.getElementById('revOnline');
-    const revCashEl   = document.getElementById('revCash');
-    if (revOnlineEl) revOnlineEl.textContent = fmtR(Math.round(online));
-    if (revCashEl)   revCashEl.textContent   = fmtR(Math.round(offline));
-
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const in7Days = new Date(today);
-    in7Days.setDate(today.getDate() + 7);
-    in7Days.setHours(23,59,59,999);
-
-    const due = members.filter(m => {
-      if(m.status !== 'Active') return false;
-      const p = m.expiryDate.split('T')[0].split('-');
-      const exp = new Date(p[0], p[1]-1, p[2]);
-      return exp <= in7Days;
-    });
-
-    const banner = document.getElementById('alertBanner');
-    if (!due.length) {
-      banner.className = 'banner green';
-      banner.innerHTML = '<div class="banner-text"><h3>✅ All Good!</h3><p>No payments due this week</p></div>';
-    } else {
-      banner.className = 'banner amber';
-      banner.innerHTML = `<div class="banner-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due</h3><p>Expiring within 7 days</p></div>
-        <button class="btn btn-ghost btn-sm" onclick="showPage('payments',document.querySelector('[data-page=payments]'));updateBNav('none')">View →</button>`;
-    }
-
-    dashMembersCache = sorted;
-    renderDashTable(sorted.slice(0,8));
-
-  } catch(e) { toast('Error loading dashboard','error'); }
-}
-
-/* ── ALL MEMBERS ── */
-let _allMembersCache = [];
+/* ── MEMBERS ── */
 let _memberStatusFilter = 'all';
 let _memberSearchQuery  = '';
 
@@ -659,14 +746,7 @@ function _memberAvatar(m) {
   return `<div style="width:90px;height:90px;border-radius:16px;background:linear-gradient(135deg,${bg},${bg}CC);display:flex;align-items:center;justify-content:center;font-size:1.9rem;font-weight:800;color:#fff;flex-shrink:0;border:3px solid rgba(255,255,255,.4);box-shadow:0 4px 14px rgba(0,0,0,.18)">${esc(initials)}</div>`;
 }
 
-function _getDueAmount(m) {
-  return m.planPrice || 0;
-}
-
 function _renderMemberCard(m, idx) {
-  const due      = _getDueAmount(m);
-  const dueColor = due > 0 ? '#E74C3C' : '#27AE60';
-
   let expiryStr = '—';
   if (m.expiryDate) {
     const p   = m.expiryDate.split('T')[0].split('-');
@@ -746,7 +826,7 @@ function _renderMemberCard(m, idx) {
         <span style="font-size:1rem">📅</span>
         <span style="font-size:.52rem;font-weight:700;color:#8AABAB">Attendance</span>
       </button>
-      <button onclick="openPaymentFor({id:'${safeId}',name:'${safeName}',plan:'${safePlan}',expiryDate:'${m.expiryDate||''}',planPrice:${m.planPrice||0},ptEnabled:${!!m.ptEnabled},ptFee:${m.ptFee||0}})"
+      <button onclick="openPaymentFor({id:'${safeId}',name:'${safeName}',plan:'${safePlan}',expiryDate:'${m.expiryDate||''}',planPrice:${m.planPrice||0},ptEnabled:${!!m.ptEnabled},ptFee:${m.ptFee||0},admissionFee:${m.admissionFee||0},admissionWaived:${!!m.admissionWaived}})"
         style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:62px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0">
         <span style="font-size:1rem">🔄</span>
         <span style="font-size:.52rem;font-weight:700;color:#8AABAB">Renew Plan</span>
@@ -761,7 +841,7 @@ function _renderMemberCard(m, idx) {
 }
 
 function _applyMembersFilters() {
-  let list = _allMembersCache;
+  let list = allMembersCache;
   if (_memberStatusFilter !== 'all')
     list = list.filter(m => m.status === _memberStatusFilter);
   if (_memberSearchQuery)
@@ -798,7 +878,7 @@ async function loadAllMembers() {
     const res = await fetch(API, {headers:hdrs()});
     if (res.status===401) { logout(); return; }
     const members = await res.json();
-    _allMembersCache = sortByExpiry(members);
+    allMembersCache = sortByExpiry(members);
     _applyMembersFilters();
   } catch(e) {
     wrap.innerHTML = '<div class="empty"><p style="color:#E74C3C">Error loading members</p></div>';
@@ -812,16 +892,6 @@ async function delMember(id, name) {
     if (res.ok) { toast(`${name} deleted`,'success'); loadAllMembers(); loadDashboard(); }
     else toast('Error deleting','error');
   } catch(e) { toast('Network error','error'); }
-}
-
-async function confirmDeleteAll() {
-  const v = prompt('Type DELETE ALL to confirm removing every member:');
-  if (v !== 'DELETE ALL') return;
-  try {
-    const members = await fetch(API,{headers:hdrs()}).then(r=>r.json());
-    for (const m of members) await fetch(`${API}/${m._id}`,{method:'DELETE',headers:hdrs()});
-    toast('All members deleted'); loadAllMembers(); loadDashboard();
-  } catch(e) { toast('Error','error'); }
 }
 
 /* ── EDIT MEMBER ── */
@@ -978,6 +1048,10 @@ document.getElementById('addMemberForm').addEventListener('submit', async e => {
   const ptEnabled = document.getElementById('mPtEnabled').checked;
   const ptFee     = parseFloat(document.getElementById('mPtFee').value||0) || gymCfg.ptFee || 0;
 
+  // Get payment date
+  const paymentDate = document.getElementById('mPaymentDate').value;
+  if (!paymentDate) { toast('Please select a payment date','error'); return; }
+
   const conditions=[];
   document.querySelectorAll('#condContainer .cond-row').forEach(row=>{
     const cond=row.querySelector('.cType')?.value;
@@ -1005,7 +1079,9 @@ document.getElementById('addMemberForm').addEventListener('submit', async e => {
     status:    document.getElementById('mStatus').value,
     emergencyContact:{name:document.getElementById('mEcName').value.trim(),phone:document.getElementById('mEcPhone').value.trim(),relationship:document.getElementById('mEcRel').value.trim()},
     healthConditions:conditions,
-    medicalNotes: document.getElementById('mNotes').value.trim()
+    medicalNotes: document.getElementById('mNotes').value.trim(),
+    paymentDate: paymentDate,
+    paymentMethod: null // Will be set when payment is confirmed
   };
 
   const btn=e.submitter; btn.disabled=true; btn.textContent='Adding…';
@@ -1026,7 +1102,20 @@ document.getElementById('addMemberForm').addEventListener('submit', async e => {
       toast(`${added.name} added!`,'success');
       loadDashboard();
       loadAllMembers();
-      openPaymentFor(added, true);
+      
+      // Open payment modal for the new member
+      openPaymentFor({
+        id: added._id,
+        name: added.name,
+        plan: added.plan,
+        expiryDate: added.expiryDate,
+        planPrice: added.planPrice,
+        ptEnabled: added.ptEnabled,
+        ptFee: added.ptFee,
+        admissionFee: added.admissionFee,
+        admissionWaived: added.admissionWaived,
+        paymentDate: paymentDate
+      }, true);
     }else{
       const err=await res.json(); toast(err.error||'Could not add member','error');
     }
@@ -1034,9 +1123,7 @@ document.getElementById('addMemberForm').addEventListener('submit', async e => {
   btn.disabled=false; btn.textContent='Add Member';
 });
 
-/* ══════════════════════════════════════════════════════
-   ATTENDANCE
-   ══════════════════════════════════════════════════════ */
+/* ── ATTENDANCE ── */
 const _attCache = {};
 
 function attKey(date) {
@@ -1194,6 +1281,7 @@ async function markAllPresent() {
   } catch(e) { toast('Error marking attendance', 'error'); }
 }
 
+/* ── MEMBER ATTENDANCE VIEW ── */
 async function openMemberAttendance(memberId, memberName) {
   document.getElementById('memberAttTitle').textContent = '📅 ' + memberName;
   document.getElementById('memberAttSubtitle').textContent = 'Attendance Records & Analysis';
@@ -1420,9 +1508,7 @@ async function renderMemberAttendanceStats(memberId) {
   }
 }
 
-/* ══════════════════════════════════════════════
-   TRAINERS
-   ══════════════════════════════════════════════ */
+/* ── TRAINERS ── */
 async function loadTrainers() {
   const wrap = document.getElementById('trainersListWrap');
   if (!wrap) return;
@@ -1523,9 +1609,7 @@ document.getElementById('addTrainerForm').addEventListener('submit', async e=>{
   btn.disabled=false; btn.textContent='Add Trainer';
 });
 
-/* ══════════════════════════════════════════════
-   PLANS
-   ══════════════════════════════════════════════ */
+/* ── PLANS ── */
 function loadPlans() {
   const wrap = document.getElementById('plansListWrap');
   if (!wrap) return;
@@ -1622,9 +1706,7 @@ function removePlan(name) {
   saveServerProfile(); populatePlanSelect(); loadPlans(); toast('Plan removed');
 }
 
-/* ══════════════════════════════════════════════
-   DISCOUNTS
-   ══════════════════════════════════════════════ */
+/* ── DISCOUNTS ── */
 function renderDiscounts() {
   const wrap = document.getElementById('discTable');
   if (!wrap) return;
@@ -1709,9 +1791,94 @@ async function loadPayments() {
   }catch(e){container.innerHTML='<div class="empty"><p style="color:var(--gr)">Error</p></div>';}
 }
 
-/* ══════════════════════════════════════════════════════
-   PAYMENT / RENEWAL MODAL
-   ══════════════════════════════════════════════════════ */
+/* ── REVENUE PAGE ── */
+async function loadRevenuePage() {
+  try {
+    const res = await fetch(API, {headers:hdrs()});
+    if (res.status===401) { logout(); return; }
+    const members = await res.json();
+    const revenue = calculateRevenue(members);
+    
+    const container = document.getElementById('revenueDetailed');
+    const today = new Date();
+    const monthLabels = [];
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      monthLabels.push(d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }));
+    }
+    const monthKeys = [];
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      monthKeys.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+    }
+
+    let html = `
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+        ${monthKeys.map((key, idx) => {
+          const data = revenue.months[key] || { total: 0, plan: 0, admission: 0, pt: 0, online: 0, cash: 0 };
+          return `
+            <div style="background:#F8FFFE;border:1px solid #E0ECEC;border-radius:14px;padding:12px;text-align:center">
+              <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.4px">${monthLabels[idx]}</div>
+              <div style="font-size:1.2rem;font-weight:800;color:#1A8C8C;margin:6px 0">₹${data.total.toLocaleString('en-IN')}</div>
+              <div style="font-size:.6rem;color:#4A6464;font-weight:600">
+                Plan: ₹${data.plan.toLocaleString('en-IN')} | PT: ₹${data.pt.toLocaleString('en-IN')} | Adm: ₹${data.admission.toLocaleString('en-IN')}
+              </div>
+              <div style="font-size:.6rem;color:#4A6464;font-weight:600;margin-top:3px">
+                📱 ₹${data.online.toLocaleString('en-IN')} | 💵 ₹${data.cash.toLocaleString('en-IN')}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      
+      <div style="background:#1A8C8C;border-radius:14px;padding:16px;color:#fff">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center">
+          <div>
+            <div style="font-size:.6rem;opacity:.7;text-transform:uppercase;letter-spacing:.5px">Total Revenue</div>
+            <div style="font-size:1.4rem;font-weight:800">₹${revenue.grandTotal.toLocaleString('en-IN')}</div>
+          </div>
+          <div>
+            <div style="font-size:.6rem;opacity:.7;text-transform:uppercase;letter-spacing:.5px">Online</div>
+            <div style="font-size:1.1rem;font-weight:800">₹${revenue.onlineTotal.toLocaleString('en-IN')}</div>
+          </div>
+          <div>
+            <div style="font-size:.6rem;opacity:.7;text-transform:uppercase;letter-spacing:.5px">Cash</div>
+            <div style="font-size:1.1rem;font-weight:800">₹${revenue.cashTotal.toLocaleString('en-IN')}</div>
+          </div>
+        </div>
+      </div>
+      
+      <div style="background:#fff;border:1px solid #E0ECEC;border-radius:14px;padding:14px;margin-top:12px">
+        <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Payment History (All Time)</div>
+        ${members.map(m => {
+          const history = m.paymentHistory || [];
+          if (!history.length) return '';
+          return `
+            <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #F0F5F5">
+              <div style="font-weight:700;font-size:.82rem;color:#1A2E2E">${esc(m.name)}</div>
+              ${history.map(p => `
+                <div style="display:flex;justify-content:space-between;font-size:.7rem;color:#4A6464;padding:2px 0;padding-left:12px">
+                  <span>₹${(p.amount||0).toLocaleString('en-IN')}</span>
+                  <span>${p.date ? new Date(p.date).toLocaleDateString('en-IN') : '—'}</span>
+                  <span>
+                    <span class="payment-method-badge ${p.method === 'upi' ? 'pm-upi' : p.method === 'cash' ? 'pm-cash' : 'pm-card'}">${(p.method||'cash').toUpperCase()}</span>
+                  </span>
+                  ${p.type ? `<span style="font-size:.6rem;color:#8AABAB">${p.type}</span>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+    
+    container.innerHTML = html;
+  } catch(e) {
+    document.getElementById('revenueDetailed').innerHTML = '<div class="empty"><p style="color:#E74C3C">Error loading revenue data</p></div>';
+  }
+}
+
+/* ── PAYMENT MODAL ── */
 function openPaymentFor(m, isNew = false) {
   curPayMember = {id: m._id || m.id, name: m.name, expiryDate: m.expiryDate, isNew: isNew, originalData: m};
 
@@ -1726,6 +1893,10 @@ function openPaymentFor(m, isNew = false) {
     const payDatesRow = document.getElementById('payDatesRow');
     if (payDatesRow) payDatesRow.style.display = 'none';
     if (payDiscBox) payDiscBox.style.display = 'none';
+    
+    // Set payment date for new member
+    const payDateEl = document.getElementById('payRenewalPayDate');
+    if (payDateEl) payDateEl.value = m.paymentDate || getLocalTodayStr();
   } else {
     document.getElementById('payPlanRow').style.display = 'block';
     document.getElementById('payPtEnabled').closest('.pt-box').style.display = 'block';
@@ -1750,7 +1921,7 @@ function openPaymentFor(m, isNew = false) {
       document.getElementById('ePtTrainer').innerHTML || '<option value="">Select Trainer</option>';
     document.getElementById('payPtTrainer').value = m.ptTrainer || '';
 
-    // ✅ Reset discount fields
+    // Reset discount fields
     const payDV = document.getElementById('payDiscValue');
     const payDR = document.getElementById('payDiscReason');
     if (payDV) payDV.value = '';
@@ -1847,7 +2018,6 @@ function selectPayMethod(method) {
   }
 }
 
-/* ✅ FIX: recalcPayment with discount support */
 function recalcPayment() {
   if (!curPayMember) return;
   const isNew = curPayMember.isNew;
@@ -1857,7 +2027,7 @@ function recalcPayment() {
 
   if (isNew) {
     planName = m.plan;
-    planAmt  = m.planPrice;
+    planAmt  = m.planPrice || 0;
     ptAmt    = m.ptEnabled ? (m.ptFee || 0) : 0;
     admAmt   = m.admissionWaived ? 0 : (m.admissionFee || 0);
   } else {
@@ -1866,7 +2036,7 @@ function recalcPayment() {
     const baseAmt = parseInt(planSel.options[planSel.selectedIndex]?.getAttribute('data-price'))
                     || getPlanPrice(planName);
 
-    // ✅ Apply renewal discount
+    // Apply renewal discount
     const dType = document.querySelector('input[name="payDType"]:checked')?.value || 'none';
     const rawDV = (document.getElementById('payDiscValue')?.value || '').replace(/,/g,'').trim();
     const dVal  = rawDV === '' ? 0 : (parseFloat(rawDV) || 0);
@@ -1883,7 +2053,7 @@ function recalcPayment() {
 
   const total = planAmt + ptAmt + admAmt;
 
-  // ✅ Show discount info in summary
+  // Show discount info in summary
   let discRow = '';
   if (!isNew) {
     const dType = document.querySelector('input[name="payDType"]:checked')?.value || 'none';
@@ -1959,18 +2129,50 @@ async function confirmPayment() {
 
   const method = curPayMethod;
   const total  = curPayTotal || 0;
+  const paymentDate = document.getElementById('payRenewalPayDate')?.value || getLocalTodayStr();
 
   if (curPayMember.isNew) {
     const payEntry = {
-      amount: total, date: new Date(),
-      method: method, receiptNo: 'REC-' + Date.now()
+      amount: total,
+      date: new Date(paymentDate),
+      method: method,
+      receiptNo: 'REC-' + Date.now(),
+      type: 'plan'
     };
+    
+    // Add admission and PT entries separately
+    const entries = [payEntry];
+    const m = curPayMember.originalData;
+    if (!m.admissionWaived && m.admissionFee > 0) {
+      entries.push({
+        amount: m.admissionFee,
+        date: new Date(paymentDate),
+        method: method,
+        receiptNo: 'REC-ADM-' + Date.now(),
+        type: 'admission'
+      });
+    }
+    if (m.ptEnabled && m.ptFee > 0) {
+      entries.push({
+        amount: m.ptFee,
+        date: new Date(paymentDate),
+        method: method,
+        receiptNo: 'REC-PT-' + Date.now(),
+        type: 'pt'
+      });
+    }
+
     const btn = document.getElementById('confirmPayBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
     try {
       await fetch(`${API}/${curPayMember.id}`, {
         method: 'PUT', headers: hdrs(),
-        body: JSON.stringify({ paymentHistory: [payEntry], lastPaymentDate: new Date() })
+        body: JSON.stringify({
+          paymentHistory: entries,
+          lastPaymentDate: new Date(paymentDate),
+          lastPaymentMethod: method,
+          lastPaymentAmount: total
+        })
       });
       const methodLabel = { upi:'📱 UPI', cash:'💵 Cash', card:'💳 Card' }[method] || method;
       toast(`✅ Member added — ${methodLabel} payment confirmed!`, 'success');
@@ -1980,6 +2182,7 @@ async function confirmPayment() {
     closeModal('paymentModal');
     curPayMember = null; curPayMethod = null;
     loadDashboard(); loadAllMembers();
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Confirm Payment'; }
     return;
   }
 
@@ -1990,17 +2193,16 @@ async function confirmPayment() {
   const ptAmt     = isPt ? (parseFloat(document.getElementById('payPtFee').value)||0) : 0;
   const ptTrainer = isPt ? document.getElementById('payPtTrainer').value : '';
 
-  // ✅ Get discount data for renewal
+  // Get discount data for renewal
   const renewDType   = document.querySelector('input[name="payDType"]:checked')?.value || 'none';
   const renewDVal    = parseFloat((document.getElementById('payDiscValue')?.value||'').replace(/,/g,'')) || 0;
   const renewDReason = document.getElementById('payDiscReason')?.value?.trim() || '';
 
   const startDateEl  = document.getElementById('payStartDate');
   const expiryDateEl = document.getElementById('payExpiryDate');
-  const payDateEl    = document.getElementById('payRenewalPayDate');
-  const chosenPayDate = payDateEl && payDateEl.value ? new Date(payDateEl.value) : new Date();
+  const chosenPayDate = paymentDate ? new Date(paymentDate) : new Date();
 
-  // ✅ Use user-chosen expiry (editable field) or fallback compute
+  // Use user-chosen expiry or fallback compute
   const newExpiry = expiryDateEl && expiryDateEl.value ? expiryDateEl.value : (() => {
     let baseDate = new Date(); baseDate.setHours(0,0,0,0);
     if (curPayMember.expiryDate) {
@@ -2013,26 +2215,34 @@ async function confirmPayment() {
   })();
 
   const payEntry = {
-    amount: total, date: chosenPayDate,
-    method: method, receiptNo: 'REC-' + Date.now()
+    amount: total,
+    date: chosenPayDate,
+    method: method,
+    receiptNo: 'REC-' + Date.now(),
+    type: 'plan'
   };
 
   const btn = document.getElementById('confirmPayBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
 
   try {
-    // ✅ Save renewal with discount info
+    // Save renewal with discount info
     const res = await fetch(`${API}/${curPayMember.id}`, {
       method: 'PUT', headers: hdrs(),
       body: JSON.stringify({
         plan: planName,
-        planPrice: curPayTotal,       // final price after discount
+        planPrice: curPayTotal,
         discountType:   renewDType,
         discountValue:  renewDVal,
         discountReason: renewDReason,
-        ptEnabled: isPt, ptFee: ptAmt, ptTrainer,
-        expiryDate: newExpiry, status: 'Active',
-        lastPaymentDate: chosenPayDate
+        ptEnabled: isPt,
+        ptFee: ptAmt,
+        ptTrainer: ptTrainer,
+        expiryDate: newExpiry,
+        status: 'Active',
+        lastPaymentDate: chosenPayDate,
+        lastPaymentMethod: method,
+        lastPaymentAmount: total
       })
     });
 
@@ -2041,14 +2251,23 @@ async function confirmPayment() {
       throw new Error(err.error || err.message || `Server error ${res.status}`);
     }
 
-    // ✅ Append to payment history (cumulative — does NOT replace)
+    // Append to payment history (cumulative)
     try {
-      const ctrl = new AbortController();
-      const tid  = setTimeout(()=>ctrl.abort(), 5000);
-      const memRes = await fetch(`${API}/${curPayMember.id}`, { headers: hdrs(), signal: ctrl.signal });
-      clearTimeout(tid);
+      const memRes = await fetch(`${API}/${curPayMember.id}`, { headers: hdrs() });
       const mem = memRes.ok ? await memRes.json() : {};
       const history = [...(mem.paymentHistory || []), payEntry];
+      
+      // Also add PT separately if enabled
+      if (isPt && ptAmt > 0) {
+        history.push({
+          amount: ptAmt,
+          date: chosenPayDate,
+          method: method,
+          receiptNo: 'REC-PT-' + Date.now(),
+          type: 'pt'
+        });
+      }
+      
       await fetch(`${API}/${curPayMember.id}`, {
         method: 'PUT', headers: hdrs(),
         body: JSON.stringify({ paymentHistory: history })
@@ -2090,6 +2309,24 @@ async function saveSettings() {
   toast('Settings saved & synced!', 'success');
 }
 
+/* ── EXTERNAL ACTIONS ── */
+function dialPhone(phone) {
+  window.location.href = 'tel:' + String(phone).replace(/[^0-9+]/g,'');
+}
+
+function openWhatsApp(phone) {
+  const clean = String(phone).replace(/[^0-9]/g, '');
+  const num   = clean.startsWith('91') ? clean : '91' + clean;
+  const url   = 'https://wa.me/' + num;
+  const isAndroidWebView = /wv/.test(navigator.userAgent) ||
+    (/Android/i.test(navigator.userAgent) && /Version\//.test(navigator.userAgent));
+  if (isAndroidWebView) {
+    window.location.href = url;
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
 /* ── INIT ── */
 window.addEventListener('DOMContentLoaded', async () => {
   if (!checkAuth()) return;
@@ -2110,6 +2347,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('attDate').value = getLocalTodayStr();
   if(document.getElementById('mStart')) {
     document.getElementById('mStart').value = getLocalTodayStr();
+  }
+  if(document.getElementById('mPaymentDate')) {
+    document.getElementById('mPaymentDate').value = getLocalTodayStr();
   }
 
   await loadServerProfile();
