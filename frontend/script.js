@@ -94,7 +94,7 @@ function av(name) {
 }
 
 function avImg(m) {
-  if (m.photo && m.photo.startsWith('data:image')) return `<img src="${m.photo}" alt="${esc(m.name)}" style="width:52px;height:52px;border-radius:14px;object-fit:cover;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.13)">`;
+  if (m.photo?.startsWith('data:image')) return `<img src="${m.photo}" alt="${esc(m.name)}" style="width:52px;height:52px;border-radius:14px;object-fit:cover;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.13)">`;
   return av(m.name);
 }
 
@@ -393,7 +393,6 @@ function calculateRevenue(members) {
     months: {}
   };
 
-  // Get last 3 months keys
   const today = new Date();
   const monthKeys = [];
   for (let i = 0; i < 3; i++) {
@@ -407,14 +406,12 @@ function calculateRevenue(members) {
 
   members.forEach(m => {
     const history = m.paymentHistory || [];
-    
     history.forEach(p => {
       if (!p.date) return;
       const key = getMonthKey(p.date);
       const amt = p.amount || 0;
       const method = p.method || 'cash';
       
-      // Check if this month is in last 3 months
       if (monthKeys.includes(key)) {
         revenue.months[key].total += amt;
         if (method === 'cash') {
@@ -424,12 +421,10 @@ function calculateRevenue(members) {
           revenue.months[key].online += amt;
           revenue.onlineTotal += amt;
         }
-        // Track by type
-        const type = p.type || 'plan';
-        if (type === 'admission') {
+        if (p.type === 'admission') {
           revenue.months[key].admission += amt;
           revenue.admissionTotal += amt;
-        } else if (type === 'pt') {
+        } else if (p.type === 'pt') {
           revenue.months[key].pt += amt;
           revenue.ptTotal += amt;
         } else {
@@ -444,14 +439,17 @@ function calculateRevenue(members) {
   return revenue;
 }
 
-/* ── DASHBOARD REVENUE DISPLAY ── */
+/* ── DASHBOARD ── */
 function renderRevenueDashboard(revenue) {
   const today = new Date();
   const monthLabels = [];
-  const monthKeys = [];
   for (let i = 0; i < 3; i++) {
     const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
     monthLabels.push(d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }));
+  }
+  const monthKeys = [];
+  for (let i = 0; i < 3; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
     monthKeys.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
   }
 
@@ -463,26 +461,17 @@ function renderRevenueDashboard(revenue) {
     if (amountEl) amountEl.textContent = `₹${monthData.total.toLocaleString('en-IN')}`;
   });
 
-  // Update breakdown with proper values
-  const breakdownEls = {
-    'revPlanTotal': revenue.planTotal,
-    'revAdmissionTotal': revenue.admissionTotal,
-    'revPTTotal': revenue.ptTotal,
-    'revOnlineTotal': revenue.onlineTotal,
-    'revCashTotal': revenue.cashTotal,
-    'revGrandTotal': revenue.grandTotal
-  };
-  
-  Object.keys(breakdownEls).forEach(id => {
+  const els = ['revPlanTotal','revAdmissionTotal','revPTTotal','revOnlineTotal','revCashTotal','revGrandTotal'];
+  const vals = [
+    revenue.planTotal, revenue.admissionTotal, revenue.ptTotal,
+    revenue.onlineTotal, revenue.cashTotal, revenue.grandTotal
+  ];
+  els.forEach((id, i) => {
     const el = document.getElementById(id);
-    if (el) {
-      const val = breakdownEls[id];
-      el.textContent = `₹${val.toLocaleString('en-IN')}`;
-    }
+    if (el) el.textContent = `₹${vals[i].toLocaleString('en-IN')}`;
   });
 }
 
-/* ── DASHBOARD ── */
 function renderDashTable(membersList) {
   const tbody = document.getElementById('dashBody');
   if (!tbody) return;
@@ -580,7 +569,6 @@ async function loadDashboard() {
     if (totalEl) totalEl.textContent = members.length;
     if (activeEl) activeEl.textContent = members.filter(m=>m.status==='Active').length;
 
-    // Calculate revenue from ALL payment history
     const revenue = calculateRevenue(members);
     renderRevenueDashboard(revenue);
 
@@ -954,7 +942,6 @@ document.getElementById('addMemberForm')?.addEventListener('submit', async e => 
       loadDashboard();
       loadAllMembers();
       
-      // Open payment modal for the new member
       openPaymentFor({
         id: added._id,
         name: added.name,
@@ -1862,10 +1849,13 @@ async function loadRevenuePage() {
     
     const today = new Date();
     const monthLabels = [];
-    const monthKeys = [];
     for (let i = 0; i < 3; i++) {
       const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
       monthLabels.push(d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }));
+    }
+    const monthKeys = [];
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
       monthKeys.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
     }
 
@@ -1873,27 +1863,15 @@ async function loadRevenuePage() {
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
         ${monthKeys.map((key, idx) => {
           const data = revenue.months[key] || { total: 0, plan: 0, admission: 0, pt: 0, online: 0, cash: 0 };
-          const totalAmt = data.total;
-          const planAmt = data.plan || 0;
-          const ptAmt = data.pt || 0;
-          const admAmt = data.admission || 0;
-          const onlineAmt = data.online || 0;
-          const cashAmt = data.cash || 0;
           return `
             <div style="background:#F8FFFE;border:1px solid #E0ECEC;border-radius:14px;padding:12px;text-align:center">
               <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.4px">${monthLabels[idx]}</div>
-              <div style="font-size:1.2rem;font-weight:800;color:#1A8C8C;margin:6px 0">₹${totalAmt.toLocaleString('en-IN')}</div>
+              <div style="font-size:1.2rem;font-weight:800;color:#1A8C8C;margin:6px 0">₹${data.total.toLocaleString('en-IN')}</div>
               <div style="font-size:.6rem;color:#4A6464;font-weight:600">
-                ${planAmt > 0 ? `Plan: ₹${planAmt.toLocaleString('en-IN')} | ` : ''}
-                ${ptAmt > 0 ? `PT: ₹${ptAmt.toLocaleString('en-IN')} | ` : ''}
-                ${admAmt > 0 ? `Adm: ₹${admAmt.toLocaleString('en-IN')}` : ''}
-                ${planAmt === 0 && ptAmt === 0 && admAmt === 0 ? 'No payments' : ''}
+                Plan: ₹${data.plan.toLocaleString('en-IN')} | PT: ₹${data.pt.toLocaleString('en-IN')} | Adm: ₹${data.admission.toLocaleString('en-IN')}
               </div>
               <div style="font-size:.6rem;color:#4A6464;font-weight:600;margin-top:3px">
-                ${onlineAmt > 0 ? `📱 ₹${onlineAmt.toLocaleString('en-IN')}` : ''}
-                ${onlineAmt > 0 && cashAmt > 0 ? ' | ' : ''}
-                ${cashAmt > 0 ? `💵 ₹${cashAmt.toLocaleString('en-IN')}` : ''}
-                ${onlineAmt === 0 && cashAmt === 0 ? 'No payments' : ''}
+                📱 ₹${data.online.toLocaleString('en-IN')} | 💵 ₹${data.cash.toLocaleString('en-IN')}
               </div>
             </div>
           `;
@@ -1907,26 +1885,12 @@ async function loadRevenuePage() {
             <div style="font-size:1.4rem;font-weight:800">₹${revenue.grandTotal.toLocaleString('en-IN')}</div>
           </div>
           <div>
-            <div style="font-size:.6rem;opacity:.7;text-transform:uppercase;letter-spacing:.5px">Online (UPI+Card)</div>
+            <div style="font-size:.6rem;opacity:.7;text-transform:uppercase;letter-spacing:.5px">Online</div>
             <div style="font-size:1.1rem;font-weight:800">₹${revenue.onlineTotal.toLocaleString('en-IN')}</div>
           </div>
           <div>
             <div style="font-size:.6rem;opacity:.7;text-transform:uppercase;letter-spacing:.5px">Cash</div>
             <div style="font-size:1.1rem;font-weight:800">₹${revenue.cashTotal.toLocaleString('en-IN')}</div>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.15)">
-          <div>
-            <div style="font-size:.55rem;opacity:.6;text-transform:uppercase;letter-spacing:.5px">Plan Fees</div>
-            <div style="font-size:.95rem;font-weight:700">₹${revenue.planTotal.toLocaleString('en-IN')}</div>
-          </div>
-          <div>
-            <div style="font-size:.55rem;opacity:.6;text-transform:uppercase;letter-spacing:.5px">Admission</div>
-            <div style="font-size:.95rem;font-weight:700">₹${revenue.admissionTotal.toLocaleString('en-IN')}</div>
-          </div>
-          <div>
-            <div style="font-size:.55rem;opacity:.6;text-transform:uppercase;letter-spacing:.5px">PT Fees</div>
-            <div style="font-size:.95rem;font-weight:700">₹${revenue.ptTotal.toLocaleString('en-IN')}</div>
           </div>
         </div>
       </div>
@@ -1938,22 +1902,19 @@ async function loadRevenuePage() {
           return `
             <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #F0F5F5">
               <div style="font-weight:700;font-size:.82rem;color:#1A2E2E">${esc(m.name)}</div>
-              ${history.map(p => {
-                const typeLabel = p.type === 'admission' ? '🎟️ Adm' : p.type === 'pt' ? '💪 PT' : '📋 Plan';
-                const methodLabel = p.method === 'upi' ? 'UPI' : p.method === 'cash' ? 'Cash' : 'Card';
-                const methodClass = p.method === 'upi' ? 'pm-upi' : p.method === 'cash' ? 'pm-cash' : 'pm-card';
-                return `
-                  <div style="display:flex;justify-content:space-between;font-size:.7rem;color:#4A6464;padding:2px 0;padding-left:12px;border-bottom:1px solid #F8FAFA">
-                    <span>${typeLabel} ₹${(p.amount||0).toLocaleString('en-IN')}</span>
-                    <span>${p.date ? new Date(p.date).toLocaleDateString('en-IN') : '—'}</span>
-                    <span class="payment-method-badge ${methodClass}">${methodLabel}</span>
-                  </div>
-                `;
-              }).join('')}
+              ${history.map(p => `
+                <div style="display:flex;justify-content:space-between;font-size:.7rem;color:#4A6464;padding:2px 0;padding-left:12px">
+                  <span>₹${(p.amount||0).toLocaleString('en-IN')}</span>
+                  <span>${p.date ? new Date(p.date).toLocaleDateString('en-IN') : '—'}</span>
+                  <span>
+                    <span class="payment-method-badge ${p.method === 'upi' ? 'pm-upi' : p.method === 'cash' ? 'pm-cash' : 'pm-card'}">${(p.method||'cash').toUpperCase()}</span>
+                  </span>
+                  ${p.type ? `<span style="font-size:.6rem;color:#8AABAB">${p.type}</span>` : ''}
+                </div>
+              `).join('')}
             </div>
           `;
         }).join('')}
-        ${members.filter(m => (m.paymentHistory || []).length).length === 0 ? '<div class="empty"><p>No payment history yet</p></div>' : ''}
       </div>
     `;
     
@@ -1963,9 +1924,7 @@ async function loadRevenuePage() {
   }
 }
 
-/* ══════════════════════════════════════════════════════
-   PAYMENT / RENEWAL MODAL - FIXED
-   ══════════════════════════════════════════════════════ */
+/* ── PAYMENT MODAL ── */
 function openPaymentFor(m, isNew = false) {
   curPayMember = {id: m._id || m.id, name: m.name, expiryDate: m.expiryDate, isNew: isNew, originalData: m};
 
@@ -2219,58 +2178,38 @@ async function cancelPayment() {
   closeModal('paymentModal');
 }
 
-/* ══════════════════════════════════════════════════════
-   CONFIRM PAYMENT - FIXED VERSION
-   ══════════════════════════════════════════════════════ */
 async function confirmPayment() {
-  if (!curPayMember) {
-    toast('No member selected', 'error');
-    return;
-  }
-  if (!curPayMethod) {
-    toast('Please select a payment method', 'error');
-    return;
-  }
+  if (!curPayMember) return;
+  if (!curPayMethod) { toast('Please select a payment method','error'); return; }
 
   const method = curPayMethod;
   const total = curPayTotal || 0;
   const paymentDate = document.getElementById('payRenewalPayDate')?.value || getLocalTodayStr();
-  const payDateObj = new Date(paymentDate + 'T00:00:00');
 
-  // For new member
   if (curPayMember.isNew) {
-    const entries = [];
+    const payEntry = {
+      amount: total,
+      date: new Date(paymentDate),
+      method: method,
+      receiptNo: 'REC-' + Date.now(),
+      type: 'plan'
+    };
+    
+    const entries = [payEntry];
     const m = curPayMember.originalData;
-    
-    // Plan payment
-    if (total > 0) {
+    if (!m.admissionWaived && m.admissionFee > 0) {
       entries.push({
-        amount: total,
-        date: payDateObj,
-        method: method,
-        receiptNo: 'REC-' + Date.now(),
-        type: 'plan'
-      });
-    }
-    
-    // Admission fee (if not waived)
-    const admFee = m.admissionFee || 0;
-    if (!m.admissionWaived && admFee > 0) {
-      entries.push({
-        amount: admFee,
-        date: payDateObj,
+        amount: m.admissionFee,
+        date: new Date(paymentDate),
         method: method,
         receiptNo: 'REC-ADM-' + Date.now(),
         type: 'admission'
       });
     }
-    
-    // PT fee (if enabled)
-    const ptFee = m.ptFee || 0;
-    if (m.ptEnabled && ptFee > 0) {
+    if (m.ptEnabled && m.ptFee > 0) {
       entries.push({
-        amount: ptFee,
-        date: payDateObj,
+        amount: m.ptFee,
+        date: new Date(paymentDate),
         method: method,
         receiptNo: 'REC-PT-' + Date.now(),
         type: 'pt'
@@ -2279,42 +2218,29 @@ async function confirmPayment() {
 
     const btn = document.getElementById('confirmPayBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
-    
     try {
-      const updateData = {
-        paymentHistory: entries,
-        lastPaymentDate: payDateObj,
-        lastPaymentMethod: method,
-        lastPaymentAmount: total,
-        status: 'Active'
-      };
-      
-      const res = await fetch(`${API}/${curPayMember.id}`, {
-        method: 'PUT',
-        headers: hdrs(),
-        body: JSON.stringify(updateData)
+      await fetch(`${API}/${curPayMember.id}`, {
+        method: 'PUT', headers: hdrs(),
+        body: JSON.stringify({
+          paymentHistory: entries,
+          lastPaymentDate: new Date(paymentDate),
+          lastPaymentMethod: method,
+          lastPaymentAmount: total
+        })
       });
-      
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Failed to save payment');
-      }
-      
       const methodLabel = { upi:'📱 UPI', cash:'💵 Cash', card:'💳 Card' }[method] || method;
       toast(`✅ Member added — ${methodLabel} payment confirmed!`, 'success');
-      closeModal('paymentModal');
-      curPayMember = null;
-      curPayMethod = null;
-      loadDashboard();
-      loadAllMembers();
     } catch(e) {
-      toast('❌ ' + e.message, 'error');
+      toast('Member added but payment record failed', 'error');
     }
+    closeModal('paymentModal');
+    curPayMember = null; curPayMethod = null;
+    loadDashboard(); loadAllMembers();
     if (btn) { btn.disabled = false; btn.textContent = '✅ Confirm Payment'; }
     return;
   }
 
-  // ── RENEWAL ──
+  // Renewal
   const planSel = document.getElementById('payPlan');
   const planName = planSel.value;
   const isPt = document.getElementById('payPtEnabled')?.checked || false;
@@ -2322,105 +2248,90 @@ async function confirmPayment() {
   const ptTrainer = isPt ? document.getElementById('payPtTrainer')?.value || '' : '';
 
   const renewDType = document.querySelector('input[name="payDType"]:checked')?.value || 'none';
-  const renewDVal = parseFloat((document.getElementById('payDiscValue')?.value || '').replace(/,/g, '')) || 0;
+  const renewDVal = parseFloat((document.getElementById('payDiscValue')?.value||'').replace(/,/g,'')) || 0;
   const renewDReason = document.getElementById('payDiscReason')?.value?.trim() || '';
 
   const expiryDateEl = document.getElementById('payExpiryDate');
-  let newExpiry;
-  if (expiryDateEl && expiryDateEl.value) {
-    newExpiry = expiryDateEl.value;
-  } else {
-    let baseDate = new Date();
-    baseDate.setHours(0, 0, 0, 0);
+  const chosenPayDate = paymentDate ? new Date(paymentDate) : new Date();
+
+  const newExpiry = expiryDateEl && expiryDateEl.value ? expiryDateEl.value : (() => {
+    let baseDate = new Date(); baseDate.setHours(0,0,0,0);
     if (curPayMember.expiryDate) {
       const p = curPayMember.expiryDate.split('T')[0].split('-');
-      const d = new Date(+p[0], +p[1] - 1, +p[2]);
+      const d = new Date(+p[0], +p[1]-1, +p[2]);
       if (d > new Date()) baseDate = d;
     }
     baseDate.setMonth(baseDate.getMonth() + getPlanMonths(planName));
-    newExpiry = baseDate.toISOString().split('T')[0];
-  }
+    return baseDate.toISOString().split('T')[0];
+  })();
 
-  // Build payment entries for renewal
-  const entries = [];
-  
-  // Plan payment
-  if (total > 0) {
-    entries.push({
-      amount: total,
-      date: payDateObj,
-      method: method,
-      receiptNo: 'REC-' + Date.now(),
-      type: 'plan'
-    });
-  }
-  
-  // PT fee (if enabled during renewal)
-  if (isPt && ptAmt > 0) {
-    entries.push({
-      amount: ptAmt,
-      date: payDateObj,
-      method: method,
-      receiptNo: 'REC-PT-' + Date.now(),
-      type: 'pt'
-    });
-  }
+  const payEntry = {
+    amount: total,
+    date: chosenPayDate,
+    method: method,
+    receiptNo: 'REC-' + Date.now(),
+    type: 'plan'
+  };
 
   const btn = document.getElementById('confirmPayBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
 
   try {
-    // Get existing member data to preserve history
-    const memRes = await fetch(`${API}/${curPayMember.id}`, { headers: hdrs() });
-    if (!memRes.ok) throw new Error('Failed to fetch member data');
-    const existingMember = await memRes.json();
-    const existingHistory = existingMember.paymentHistory || [];
-    
-    // Merge existing history with new entries
-    const mergedHistory = [...existingHistory, ...entries];
-
-    // Update member with renewal data
-    const updateData = {
-      plan: planName,
-      planPrice: curPayTotal,
-      discountType: renewDType,
-      discountValue: renewDVal,
-      discountReason: renewDReason,
-      ptEnabled: isPt,
-      ptFee: ptAmt,
-      ptTrainer: ptTrainer,
-      expiryDate: newExpiry,
-      status: 'Active',
-      lastPaymentDate: payDateObj,
-      lastPaymentMethod: method,
-      lastPaymentAmount: total,
-      paymentHistory: mergedHistory
-    };
-
-    const updateRes = await fetch(`${API}/${curPayMember.id}`, {
-      method: 'PUT',
-      headers: hdrs(),
-      body: JSON.stringify(updateData)
+    const res = await fetch(`${API}/${curPayMember.id}`, {
+      method: 'PUT', headers: hdrs(),
+      body: JSON.stringify({
+        plan: planName,
+        planPrice: curPayTotal,
+        discountType: renewDType,
+        discountValue: renewDVal,
+        discountReason: renewDReason,
+        ptEnabled: isPt,
+        ptFee: ptAmt,
+        ptTrainer: ptTrainer,
+        expiryDate: newExpiry,
+        status: 'Active',
+        lastPaymentDate: chosenPayDate,
+        lastPaymentMethod: method,
+        lastPaymentAmount: total
+      })
     });
 
-    if (!updateRes.ok) {
-      const err = await updateRes.json().catch(() => ({}));
-      throw new Error(err.error || err.message || `Server error ${updateRes.status}`);
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.error || err.message || `Server error ${res.status}`);
     }
+
+    try {
+      const memRes = await fetch(`${API}/${curPayMember.id}`, { headers: hdrs() });
+      const mem = memRes.ok ? await memRes.json() : {};
+      const history = [...(mem.paymentHistory || []), payEntry];
+      
+      if (isPt && ptAmt > 0) {
+        history.push({
+          amount: ptAmt,
+          date: chosenPayDate,
+          method: method,
+          receiptNo: 'REC-PT-' + Date.now(),
+          type: 'pt'
+        });
+      }
+      
+      await fetch(`${API}/${curPayMember.id}`, {
+        method: 'PUT', headers: hdrs(),
+        body: JSON.stringify({ paymentHistory: history })
+      });
+    } catch(e2) { /* non-critical */ }
 
     const methodLabel = { upi:'📱 UPI', cash:'💵 Cash', card:'💳 Card' }[method] || method;
     const expiryDisplay = new Date(newExpiry).toLocaleDateString('en-IN');
     toast(`✅ ${methodLabel} — Renewed until ${expiryDisplay}`, 'success');
     closeModal('paymentModal');
-    curPayMember = null;
-    curPayMethod = null;
-    loadDashboard();
-    loadPayments();
-    loadAllMembers();
+    curPayMember = null; curPayMethod = null;
+    loadDashboard(); loadPayments(); loadAllMembers();
   } catch(e) {
-    toast('❌ ' + (e.message || 'Network error'), 'error');
+    toast(`❌ ${e.message || 'Network error — check connection'}`, 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Confirm Payment'; }
   }
-  if (btn) { btn.disabled = false; btn.textContent = '✅ Confirm Payment'; }
 }
 
 /* ── SETTINGS ── */
