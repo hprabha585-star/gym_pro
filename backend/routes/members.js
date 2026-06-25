@@ -249,7 +249,6 @@ router.get('/monthly-due/:memberId', async (req, res) => {
 router.post('/send-reminder/:memberId', async (req, res) => {
   res.json({ message: 'Reminder sent successfully' });
 });
-
 router.post('/record-payment/:memberId', async (req, res) => {
   try {
 
