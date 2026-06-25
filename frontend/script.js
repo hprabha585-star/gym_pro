@@ -395,7 +395,7 @@ function calculateRevenue(members) {
 
   const today = new Date();
   const monthKeys = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 12; i++) {
     const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
     const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
     monthKeys.push(key);
@@ -443,12 +443,12 @@ function calculateRevenue(members) {
 function renderRevenueDashboard(revenue) {
   const today = new Date();
   const monthLabels = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 12; i++) {
     const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
     monthLabels.push(d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }));
   }
   const monthKeys = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 12; i++) {
     const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
     monthKeys.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
   }
@@ -1849,12 +1849,12 @@ async function loadRevenuePage() {
     
     const today = new Date();
     const monthLabels = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 12; i++) {
       const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
       monthLabels.push(d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }));
     }
     const monthKeys = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 12; i++) {
       const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
       monthKeys.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
     }
@@ -2187,13 +2187,15 @@ async function confirmPayment() {
   const paymentDate = document.getElementById('payRenewalPayDate')?.value || getLocalTodayStr();
 
   if (curPayMember.isNew) {
-    const payEntry = {
-      amount: total,
-      date: new Date(paymentDate),
-      method: method,
-      receiptNo: 'REC-' + Date.now(),
-      type: 'plan'
-    };
+const m = curPayMember.originalData;
+
+const payEntry = {
+  amount: Number(m.planPrice || 0),
+  date: new Date(paymentDate),
+  method: method,
+  receiptNo: 'REC-' + Date.now(),
+  type: 'plan'
+};
     
     const entries = [payEntry];
     const m = curPayMember.originalData;
