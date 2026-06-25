@@ -250,50 +250,8 @@ router.post('/send-reminder/:memberId', async (req, res) => {
   res.json({ message: 'Reminder sent successfully' });
 });
 router.post('/record-payment/:memberId', async (req, res) => {
-  try {
-
-    const {
-      amount,
-      method,
-      paymentDate,
-      type = 'plan'
-    } = req.body;
-
-    const member = await Member.findOne({
-      _id: req.params.memberId,
-      userId: req.user.userId
-    });
-
-    if (!member) {
-      return res.status(404).json({
-        error: 'Member not found'
-      });
-    }
-
-    member.paymentHistory.push({
-      amount,
-      type,
-      method,
-      date: paymentDate || new Date()
-    });
-
-    member.lastPaymentAmount = amount;
-    member.lastPaymentMethod = method;
-    member.lastPaymentDate = paymentDate || new Date();
-
-    await member.save();
-
-    res.json({
-      success: true,
-      message: 'Payment recorded successfully',
-      member
-    });
-
-  } catch (err) {
-    res.status(500).json({
-      error: err.message
-    });
-  }
+  res.json({ message: 'Payment recorded successfully' });
 });
+
 
 module.exports = router;
