@@ -954,6 +954,7 @@ document.getElementById('addMemberForm')?.addEventListener('submit', async e => 
       loadDashboard();
       loadAllMembers();
       
+      // Open payment modal for the new member
       openPaymentFor({
         id: added._id,
         name: added.name,
@@ -1962,7 +1963,9 @@ async function loadRevenuePage() {
   }
 }
 
-/* ── PAYMENT MODAL ── */
+/* ══════════════════════════════════════════════════════
+   PAYMENT / RENEWAL MODAL - FIXED
+   ══════════════════════════════════════════════════════ */
 function openPaymentFor(m, isNew = false) {
   curPayMember = {id: m._id || m.id, name: m.name, expiryDate: m.expiryDate, isNew: isNew, originalData: m};
 
@@ -2216,6 +2219,7 @@ async function cancelPayment() {
   closeModal('paymentModal');
 }
 
+/* ── FIXED: CONFIRM PAYMENT ── */
 async function confirmPayment() {
   if (!curPayMember) return;
   if (!curPayMethod) { toast('Please select a payment method','error'); return; }
@@ -2224,30 +2228,41 @@ async function confirmPayment() {
   const total = curPayTotal || 0;
   const paymentDate = document.getElementById('payRenewalPayDate')?.value || getLocalTodayStr();
 
+  // Parse the payment date properly
+  const payDateObj = new Date(paymentDate);
+  
   if (curPayMember.isNew) {
-    const payEntry = {
-      amount: total,
-      date: new Date(paymentDate),
-      method: method,
-      receiptNo: 'REC-' + Date.now(),
-      type: 'plan'
-    };
-    
-    const entries = [payEntry];
+    // NEW MEMBER: Save all payment entries with proper types
+    const entries = [];
     const m = curPayMember.originalData;
+    
+    // Plan payment
+    if (total > 0) {
+      entries.push({
+        amount: total,
+        date: payDateObj,
+        method: method,
+        receiptNo: 'REC-' + Date.now(),
+        type: 'plan'
+      });
+    }
+    
+    // Admission fee (if not waived)
     if (!m.admissionWaived && m.admissionFee > 0) {
       entries.push({
         amount: m.admissionFee,
-        date: new Date(paymentDate),
+        date: payDateObj,
         method: method,
         receiptNo: 'REC-ADM-' + Date.now(),
         type: 'admission'
       });
     }
+    
+    // PT fee (if enabled)
     if (m.ptEnabled && m.ptFee > 0) {
       entries.push({
         amount: m.ptFee,
-        date: new Date(paymentDate),
+        date: payDateObj,
         method: method,
         receiptNo: 'REC-PT-' + Date.now(),
         type: 'pt'
@@ -2256,16 +2271,20 @@ async function confirmPayment() {
 
     const btn = document.getElementById('confirmPayBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
+    
     try {
+      // Update member with payment history
       await fetch(`${API}/${curPayMember.id}`, {
         method: 'PUT', headers: hdrs(),
         body: JSON.stringify({
           paymentHistory: entries,
-          lastPaymentDate: new Date(paymentDate),
+          lastPaymentDate: payDateObj,
           lastPaymentMethod: method,
-          lastPaymentAmount: total
+          lastPaymentAmount: total,
+          status: 'Active'
         })
       });
+      
       const methodLabel = { upi:'📱 UPI', cash:'💵 Cash', card:'💳 Card' }[method] || method;
       toast(`✅ Member added — ${methodLabel} payment confirmed!`, 'success');
     } catch(e) {
@@ -2278,21 +2297,25 @@ async function confirmPayment() {
     return;
   }
 
-  // Renewal
+  // ── RENEWAL ──
   const planSel = document.getElementById('payPlan');
   const planName = planSel.value;
   const isPt = document.getElementById('payPtEnabled')?.checked || false;
   const ptAmt = isPt ? (parseFloat(document.getElementById('payPtFee')?.value) || 0) : 0;
   const ptTrainer = isPt ? document.getElementById('payPtTrainer')?.value || '' : '';
 
+  // Get discount details
   const renewDType = document.querySelector('input[name="payDType"]:checked')?.value || 'none';
   const renewDVal = parseFloat((document.getElementById('payDiscValue')?.value||'').replace(/,/g,'')) || 0;
   const renewDReason = document.getElementById('payDiscReason')?.value?.trim() || '';
 
   const expiryDateEl = document.getElementById('payExpiryDate');
-  const chosenPayDate = paymentDate ? new Date(paymentDate) : new Date();
-
-  const newExpiry = expiryDateEl && expiryDateEl.value ? expiryDateEl.value : (() => {
+  
+  // Calculate new expiry date
+  let newExpiry;
+  if (expiryDateEl && expiryDateEl.value) {
+    newExpiry = expiryDateEl.value;
+  } else {
     let baseDate = new Date(); baseDate.setHours(0,0,0,0);
     if (curPayMember.expiryDate) {
       const p = curPayMember.expiryDate.split('T')[0].split('-');
@@ -2300,22 +2323,48 @@ async function confirmPayment() {
       if (d > new Date()) baseDate = d;
     }
     baseDate.setMonth(baseDate.getMonth() + getPlanMonths(planName));
-    return baseDate.toISOString().split('T')[0];
-  })();
+    newExpiry = baseDate.toISOString().split('T')[0];
+  }
 
-  const payEntry = {
-    amount: total,
-    date: chosenPayDate,
-    method: method,
-    receiptNo: 'REC-' + Date.now(),
-    type: 'plan'
-  };
+  // Build payment entries for renewal
+  const entries = [];
+  
+  // Plan payment
+  if (total > 0) {
+    entries.push({
+      amount: total,
+      date: payDateObj,
+      method: method,
+      receiptNo: 'REC-' + Date.now(),
+      type: 'plan'
+    });
+  }
+  
+  // PT fee (if enabled during renewal)
+  if (isPt && ptAmt > 0) {
+    entries.push({
+      amount: ptAmt,
+      date: payDateObj,
+      method: method,
+      receiptNo: 'REC-PT-' + Date.now(),
+      type: 'pt'
+    });
+  }
 
   const btn = document.getElementById('confirmPayBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
 
   try {
-    const res = await fetch(`${API}/${curPayMember.id}`, {
+    // First, get existing member data to preserve history
+    const memRes = await fetch(`${API}/${curPayMember.id}`, { headers: hdrs() });
+    const existingMember = memRes.ok ? await memRes.json() : {};
+    const existingHistory = existingMember.paymentHistory || [];
+    
+    // Merge existing history with new entries
+    const mergedHistory = [...existingHistory, ...entries];
+
+    // Update member with renewal data
+    const updateRes = await fetch(`${API}/${curPayMember.id}`, {
       method: 'PUT', headers: hdrs(),
       body: JSON.stringify({
         plan: planName,
@@ -2328,37 +2377,17 @@ async function confirmPayment() {
         ptTrainer: ptTrainer,
         expiryDate: newExpiry,
         status: 'Active',
-        lastPaymentDate: chosenPayDate,
+        lastPaymentDate: payDateObj,
         lastPaymentMethod: method,
-        lastPaymentAmount: total
+        lastPaymentAmount: total,
+        paymentHistory: mergedHistory
       })
     });
 
-    if (!res.ok) {
-      const err = await res.json().catch(()=>({}));
-      throw new Error(err.error || err.message || `Server error ${res.status}`);
+    if (!updateRes.ok) {
+      const err = await updateRes.json().catch(()=>({}));
+      throw new Error(err.error || err.message || `Server error ${updateRes.status}`);
     }
-
-    try {
-      const memRes = await fetch(`${API}/${curPayMember.id}`, { headers: hdrs() });
-      const mem = memRes.ok ? await memRes.json() : {};
-      const history = [...(mem.paymentHistory || []), payEntry];
-      
-      if (isPt && ptAmt > 0) {
-        history.push({
-          amount: ptAmt,
-          date: chosenPayDate,
-          method: method,
-          receiptNo: 'REC-PT-' + Date.now(),
-          type: 'pt'
-        });
-      }
-      
-      await fetch(`${API}/${curPayMember.id}`, {
-        method: 'PUT', headers: hdrs(),
-        body: JSON.stringify({ paymentHistory: history })
-      });
-    } catch(e2) { /* non-critical */ }
 
     const methodLabel = { upi:'📱 UPI', cash:'💵 Cash', card:'💳 Card' }[method] || method;
     const expiryDisplay = new Date(newExpiry).toLocaleDateString('en-IN');
