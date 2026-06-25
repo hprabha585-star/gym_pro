@@ -94,7 +94,7 @@ function av(name) {
 }
 
 function avImg(m) {
-  if (m.photo?.startsWith('data:image')) return `<img src="${m.photo}" alt="${esc(m.name)}" style="width:52px;height:52px;border-radius:14px;object-fit:cover;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.13)">`;
+  if (m.photo && m.photo.startsWith('data:image')) return `<img src="${m.photo}" alt="${esc(m.name)}" style="width:52px;height:52px;border-radius:14px;object-fit:cover;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.13)">`;
   return av(m.name);
 }
 
@@ -393,6 +393,7 @@ function calculateRevenue(members) {
     months: {}
   };
 
+  // Get last 3 months keys
   const today = new Date();
   const monthKeys = [];
   for (let i = 0; i < 3; i++) {
@@ -406,12 +407,14 @@ function calculateRevenue(members) {
 
   members.forEach(m => {
     const history = m.paymentHistory || [];
+    
     history.forEach(p => {
       if (!p.date) return;
       const key = getMonthKey(p.date);
       const amt = p.amount || 0;
       const method = p.method || 'cash';
       
+      // Check if this month is in last 3 months
       if (monthKeys.includes(key)) {
         revenue.months[key].total += amt;
         if (method === 'cash') {
@@ -421,10 +424,12 @@ function calculateRevenue(members) {
           revenue.months[key].online += amt;
           revenue.onlineTotal += amt;
         }
-        if (p.type === 'admission') {
+        // Track by type
+        const type = p.type || 'plan';
+        if (type === 'admission') {
           revenue.months[key].admission += amt;
           revenue.admissionTotal += amt;
-        } else if (p.type === 'pt') {
+        } else if (type === 'pt') {
           revenue.months[key].pt += amt;
           revenue.ptTotal += amt;
         } else {
@@ -439,17 +444,14 @@ function calculateRevenue(members) {
   return revenue;
 }
 
-/* ── DASHBOARD ── */
+/* ── DASHBOARD REVENUE DISPLAY ── */
 function renderRevenueDashboard(revenue) {
   const today = new Date();
   const monthLabels = [];
-  for (let i = 0; i < 3; i++) {
-    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-    monthLabels.push(d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }));
-  }
   const monthKeys = [];
   for (let i = 0; i < 3; i++) {
     const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    monthLabels.push(d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }));
     monthKeys.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
   }
 
@@ -461,17 +463,26 @@ function renderRevenueDashboard(revenue) {
     if (amountEl) amountEl.textContent = `₹${monthData.total.toLocaleString('en-IN')}`;
   });
 
-  const els = ['revPlanTotal','revAdmissionTotal','revPTTotal','revOnlineTotal','revCashTotal','revGrandTotal'];
-  const vals = [
-    revenue.planTotal, revenue.admissionTotal, revenue.ptTotal,
-    revenue.onlineTotal, revenue.cashTotal, revenue.grandTotal
-  ];
-  els.forEach((id, i) => {
+  // Update breakdown with proper values
+  const breakdownEls = {
+    'revPlanTotal': revenue.planTotal,
+    'revAdmissionTotal': revenue.admissionTotal,
+    'revPTTotal': revenue.ptTotal,
+    'revOnlineTotal': revenue.onlineTotal,
+    'revCashTotal': revenue.cashTotal,
+    'revGrandTotal': revenue.grandTotal
+  };
+  
+  Object.keys(breakdownEls).forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.textContent = `₹${vals[i].toLocaleString('en-IN')}`;
+    if (el) {
+      const val = breakdownEls[id];
+      el.textContent = `₹${val.toLocaleString('en-IN')}`;
+    }
   });
 }
 
+/* ── DASHBOARD ── */
 function renderDashTable(membersList) {
   const tbody = document.getElementById('dashBody');
   if (!tbody) return;
@@ -569,6 +580,7 @@ async function loadDashboard() {
     if (totalEl) totalEl.textContent = members.length;
     if (activeEl) activeEl.textContent = members.filter(m=>m.status==='Active').length;
 
+    // Calculate revenue from ALL payment history
     const revenue = calculateRevenue(members);
     renderRevenueDashboard(revenue);
 
@@ -1849,13 +1861,10 @@ async function loadRevenuePage() {
     
     const today = new Date();
     const monthLabels = [];
-    for (let i = 0; i < 3; i++) {
-      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      monthLabels.push(d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }));
-    }
     const monthKeys = [];
     for (let i = 0; i < 3; i++) {
       const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      monthLabels.push(d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }));
       monthKeys.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
     }
 
@@ -1863,15 +1872,27 @@ async function loadRevenuePage() {
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
         ${monthKeys.map((key, idx) => {
           const data = revenue.months[key] || { total: 0, plan: 0, admission: 0, pt: 0, online: 0, cash: 0 };
+          const totalAmt = data.total;
+          const planAmt = data.plan || 0;
+          const ptAmt = data.pt || 0;
+          const admAmt = data.admission || 0;
+          const onlineAmt = data.online || 0;
+          const cashAmt = data.cash || 0;
           return `
             <div style="background:#F8FFFE;border:1px solid #E0ECEC;border-radius:14px;padding:12px;text-align:center">
               <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.4px">${monthLabels[idx]}</div>
-              <div style="font-size:1.2rem;font-weight:800;color:#1A8C8C;margin:6px 0">₹${data.total.toLocaleString('en-IN')}</div>
+              <div style="font-size:1.2rem;font-weight:800;color:#1A8C8C;margin:6px 0">₹${totalAmt.toLocaleString('en-IN')}</div>
               <div style="font-size:.6rem;color:#4A6464;font-weight:600">
-                Plan: ₹${data.plan.toLocaleString('en-IN')} | PT: ₹${data.pt.toLocaleString('en-IN')} | Adm: ₹${data.admission.toLocaleString('en-IN')}
+                ${planAmt > 0 ? `Plan: ₹${planAmt.toLocaleString('en-IN')} | ` : ''}
+                ${ptAmt > 0 ? `PT: ₹${ptAmt.toLocaleString('en-IN')} | ` : ''}
+                ${admAmt > 0 ? `Adm: ₹${admAmt.toLocaleString('en-IN')}` : ''}
+                ${planAmt === 0 && ptAmt === 0 && admAmt === 0 ? 'No payments' : ''}
               </div>
               <div style="font-size:.6rem;color:#4A6464;font-weight:600;margin-top:3px">
-                📱 ₹${data.online.toLocaleString('en-IN')} | 💵 ₹${data.cash.toLocaleString('en-IN')}
+                ${onlineAmt > 0 ? `📱 ₹${onlineAmt.toLocaleString('en-IN')}` : ''}
+                ${onlineAmt > 0 && cashAmt > 0 ? ' | ' : ''}
+                ${cashAmt > 0 ? `💵 ₹${cashAmt.toLocaleString('en-IN')}` : ''}
+                ${onlineAmt === 0 && cashAmt === 0 ? 'No payments' : ''}
               </div>
             </div>
           `;
@@ -1885,12 +1906,26 @@ async function loadRevenuePage() {
             <div style="font-size:1.4rem;font-weight:800">₹${revenue.grandTotal.toLocaleString('en-IN')}</div>
           </div>
           <div>
-            <div style="font-size:.6rem;opacity:.7;text-transform:uppercase;letter-spacing:.5px">Online</div>
+            <div style="font-size:.6rem;opacity:.7;text-transform:uppercase;letter-spacing:.5px">Online (UPI+Card)</div>
             <div style="font-size:1.1rem;font-weight:800">₹${revenue.onlineTotal.toLocaleString('en-IN')}</div>
           </div>
           <div>
             <div style="font-size:.6rem;opacity:.7;text-transform:uppercase;letter-spacing:.5px">Cash</div>
             <div style="font-size:1.1rem;font-weight:800">₹${revenue.cashTotal.toLocaleString('en-IN')}</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.15)">
+          <div>
+            <div style="font-size:.55rem;opacity:.6;text-transform:uppercase;letter-spacing:.5px">Plan Fees</div>
+            <div style="font-size:.95rem;font-weight:700">₹${revenue.planTotal.toLocaleString('en-IN')}</div>
+          </div>
+          <div>
+            <div style="font-size:.55rem;opacity:.6;text-transform:uppercase;letter-spacing:.5px">Admission</div>
+            <div style="font-size:.95rem;font-weight:700">₹${revenue.admissionTotal.toLocaleString('en-IN')}</div>
+          </div>
+          <div>
+            <div style="font-size:.55rem;opacity:.6;text-transform:uppercase;letter-spacing:.5px">PT Fees</div>
+            <div style="font-size:.95rem;font-weight:700">₹${revenue.ptTotal.toLocaleString('en-IN')}</div>
           </div>
         </div>
       </div>
@@ -1902,19 +1937,22 @@ async function loadRevenuePage() {
           return `
             <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #F0F5F5">
               <div style="font-weight:700;font-size:.82rem;color:#1A2E2E">${esc(m.name)}</div>
-              ${history.map(p => `
-                <div style="display:flex;justify-content:space-between;font-size:.7rem;color:#4A6464;padding:2px 0;padding-left:12px">
-                  <span>₹${(p.amount||0).toLocaleString('en-IN')}</span>
-                  <span>${p.date ? new Date(p.date).toLocaleDateString('en-IN') : '—'}</span>
-                  <span>
-                    <span class="payment-method-badge ${p.method === 'upi' ? 'pm-upi' : p.method === 'cash' ? 'pm-cash' : 'pm-card'}">${(p.method||'cash').toUpperCase()}</span>
-                  </span>
-                  ${p.type ? `<span style="font-size:.6rem;color:#8AABAB">${p.type}</span>` : ''}
-                </div>
-              `).join('')}
+              ${history.map(p => {
+                const typeLabel = p.type === 'admission' ? '🎟️ Adm' : p.type === 'pt' ? '💪 PT' : '📋 Plan';
+                const methodLabel = p.method === 'upi' ? 'UPI' : p.method === 'cash' ? 'Cash' : 'Card';
+                const methodClass = p.method === 'upi' ? 'pm-upi' : p.method === 'cash' ? 'pm-cash' : 'pm-card';
+                return `
+                  <div style="display:flex;justify-content:space-between;font-size:.7rem;color:#4A6464;padding:2px 0;padding-left:12px;border-bottom:1px solid #F8FAFA">
+                    <span>${typeLabel} ₹${(p.amount||0).toLocaleString('en-IN')}</span>
+                    <span>${p.date ? new Date(p.date).toLocaleDateString('en-IN') : '—'}</span>
+                    <span class="payment-method-badge ${methodClass}">${methodLabel}</span>
+                  </div>
+                `;
+              }).join('')}
             </div>
           `;
         }).join('')}
+        ${members.filter(m => (m.paymentHistory || []).length).length === 0 ? '<div class="empty"><p>No payment history yet</p></div>' : ''}
       </div>
     `;
     
