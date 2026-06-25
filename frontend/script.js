@@ -519,15 +519,15 @@ function renderDashTable(membersList) {
             </div>
           </div>
         </div>
-       </td>
+      </td>
       <td style="padding:12px 12px 12px 6px;vertical-align:middle;text-align:right;white-space:nowrap">
         <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end;margin-bottom:5px">
           <span style="width:8px;height:8px;border-radius:50%;background:${expColor};flex-shrink:0"></span>
           <span style="font-size:.78rem;font-weight:700;color:#1A2E2E">${expLabel}</span>
         </div>
         <span style="background:${sb};color:${sc};padding:3px 10px;border-radius:20px;font-size:.65rem;font-weight:800">${esc(m.status||'')}</span>
-       </td>
-     </tr>`;
+      </td>
+    </tr>`;
   }).join('');
 }
 
@@ -550,74 +550,109 @@ function filterDash(days) {
   renderDashTable(filtered);
 }
 
+/* ── FIXED: loadDashboard with proper error handling ── */
 async function loadDashboard() {
   try {
     const res = await fetch(API, {headers:hdrs()});
-    if (res.status===401) { logout(); return; }
+    if (res.status === 401) { logout(); return; }
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+    
     const members = await res.json();
-    const sorted  = sortByExpiry(members);
+    
+    // Validate that we got an array
+    if (!Array.isArray(members)) {
+      console.error('Invalid members data:', members);
+      throw new Error('Invalid data format from server');
+    }
+    
+    const sorted = sortByExpiry(members);
 
-    document.getElementById('statTotal').textContent  = members.length;
-    document.getElementById('statActive').textContent = members.filter(m=>m.status==='Active').length;
+    // Update stat counters
+    const totalEl = document.getElementById('statTotal');
+    const activeEl = document.getElementById('statActive');
+    if (totalEl) totalEl.textContent = members.length;
+    if (activeEl) activeEl.textContent = members.filter(m => m.status === 'Active' || m.status === 'Trial').length;
 
+    // Calculate revenue from payment history
     let monthly = 0, admission = 0, pt = 0, online = 0, offline = 0;
     
     members.forEach(m => {
-      // Count admission fees only once (when member first joined, not on renewals)
+      // Safely get payment history
+      const history = Array.isArray(m.paymentHistory) ? m.paymentHistory : [];
+      
+      // Count admission fees (only once, when member first joined)
       if (m.admissionFee && !m.admissionWaived) {
-        // Check if this admission hasn't been counted yet (first payment or no payment history)
-        const hasRenewals = (m.paymentHistory || []).some(p => p.type === 'renewal');
-        if (!hasRenewals || (m.paymentHistory || []).length === 0) {
-          admission += (m.admissionFee || 0);
+        // Check if this admission has been counted
+        const hasRenewals = history.some(p => p && p.type === 'renewal');
+        // If no renewals, count admission
+        if (!hasRenewals) {
+          admission += parseFloat(m.admissionFee) || 0;
         }
       }
       
-      // Count PT fees from payment history
+      // Process payment history
       let hasPtInRenewals = false;
-      (m.paymentHistory || []).forEach(p => {
-        if (p.type === 'renewal' && p.ptAmount) {
-          pt += p.ptAmount;
-          hasPtInRenewals = true;
-        }
-      });
       
-      // If no PT in renewals and PT is enabled, add current PT fee
-      if (!hasPtInRenewals && m.ptEnabled && m.ptFee) {
-        pt += (m.ptFee || 0);
-      }
-      
-      // Count monthly fees from payment history (all renewal amounts + initial membership)
-      (m.paymentHistory || []).forEach(p => {
+      history.forEach(p => {
+        if (!p) return;
+        const amount = parseFloat(p.amount) || 0;
+        
         if (p.type === 'renewal') {
-          monthly += (p.planAmount || 0);
-        } else if (p.type === 'new_membership' || (!p.type && m.planPrice)) {
-          // Initial membership payment
-          monthly += (m.planPrice || 0);
+          // Renewal payment - add plan amount and PT fee separately
+          monthly += parseFloat(p.planAmount) || amount; // fallback to amount if planAmount not set
+          if (p.ptAmount) {
+            pt += parseFloat(p.ptAmount) || 0;
+            hasPtInRenewals = true;
+          }
+        } else if (p.type === 'new_membership' || !p.type) {
+          // Initial membership or legacy payment
+          monthly += amount;
         }
         
-        const amt = p.amount || 0;
-        if (p.method === 'cash') offline += amt;
-        else if (p.method === 'upi' || p.method === 'card') online += amt;
+        // Track online vs cash
+        if (p.method === 'cash') offline += amount;
+        else if (p.method === 'upi' || p.method === 'card') online += amount;
       });
       
-      // If no payment history, use current plan price
-      if ((m.paymentHistory || []).length === 0) {
-        monthly += (m.planPrice || 0);
-        if (m.ptEnabled && m.ptFee) pt += (m.ptFee || 0);
+      // If no payment history, use current values
+      if (history.length === 0) {
+        monthly += parseFloat(m.planPrice) || 0;
+        if (m.ptEnabled && m.ptFee) {
+          pt += parseFloat(m.ptFee) || 0;
+        }
+        // Add admission if not waived
+        if (m.admissionFee && !m.admissionWaived) {
+          admission += parseFloat(m.admissionFee) || 0;
+        }
+      }
+      
+      // If PT fees exist but weren't in renewals, add current PT fee
+      if (!hasPtInRenewals && m.ptEnabled && m.ptFee) {
+        pt += parseFloat(m.ptFee) || 0;
       }
     });
-    
-    const total = monthly + admission + pt;
-    const fmtR  = v => v >= 1000 ? `₹${(v/1000).toFixed(1)}k` : `₹${v}`;
-    document.getElementById('statRev').textContent  = fmtR(Math.round(total));
-    document.getElementById('revM').textContent     = `₹${Math.round(monthly).toLocaleString('en-IN')}`;
-    document.getElementById('revA').textContent     = `₹${Math.round(admission).toLocaleString('en-IN')}`;
-    document.getElementById('revPT').textContent    = `₹${Math.round(pt).toLocaleString('en-IN')}`;
-    const revOnlineEl  = document.getElementById('revOnline');
-    const revCashEl    = document.getElementById('revCash');
-    if (revOnlineEl) revOnlineEl.textContent = fmtR(Math.round(online));
-    if (revCashEl)   revCashEl.textContent   = fmtR(Math.round(offline));
 
+    // Update revenue displays
+    const total = monthly + admission + pt;
+    const fmtR = v => v >= 1000 ? `₹${(v/1000).toFixed(1)}k` : `₹${v}`;
+    
+    const statRev = document.getElementById('statRev');
+    const revM = document.getElementById('revM');
+    const revA = document.getElementById('revA');
+    const revPT = document.getElementById('revPT');
+    const revOnline = document.getElementById('revOnline');
+    const revCash = document.getElementById('revCash');
+    
+    if (statRev) statRev.textContent = fmtR(Math.round(total));
+    if (revM) revM.textContent = `₹${Math.round(monthly).toLocaleString('en-IN')}`;
+    if (revA) revA.textContent = `₹${Math.round(admission).toLocaleString('en-IN')}`;
+    if (revPT) revPT.textContent = `₹${Math.round(pt).toLocaleString('en-IN')}`;
+    if (revOnline) revOnline.textContent = fmtR(Math.round(online));
+    if (revCash) revCash.textContent = fmtR(Math.round(offline));
+
+    // Calculate due payments
     const today = new Date();
     today.setHours(0,0,0,0);
     const in7Days = new Date(today);
@@ -625,25 +660,88 @@ async function loadDashboard() {
     in7Days.setHours(23,59,59,999);
 
     const due = members.filter(m => {
-      if(m.status !== 'Active') return false;
+      if (!m.expiryDate) return false;
+      if (m.status !== 'Active' && m.status !== 'Trial') return false;
       const p = m.expiryDate.split('T')[0].split('-');
-      const exp = new Date(p[0], p[1]-1, p[2]);
+      if (p.length !== 3) return false;
+      const exp = new Date(+p[0], +p[1]-1, +p[2]);
       return exp <= in7Days;
     });
 
     const banner = document.getElementById('alertBanner');
-    if (!due.length) {
-      banner.className = 'banner green';
-      banner.innerHTML = '<div class="banner-text"><h3>✅ All Good!</h3><p>No payments due this week</p></div>';
-    } else {
-      banner.className = 'banner amber';
-      banner.innerHTML = `<div class="banner-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due</h3><p>Expiring within 7 days</p></div>
-        <button class="btn btn-ghost btn-sm" onclick="showPage('payments',document.querySelector('[data-page=payments]'));updateBNav('none')">View →</button>`;
+    if (banner) {
+      if (!due.length) {
+        banner.className = 'banner green';
+        banner.innerHTML = '<div class="banner-text"><h3>✅ All Good!</h3><p>No payments due this week</p></div>';
+      } else {
+        banner.className = 'banner amber';
+        banner.innerHTML = `<div class="banner-text"><h3>⚠️ ${due.length} Payment${due.length>1?'s':''} Due</h3><p>Expiring within 7 days</p></div>
+          <button class="btn btn-ghost btn-sm" onclick="showPage('payments',document.querySelector('[data-page=payments]'));updateBNav('none')">View →</button>`;
+      }
     }
 
+    // Update expiry alert counts
+    const expToday = document.getElementById('statExpToday');
+    const exp3 = document.getElementById('statExp3');
+    const exp7 = document.getElementById('statExp7');
+    const exp15 = document.getElementById('statExp15');
+    
+    if (expToday) expToday.textContent = members.filter(m => {
+      if (!m.expiryDate || (m.status !== 'Active' && m.status !== 'Trial')) return false;
+      const p = m.expiryDate.split('T')[0].split('-');
+      if (p.length !== 3) return false;
+      const exp = new Date(+p[0], +p[1]-1, +p[2]);
+      return exp.getTime() === today.getTime();
+    }).length;
+    
+    if (exp3) exp3.textContent = members.filter(m => {
+      if (!m.expiryDate || (m.status !== 'Active' && m.status !== 'Trial')) return false;
+      const p = m.expiryDate.split('T')[0].split('-');
+      if (p.length !== 3) return false;
+      const exp = new Date(+p[0], +p[1]-1, +p[2]);
+      const days = Math.ceil((exp - today) / 86400000);
+      return days >= 1 && days <= 3;
+    }).length;
+    
+    if (exp7) exp7.textContent = members.filter(m => {
+      if (!m.expiryDate || (m.status !== 'Active' && m.status !== 'Trial')) return false;
+      const p = m.expiryDate.split('T')[0].split('-');
+      if (p.length !== 3) return false;
+      const exp = new Date(+p[0], +p[1]-1, +p[2]);
+      const days = Math.ceil((exp - today) / 86400000);
+      return days >= 4 && days <= 7;
+    }).length;
+    
+    if (exp15) exp15.textContent = members.filter(m => {
+      if (!m.expiryDate || (m.status !== 'Active' && m.status !== 'Trial')) return false;
+      const p = m.expiryDate.split('T')[0].split('-');
+      if (p.length !== 3) return false;
+      const exp = new Date(+p[0], +p[1]-1, +p[2]);
+      const days = Math.ceil((exp - today) / 86400000);
+      return days >= 8 && days <= 15;
+    }).length;
+
+    // Update dashboard date
+    const dashLabel = document.getElementById('dashTodayLabel');
+    if (dashLabel) {
+      const d = new Date();
+      dashLabel.textContent = `Today — ${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+    }
+
+    // Cache and render members table
     dashMembersCache = sorted;
-    renderDashTable(sorted.slice(0,8));
-  } catch(e) { toast('Error loading dashboard','error'); }
+    renderDashTable(sorted.slice(0, 8));
+    
+  } catch(e) {
+    console.error('Dashboard error:', e);
+    toast('Error loading dashboard: ' + e.message, 'error');
+    // Show error state in dashboard
+    const banner = document.getElementById('alertBanner');
+    if (banner) {
+      banner.className = 'banner red';
+      banner.innerHTML = `<div class="banner-text"><h3>❌ Error Loading Dashboard</h3><p>${e.message}</p></div>`;
+    }
+  }
 }
 
 /* ── ALL MEMBERS ── */
@@ -803,11 +901,14 @@ async function loadAllMembers() {
   try {
     const res = await fetch(API, {headers:hdrs()});
     if (res.status===401) { logout(); return; }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const members = await res.json();
+    if (!Array.isArray(members)) throw new Error('Invalid data format');
     _allMembersCache = sortByExpiry(members);
     _applyMembersFilters();
   } catch(e) {
-    wrap.innerHTML = '<div class="empty"><p style="color:#E74C3C">Error loading members</p></div>';
+    console.error('loadAllMembers error:', e);
+    wrap.innerHTML = '<div class="empty"><p style="color:#E74C3C">Error loading members: ' + e.message + '</p></div>';
   }
 }
 
@@ -2010,7 +2111,7 @@ async function cancelPayment() {
   closeModal('paymentModal');
 }
 
-/* ── CONFIRM PAYMENT (FIXED: Adds to totals, doesn't replace) ── */
+/* ── CONFIRM PAYMENT ── */
 async function confirmPayment() {
   if (!curPayMember) return;
   if (!curPayMethod) { toast('Please select a payment method','error'); return; }
@@ -2073,7 +2174,6 @@ async function confirmPayment() {
   const renewPayDateVal = document.getElementById('payRenewalPayDate')?.value;
   const renewPayDate    = renewPayDateVal ? new Date(renewPayDateVal) : new Date();
 
-  // Mark this payment as a RENEWAL
   const payEntry = {
     amount:    total,
     date:      renewPayDate,
@@ -2098,7 +2198,6 @@ async function confirmPayment() {
       if (memRes.ok) {
         const mem = await memRes.json();
         history = [...(mem.paymentHistory || []), payEntry];
-        // Preserve admission fee settings
         existingAdmissionFee = mem.admissionFee || 0;
         existingAdmissionWaived = mem.admissionWaived || false;
       }
@@ -2116,7 +2215,6 @@ async function confirmPayment() {
       status:          'Active',
       lastPaymentDate: renewPayDate,
       paymentHistory:  history,
-      // Preserve admission fee (don't overwrite or remove)
       admissionFee:    existingAdmissionFee,
       admissionWaived: existingAdmissionWaived
     };
