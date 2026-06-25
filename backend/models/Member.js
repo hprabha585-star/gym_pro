@@ -85,32 +85,27 @@ const memberSchema = new mongoose.Schema({
     default: 0 
   },
 paymentHistory: [{
-  amount: {
-    type: Number,
-    required: true
-  },
+amount: Number,
 
-  type: {
-    type: String,
-    enum: ['plan', 'admission', 'pt'],
-    default: 'plan'
-  },
+type: {
+type: String,
+enum: ['plan', 'admission', 'pt'],
+default: 'plan'
+},
 
-  date: {
-    type: Date,
-    default: Date.now
-  },
+date: {
+type: Date,
+default: Date.now
+},
 
-  method: {
-    type: String,
-    enum: ['upi', 'cash', 'card']
-  },
+method: {
+type: String,
+enum: ['upi', 'cash', 'card']
+},
 
-  receiptNo: String,
-
-  plan: String,
-
-  months: Number
+receiptNo: String,
+plan: String,
+months: Number
 }],
   status: { 
     type: String, 
