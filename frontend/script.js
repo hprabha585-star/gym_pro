@@ -2188,12 +2188,11 @@ async function confirmPayment() {
 
   if (curPayMember.isNew) {
     const m = curPayMember.originalData;
-    // FIX: split `total` into its component parts instead of using the
-    // combined total as the "plan" entry (which previously double-counted
-    // admission + PT on top of the full total).
-    const admAmt  = (!m.admissionWaived && m.admissionFee > 0) ? m.admissionFee : 0;
-    const ptAmt   = (m.ptEnabled && m.ptFee > 0) ? m.ptFee : 0;
-    const planAmt = Math.max(0, total - admAmt - ptAmt);
+    // FIX: Use explicit stored field values (not derived from total) to guarantee
+    // correct split - avoids planAmt absorbing admission/PT when fields are undefined.
+    const admAmt  = (m.admissionWaived === true || !m.admissionFee) ? 0 : (Number(m.admissionFee) || 0);
+    const ptAmt   = (m.ptEnabled && m.ptFee > 0) ? (Number(m.ptFee) || 0) : 0;
+    const planAmt = (Number(m.planPrice) > 0) ? Number(m.planPrice) : Math.max(0, total - admAmt - ptAmt);
 
     const payEntry = {
       amount: planAmt,
@@ -2288,6 +2287,23 @@ async function confirmPayment() {
   if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
 
   try {
+    // FIX Bug 2: Fetch existing history FIRST, then do a single PUT with everything.
+    // The old two-PUT approach lost the existing paymentHistory because the first
+    // PUT (with plan/expiry fields) did not include paymentHistory, so the second
+    // PUT's fetch would return an empty/stale history.
+    const memRes = await fetch(`${API}/${curPayMember.id}`, { headers: hdrs() });
+    const mem = memRes.ok ? await memRes.json() : {};
+    const renewHistory = [...(mem.paymentHistory || []), payEntry];
+    if (isPt && ptAmt > 0) {
+      renewHistory.push({
+        amount: ptAmt,
+        date: chosenPayDate,
+        method: method,
+        receiptNo: 'REC-PT-' + Date.now(),
+        type: 'pt'
+      });
+    }
+
     const res = await fetch(`${API}/${curPayMember.id}`, {
       method: 'PUT', headers: hdrs(),
       body: JSON.stringify({
@@ -2303,7 +2319,8 @@ async function confirmPayment() {
         status: 'Active',
         lastPaymentDate: chosenPayDate,
         lastPaymentMethod: method,
-        lastPaymentAmount: total
+        lastPaymentAmount: total,
+        paymentHistory: renewHistory
       })
     });
 
@@ -2312,26 +2329,6 @@ async function confirmPayment() {
       throw new Error(err.error || err.message || `Server error ${res.status}`);
     }
 
-    try {
-      const memRes = await fetch(`${API}/${curPayMember.id}`, { headers: hdrs() });
-      const mem = memRes.ok ? await memRes.json() : {};
-      const history = [...(mem.paymentHistory || []), payEntry];
-      
-      if (isPt && ptAmt > 0) {
-        history.push({
-          amount: ptAmt,
-          date: chosenPayDate,
-          method: method,
-          receiptNo: 'REC-PT-' + Date.now(),
-          type: 'pt'
-        });
-      }
-      
-      await fetch(`${API}/${curPayMember.id}`, {
-        method: 'PUT', headers: hdrs(),
-        body: JSON.stringify({ paymentHistory: history })
-      });
-    } catch(e2) { /* non-critical */ }
 
     const methodLabel = { upi:'📱 UPI', cash:'💵 Cash', card:'💳 Card' }[method] || method;
     const expiryDisplay = new Date(newExpiry).toLocaleDateString('en-IN');
