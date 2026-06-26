@@ -661,7 +661,7 @@ function _renderMemberCard(m, idx) {
             <span style="font-weight:600">Plan Expiry: </span>
             <span style="font-weight:700;color:#1A2E2E">${expiryStr}</span>
           </div>
-          <div style="font-size:.75rem;font-weight:800;color:#27AE60">Paid: ₹${(m.planPrice||0).toLocaleString('en-IN')}</div>
+          <div style="font-size:.75rem;font-weight:800;color:#27AE60">Paid: ₹${(m.lastPaymentAmount||m.planPrice||0).toLocaleString('en-IN')}</div>
         </div>
         <div style="font-size:.72rem;color:#8AABAB;margin-top:2px">
           <span style="font-weight:600">Payment Date: </span>
@@ -2187,28 +2187,35 @@ async function confirmPayment() {
   const paymentDate = document.getElementById('payRenewalPayDate')?.value || getLocalTodayStr();
 
   if (curPayMember.isNew) {
+    const m = curPayMember.originalData;
+    // FIX: split `total` into its component parts instead of using the
+    // combined total as the "plan" entry (which previously double-counted
+    // admission + PT on top of the full total).
+    const admAmt  = (!m.admissionWaived && m.admissionFee > 0) ? m.admissionFee : 0;
+    const ptAmt   = (m.ptEnabled && m.ptFee > 0) ? m.ptFee : 0;
+    const planAmt = Math.max(0, total - admAmt - ptAmt);
+
     const payEntry = {
-      amount: total,
+      amount: planAmt,
       date: new Date(paymentDate),
       method: method,
       receiptNo: 'REC-' + Date.now(),
       type: 'plan'
     };
-    
+
     const entries = [payEntry];
-    const m = curPayMember.originalData;
-    if (!m.admissionWaived && m.admissionFee > 0) {
+    if (admAmt > 0) {
       entries.push({
-        amount: m.admissionFee,
+        amount: admAmt,
         date: new Date(paymentDate),
         method: method,
         receiptNo: 'REC-ADM-' + Date.now(),
         type: 'admission'
       });
     }
-    if (m.ptEnabled && m.ptFee > 0) {
+    if (ptAmt > 0) {
       entries.push({
-        amount: m.ptFee,
+        amount: ptAmt,
         date: new Date(paymentDate),
         method: method,
         receiptNo: 'REC-PT-' + Date.now(),
@@ -2265,8 +2272,12 @@ async function confirmPayment() {
     return baseDate.toISOString().split('T')[0];
   })();
 
+  // FIX: split `total` so the plan entry doesn't also contain the PT fee
+  // that gets pushed separately below (previously double-counted PT).
+  const planAmt = Math.max(0, total - (isPt ? ptAmt : 0));
+
   const payEntry = {
-    amount: total,
+    amount: planAmt,
     date: chosenPayDate,
     method: method,
     receiptNo: 'REC-' + Date.now(),
@@ -2281,7 +2292,7 @@ async function confirmPayment() {
       method: 'PUT', headers: hdrs(),
       body: JSON.stringify({
         plan: planName,
-        planPrice: curPayTotal,
+        planPrice: planAmt,
         discountType: renewDType,
         discountValue: renewDVal,
         discountReason: renewDReason,
