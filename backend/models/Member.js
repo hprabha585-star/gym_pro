@@ -90,7 +90,8 @@ const memberSchema = new mongoose.Schema({
     method: { type: String, enum: ['upi', 'cash', 'card'] },
     receiptNo: String,
     plan: String,
-    months: Number
+    months: Number,
+    type: { type: String, enum: ['plan', 'admission', 'pt'], default: 'plan' }
   }],
   status: { 
     type: String, 
