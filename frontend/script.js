@@ -2299,13 +2299,10 @@ async function confirmPayment() {
   if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
 
   try {
-    // FIX Bug 2: Fetch existing history FIRST, then do a single PUT with everything.
-    // The old two-PUT approach lost the existing paymentHistory because the first
-    // PUT (with plan/expiry fields) did not include paymentHistory, so the second
-    // PUT's fetch would return an empty/stale history.
-    const memRes = await fetch(`${API}/${curPayMember.id}`, { headers: hdrs() });
-    const mem = memRes.ok ? await memRes.json() : {};
-    const renewHistory = [...(mem.paymentHistory || []), payEntry];
+    // Use cache for existing history - avoids extra network round-trip and the
+    // HTML-response bug that occurred because GET /api/members/:id did not exist.
+    const cached = allMembersCache.find(x => (x._id||x.id) === curPayMember.id) || {};
+    const renewHistory = [...(cached.paymentHistory || []), payEntry];
     if (isPt && ptAmt > 0) {
       renewHistory.push({
         amount: ptAmt,
