@@ -453,6 +453,7 @@ function renderRevenueDashboard(revenue) {
     monthKeys.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
   }
 
+  // Fill the 3 month total boxes
   monthKeys.forEach((key, idx) => {
     const monthData = revenue.months[key] || { total: 0 };
     const labelEl = document.getElementById(`revMonth${idx+1}Label`);
@@ -461,10 +462,13 @@ function renderRevenueDashboard(revenue) {
     if (amountEl) amountEl.textContent = `₹${monthData.total.toLocaleString('en-IN')}`;
   });
 
+  // Breakdown rows show CURRENT MONTH only (not all-time)
+  const curKey = monthKeys[0]; // index 0 = current month
+  const cur = revenue.months[curKey] || { plan:0, admission:0, pt:0, online:0, cash:0, total:0 };
   const els = ['revPlanTotal','revAdmissionTotal','revPTTotal','revOnlineTotal','revCashTotal','revGrandTotal'];
   const vals = [
-    revenue.planTotal, revenue.admissionTotal, revenue.ptTotal,
-    revenue.onlineTotal, revenue.cashTotal, revenue.grandTotal
+    cur.plan, cur.admission, cur.pt,
+    cur.online, cur.cash, cur.total
   ];
   els.forEach((id, i) => {
     const el = document.getElementById(id);
@@ -1803,6 +1807,7 @@ async function loadPayments() {
     const res = await fetch(API,{headers:hdrs()});
     if(res.status===401){logout();return;}
     const members = await res.json();
+    allMembersCache = members; // keep cache fresh for openPaymentForById
     const today = new Date();
     today.setHours(0,0,0,0);
     const in14Days = new Date(today);
@@ -1829,7 +1834,7 @@ async function loadPayments() {
       return `<div class="pay-row">
         <div style="display:flex;align-items:center;gap:12px">${avImg(m)}<div><div style="font-weight:700;font-size:.85rem">${esc(m.name)}</div><div style="font-size:.72rem;color:var(--tx3)">${esc(m.plan)}</div><div style="font-size:.7rem;color:var(--tx3)">Exp: ${fmt(m.expiryDate)}</div></div></div>
         <span class="badge ${d<0?'b-inactive':'b-trial'}">${d<0?'Overdue':d+'d'}</span>
-        <button class="btn btn-success btn-sm" onclick='openPaymentFor(${JSON.stringify(m).replace(/'/g,"&#39;")})'>Renew</button>
+        <button class="btn btn-success btn-sm" onclick="openPaymentForById('${esc(String(m._id||''))}')" >Renew</button>
       </div>`;
     }).join('');
   } catch(e) {
@@ -1925,6 +1930,13 @@ async function loadRevenuePage() {
 }
 
 /* ── PAYMENT MODAL ── */
+// Look up full member from cache by ID then open payment modal
+function openPaymentForById(id) {
+  const m = allMembersCache.find(x => (x._id||x.id) === id);
+  if (!m) { toast('Member not found - please refresh','error'); return; }
+  openPaymentFor(m, false);
+}
+
 function openPaymentFor(m, isNew = false) {
   curPayMember = {id: m._id || m.id, name: m.name, expiryDate: m.expiryDate, isNew: isNew, originalData: m};
 
