@@ -53,6 +53,17 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+// Get single member by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const member = await Member.findOne({ _id: req.params.id, userId: req.user.userId });
+    if (!member) return res.status(404).json({ error: 'Member not found' });
+    res.json(member);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Add new member (with userId)
 router.post('/', async (req, res) => {
   try {
