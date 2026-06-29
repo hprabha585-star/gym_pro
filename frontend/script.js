@@ -480,7 +480,7 @@ function renderDashTable(membersList) {
   const tbody = document.getElementById('dashBody');
   if (!tbody) return;
   if (!membersList.length) {
-    tbody.innerHTML = '<tr><td colspan="2"><div class="empty"><p>No members found in this timeframe.</p></div></td></tr>';
+    tbody.innerHTML = '<div class="empty"><p>No members found in this timeframe.</p></div>';
     return;
   }
   tbody.innerHTML = membersList.map(m => {
@@ -497,27 +497,40 @@ function renderDashTable(membersList) {
     const stBg = {Active:'#E8F8EF',Trial:'#E3F2FD',Inactive:'#F3F4F6',Expired:'#FEECEB'};
     const sc = stClr[m.status] || '#95A5A6';
     const sb = stBg[m.status] || '#F3F4F6';
-    return `<tr onclick="openEditMember('${m._id}')" style="cursor:pointer;border-bottom:1px solid #F0F5F5">
-      <td style="padding:12px 8px 12px 12px;vertical-align:middle">
-        <div style="display:flex;align-items:center;gap:14px">
-          ${avImg(m)}
-          <div style="min-width:0;display:flex;flex-direction:column;justify-content:center">
-            <div style="font-weight:800;font-size:.92rem;color:#1A2E2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px">${esc(m.name)}</div>
-            <div style="font-size:.72rem;color:#8AABAB;margin-top:2px">${esc(m.phone||'')}</div>
-            <div style="margin-top:4px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-              <span style="font-size:.68rem;color:#4A6464;font-weight:600">${esc(m.plan||'')}</span>
-            </div>
+    const safePhone_d = esc(m.phone||'');
+    const safeId_d = esc(m._id);
+    const safeName_d = esc(m.name||'');
+    return `<div style="border-bottom:1px solid #F0F5F5;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 12px 8px;cursor:pointer" onclick="openEditMember('${safeId_d}')">
+        ${avImg(m)}
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:1rem;color:#1A2E2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safeName_d}</div>
+          <div style="font-size:.8rem;color:#4A6464;font-weight:600;margin-top:2px">📱 +91 ${safePhone_d}</div>
+          <div style="font-size:.75rem;color:#8AABAB;margin-top:2px">${esc(m.plan||'')}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end;margin-bottom:5px">
+            <span style="width:8px;height:8px;border-radius:50%;background:${expColor};flex-shrink:0"></span>
+            <span style="font-size:.8rem;font-weight:700;color:#1A2E2E;white-space:nowrap">${expLabel}</span>
           </div>
+          <span style="background:${sb};color:${sc};padding:3px 10px;border-radius:20px;font-size:.68rem;font-weight:800">${esc(m.status||'')}</span>
         </div>
-       </td>
-      <td style="padding:12px 12px 12px 6px;vertical-align:middle;text-align:right;white-space:nowrap">
-        <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end;margin-bottom:5px">
-          <span style="width:8px;height:8px;border-radius:50%;background:${expColor};flex-shrink:0"></span>
-          <span style="font-size:.78rem;font-weight:700;color:#1A2E2E">${expLabel}</span>
-        </div>
-        <span style="background:${sb};color:${sc};padding:3px 10px;border-radius:20px;font-size:.65rem;font-weight:800">${esc(m.status||'')}</span>
-       </td>
-     </tr>`;
+      </div>
+      <div style="display:flex;border-top:1px solid #F0F5F5;background:linear-gradient(90deg,#E8F8EF 0%,#fff 70%)">
+        <button onclick="dialPhone('${safePhone_d}')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5">
+          <span style="font-size:1rem">📞</span><span style="font-size:.55rem;font-weight:700;color:#8AABAB">Call</span>
+        </button>
+        <button onclick="openWhatsApp('${safePhone_d}')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5">
+          <span style="font-size:1rem">💬</span><span style="font-size:.55rem;font-weight:700;color:#8AABAB">WhatsApp</span>
+        </button>
+        <button onclick="openPaymentForById('${safeId_d}')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5">
+          <span style="font-size:1rem">🔄</span><span style="font-size:.55rem;font-weight:700;color:#8AABAB">Renew</span>
+        </button>
+        <button onclick="openEditMember('${safeId_d}')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;border:none;background:transparent;cursor:pointer">
+          <span style="font-size:1rem">✏️</span><span style="font-size:.55rem;font-weight:700;color:#8AABAB">Edit</span>
+        </button>
+      </div>
+    </div>`;
   }).join('');
 }
 
