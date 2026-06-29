@@ -175,21 +175,21 @@
 
     <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding:0 2px" id="dashTodayLabel">Today</div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-      <div style="background:#1A8C8C;border-radius:18px;padding:16px 14px;cursor:pointer;position:relative;overflow:hidden"
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div style="background:#1A8C8C;border-radius:14px;padding:10px 12px;cursor:pointer;position:relative;overflow:hidden"
         onclick="showPage('attendance',document.querySelector('[data-page=attendance]'));updateBNav('attendance')">
-        <div style="position:absolute;top:-12px;right:-12px;width:60px;height:60px;background:rgba(255,255,255,.1);border-radius:50%"></div>
-        <div style="font-size:1.8rem;margin-bottom:6px">📅</div>
-        <div style="font-size:1.7rem;font-weight:800;color:#fff;line-height:1" id="statActive">—</div>
-        <div style="font-size:.72rem;color:rgba(255,255,255,.75);font-weight:600;margin-top:4px">Today's Attendance</div>
-        <div style="font-size:.62rem;color:rgba(255,255,255,.5);margin-top:2px">Tap to mark ›</div>
+        <div style="position:absolute;top:-10px;right:-10px;width:44px;height:44px;background:rgba(255,255,255,.1);border-radius:50%"></div>
+        <div style="font-size:1.3rem;margin-bottom:3px">📅</div>
+        <div style="font-size:1.4rem;font-weight:800;color:#fff;line-height:1" id="statActive">—</div>
+        <div style="font-size:.65rem;color:rgba(255,255,255,.75);font-weight:600;margin-top:3px">Today's Attendance</div>
+        <div style="font-size:.58rem;color:rgba(255,255,255,.5);margin-top:1px">Tap to mark »</div>
       </div>
-      <div style="background:#fff;border:1px solid #E0ECEC;border-radius:18px;padding:16px 14px;cursor:pointer;position:relative;overflow:hidden">
-        <div style="position:absolute;top:-12px;right:-12px;width:60px;height:60px;background:#F0FAFA;border-radius:50%"></div>
-        <div style="font-size:1.8rem;margin-bottom:6px">👥</div>
-        <div style="font-size:1.7rem;font-weight:800;color:#1A2E2E;line-height:1" id="statTotal">—</div>
-        <div style="font-size:.72rem;color:#8AABAB;font-weight:600;margin-top:4px">Total Members</div>
-        <div style="font-size:.62rem;color:#B0C4C4;margin-top:2px">All status</div>
+      <div style="background:#fff;border:1px solid #E0ECEC;border-radius:14px;padding:10px 12px;cursor:pointer;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-10px;right:-10px;width:44px;height:44px;background:#F0FAFA;border-radius:50%"></div>
+        <div style="font-size:1.3rem;margin-bottom:3px">👥</div>
+        <div style="font-size:1.4rem;font-weight:800;color:#1A2E2E;line-height:1" id="statTotal">—</div>
+        <div style="font-size:.65rem;color:#8AABAB;font-weight:600;margin-top:3px">Total Members</div>
+        <div style="font-size:.58rem;color:#B0C4C4;margin-top:1px">All status</div>
       </div>
     </div>
 
@@ -262,17 +262,9 @@
           <button style="padding:5px 13px;border-radius:20px;border:none;background:#1A8C8C;color:#fff;font-family:inherit;font-size:.72rem;font-weight:800;cursor:pointer;min-height:32px" onclick="openModal('addMemberModal')">+ Add</button>
         </div>
       </div>
-      <table style="width:100%;border-collapse:collapse">
-        <thead>
-          <tr style="background:#F5FBFB">
-            <th style="padding:7px 8px 7px 14px;text-align:left;font-size:.62rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.7px">Member</th>
-            <th style="padding:7px 14px 7px 6px;text-align:right;font-size:.62rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.7px">Expires / Status</th>
-          </tr>
-        </thead>
-        <tbody id="dashBody">
-          <tr><td colspan="2"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr>
-        </tbody>
-      </table>
+      <div id="dashBody">
+        <div class="empty"><div class="ei">⏳</div><p>Loading…</p></div>
+      </div>
     </div>
   </div>
 
