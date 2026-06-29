@@ -98,6 +98,16 @@ function avImg(m) {
   return av(m.name);
 }
 
+// Larger avatar for dashboard expiring-soon cards
+function avImgDash(m) {
+  const initials = (m.name||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
+  const bg = avClr(m.name);
+  if (m.photo?.startsWith('data:image')) {
+    return `<img src="${m.photo}" alt="${esc(m.name)}" style="width:96px;height:96px;border-radius:18px;object-fit:cover;flex-shrink:0;box-shadow:0 4px 16px rgba(0,0,0,.22)">`;
+  }
+  return `<div style="width:96px;height:96px;border-radius:18px;background:linear-gradient(135deg,${bg},${bg}CC);display:inline-flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 4px 16px rgba(0,0,0,.22)">${esc(initials)}</div>`;
+}
+
 function badge(status) {
   const m = {Active:'b-active',Trial:'b-trial',Inactive:'b-inactive',Expired:'b-expired'};
   return `<span class="badge ${m[status]||'b-inactive'}">${esc(status)}</span>`;
@@ -502,7 +512,7 @@ function renderDashTable(membersList) {
     const safeName_d = esc(m.name||'');
     return `<div style="border-bottom:1px solid #F0F5F5;overflow:hidden">
       <div style="display:flex;align-items:center;gap:12px;padding:12px 12px 8px;cursor:pointer" onclick="openEditMember('${safeId_d}')">
-        ${avImg(m)}
+        ${avImgDash(m)}
         <div style="flex:1;min-width:0">
           <div style="font-weight:800;font-size:1rem;color:#1A2E2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safeName_d}</div>
           <div style="font-size:.8rem;color:#4A6464;font-weight:600;margin-top:2px">📱 +91 ${safePhone_d}</div>
