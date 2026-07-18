@@ -10,7 +10,7 @@ router.use(authMiddleware);
 // Get all members (only current user's members)
 router.get('/', async (req, res) => {
   try {
-    const members = await Member.find({ userId: req.user.userId }).sort({ joinDate: -1 });
+    const members = await Member.find({ userId: (req.user.gymId || req.user.userId) }).sort({ joinDate: -1 });
     res.json(members);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -20,11 +20,11 @@ router.get('/', async (req, res) => {
 // Get dashboard stats (only current user's data)
 router.get('/stats', async (req, res) => {
   try {
-    const totalMembers = await Member.countDocuments({ userId: req.user.userId });
+    const totalMembers = await Member.countDocuments({ userId: (req.user.gymId || req.user.userId) });
     const today = new Date().toISOString().split('T')[0];
     
     const todayAttendance = await Attendance.countDocuments({ 
-      userId: req.user.userId,
+      userId: (req.user.gymId || req.user.userId),
       date: today, 
       status: 'Present' 
     });
@@ -41,7 +41,7 @@ router.get('/stats', async (req, res) => {
       '1 Year Strength + Cardio': 14000
     };
     
-    const activeMembers = await Member.find({ userId: req.user.userId, status: 'Active' });
+    const activeMembers = await Member.find({ userId: (req.user.gymId || req.user.userId), status: 'Active' });
     let estimatedRevenue = 0;
     activeMembers.forEach(m => {
       estimatedRevenue += revenueMap[m.plan] || 0;
@@ -53,24 +53,13 @@ router.get('/stats', async (req, res) => {
   }
 });
 
-// Get single member by ID
-router.get('/:id', async (req, res) => {
-  try {
-    const member = await Member.findOne({ _id: req.params.id, userId: req.user.userId });
-    if (!member) return res.status(404).json({ error: 'Member not found' });
-    res.json(member);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 // Add new member (with userId)
 router.post('/', async (req, res) => {
   try {
     const memberData = req.body;
     
     const existingMember = await Member.findOne({ 
-      userId: req.user.userId,
+      userId: (req.user.gymId || req.user.userId),
       phone: memberData.phone 
     });
     if (existingMember) {
@@ -79,7 +68,7 @@ router.post('/', async (req, res) => {
     
     const member = new Member({
       ...memberData,
-      userId: req.user.userId
+      userId: (req.user.gymId || req.user.userId)
     });
     const newMember = await member.save();
     res.status(201).json(newMember);
@@ -97,7 +86,7 @@ router.put('/:id', async (req, res) => {
     // Ensure phone number isn't being updated to one that belongs to another member
     if (memberData.phone) {
       const existingMember = await Member.findOne({ 
-        userId: req.user.userId, 
+        userId: (req.user.gymId || req.user.userId), 
         phone: memberData.phone,
         _id: { $ne: req.params.id }
       });
@@ -107,7 +96,7 @@ router.put('/:id', async (req, res) => {
     }
 
     const updatedMember = await Member.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user.userId },
+      { _id: req.params.id, userId: (req.user.gymId || req.user.userId) },
       { $set: memberData },
       { new: true, runValidators: true }
     );
@@ -128,11 +117,11 @@ router.delete('/:id', async (req, res) => {
   try {
     const member = await Member.findOneAndDelete({ 
       _id: req.params.id, 
-      userId: req.user.userId 
+      userId: (req.user.gymId || req.user.userId) 
     });
     if (!member) return res.status(404).json({ error: 'Member not found' });
     await Attendance.deleteMany({ 
-      userId: req.user.userId,
+      userId: (req.user.gymId || req.user.userId),
       memberId: req.params.id 
     });
     res.json({ message: 'Member deleted successfully' });
@@ -146,7 +135,7 @@ router.get('/attendance/:date', async (req, res) => {
   try {
     const { date } = req.params;
     const attendances = await Attendance.find({ 
-      userId: req.user.userId,
+      userId: (req.user.gymId || req.user.userId),
       date 
     }).populate('memberId', 'name phone plan status');
     res.json(attendances);
@@ -162,15 +151,15 @@ router.post('/attendance', async (req, res) => {
     
     const member = await Member.findOne({ 
       _id: memberId, 
-      userId: req.user.userId 
+      userId: (req.user.gymId || req.user.userId) 
     });
     if (!member) {
       return res.status(404).json({ error: 'Member not found' });
     }
     
     const attendance = await Attendance.findOneAndUpdate(
-      { userId: req.user.userId, memberId, date },
-      { userId: req.user.userId, memberId, date, status, markedAt: new Date() },
+      { userId: (req.user.gymId || req.user.userId), memberId, date },
+      { userId: (req.user.gymId || req.user.userId), memberId, date, status, markedAt: new Date() },
       { upsert: true, new: true }
     );
     
@@ -185,11 +174,11 @@ router.get('/attendance/stats/:date', async (req, res) => {
   try {
     const { date } = req.params;
     const totalActive = await Member.countDocuments({ 
-      userId: req.user.userId,
+      userId: (req.user.gymId || req.user.userId),
       status: { $in: ['Active', 'Trial'] } 
     });
     const presentCount = await Attendance.countDocuments({ 
-      userId: req.user.userId,
+      userId: (req.user.gymId || req.user.userId),
       date, 
       status: 'Present' 
     });
@@ -205,7 +194,7 @@ router.get('/attendance/stats/:date', async (req, res) => {
 router.get('/payment-reminders', async (req, res) => {
   try {
     const dueMembers = await Member.find({
-      userId: req.user.userId,
+      userId: (req.user.gymId || req.user.userId),
       status: 'Active',
       expiryDate: { $lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) }
     });
@@ -225,7 +214,7 @@ router.get('/monthly-due/:memberId', async (req, res) => {
   try {
     const member = await Member.findOne({ 
       _id: req.params.memberId, 
-      userId: req.user.userId 
+      userId: (req.user.gymId || req.user.userId) 
     });
     if (!member) {
       return res.status(404).json({ error: 'Member not found' });
