@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>GymPro — Super Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'DM Sans',-apple-system,sans-serif;background:#F0F5F5;color:#1A2E2E;padding:16px 16px 40px;-webkit-tap-highlight-color:transparent}
+    .container{max-width:800px;margin:0 auto}
+    .header{background:linear-gradient(135deg,#1A2E2E,#2C4A4A);color:#fff;padding:20px;border-radius:20px;margin-bottom:16px;box-shadow:0 4px 20px rgba(0,0,0,.25)}
+    .header h1{font-size:1.4rem;font-weight:800;margin-bottom:4px}
+    .header p{font-size:.8rem;opacity:.7}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+    .stat-card{background:#fff;border-radius:16px;padding:14px;text-align:center;border:1px solid #E0ECEC;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+    .stat-number{font-size:1.8rem;font-weight:800;color:#1A8C8C;line-height:1}
+    .stat-label{font-size:.62rem;color:#8AABAB;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:5px}
+    .section{background:#fff;border-radius:18px;margin-bottom:14px;overflow:hidden;border:1px solid #E0ECEC;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+    .section-title{padding:14px 16px;background:#F8FFFE;border-bottom:1.5px solid #E0ECEC;font-weight:800;font-size:.95rem;display:flex;align-items:center;gap:8px}
+    .gym-item{padding:14px 16px;border-bottom:1px solid #F0F5F5}
+    .gym-item:last-child{border-bottom:none}
+    .gym-name{font-weight:800;font-size:.95rem;margin-bottom:3px}
+    .gym-meta{font-size:.72rem;color:#8AABAB;margin-top:2px}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.65rem;font-weight:800}
+    .badge-active{background:#E8F8EF;color:#27AE60}
+    .badge-pending{background:#FEF9E7;color:#F39C12}
+    .badge-suspended{background:#FEECEB;color:#E74C3C}
+    .btn{padding:7px 14px;border:none;border-radius:10px;font-family:inherit;font-weight:700;font-size:.75rem;cursor:pointer;transition:all .15s}
+    .btn:active{transform:scale(.96)}
+    .btn-approve{background:#27AE60;color:#fff}
+    .btn-reject{background:#E74C3C;color:#fff}
+    .btn-suspend{background:#F39C12;color:#fff}
+    .btn-delete{background:#FEECEB;color:#E74C3C;border:1px solid #FECDD5}
+    .btn-ghost{background:#F0F5F5;color:#4A6464;border:1px solid #E0ECEC}
+    .btn-group{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+    .empty{text-align:center;padding:40px 20px;color:#8AABAB;font-size:.85rem}
+    .back-link{display:inline-flex;align-items:center;gap:6px;margin-bottom:14px;color:#1A8C8C;text-decoration:none;font-weight:700;font-size:.88rem}
+    .toast{position:fixed;bottom:20px;left:16px;right:16px;background:#1A2E2E;color:#fff;padding:13px 16px;border-radius:14px;text-align:center;font-weight:700;font-size:.85rem;transform:translateY(120px);transition:transform .3s cubic-bezier(.22,1,.36,1);z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+    .toast.show{transform:translateY(0)}
+    .toast.success{background:#27AE60}
+    .toast.error{background:#E74C3C}
+    .logout-btn{background:#FEECEB;color:#E74C3C;border:1px solid #FECDD5;border-radius:12px;padding:8px 16px;font-family:inherit;font-weight:800;font-size:.85rem;cursor:pointer;margin-top:12px}
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <a href="#" class="back-link" onclick="logout()">🚪 Logout</a>
+
+  <div class="header">
+    <h1>⚡ GymPro Super Admin</h1>
+    <p id="saEmail">Loading…</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-number" id="statGyms">—</div>
+      <div class="stat-label">Active Gyms</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="statPending">—</div>
+      <div class="stat-label">Pending</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="statStaff">—</div>
+      <div class="stat-label">Total Staff</div>
+    </div>
+  </div>
+
+  <!-- PENDING GYM APPROVALS -->
+  <div class="section">
+    <div class="section-title">⏳ Pending Gym Registrations</div>
+    <div id="pendingList"><div class="empty">Loading…</div></div>
+  </div>
+
+  <!-- ACTIVE GYMS -->
+  <div class="section">
+    <div class="section-title">🏋️ All Active Gyms</div>
+    <div id="gymList"><div class="empty">Loading…</div></div>
+  </div>
+
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+const BASE = 'https://gym-pro-mvyv.onrender.com/api';
+const token = localStorage.getItem('token');
+const user  = JSON.parse(localStorage.getItem('user') || '{}');
+
+if (!token || user.role !== 'superadmin') {
+  window.location.href = '/login.html';
+}
+
+document.getElementById('saEmail').textContent = `Logged in as: ${user.email || ''}`;
+
+function hdrs() {
+  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+}
+
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast show ${type}`;
+  setTimeout(() => el.className = 'toast', 3000);
+}
+
+function logout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  window.location.href = '/login.html';
+}
+
+function esc(s) {
+  return String(s||'').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function loadStats() {
+  try {
+    const res = await fetch(`${BASE}/admin/all-gyms-stats`, { headers: hdrs() });
+    if (!res.ok) return;
+    const d = await res.json();
+    document.getElementById('statGyms').textContent    = d.totalGyms   || 0;
+    document.getElementById('statPending').textContent = d.pendingGyms  || 0;
+    document.getElementById('statStaff').textContent   = d.totalStaff  || 0;
+  } catch(e) {}
+}
+
+async function loadPending() {
+  try {
+    const res = await fetch(`${BASE}/auth/pending-approvals`, { headers: hdrs() });
+    if (!res.ok) throw new Error();
+    const list = await res.json();
+    const el = document.getElementById('pendingList');
+    if (!list.length) { el.innerHTML = '<div class="empty">✅ No pending registrations</div>'; return; }
+    el.innerHTML = list.map(g => `
+      <div class="gym-item">
+        <div class="gym-name">🏋️ ${esc(g.gymName || g.name)}</div>
+        <div class="gym-meta">👤 ${esc(g.name)} &bull; 📧 ${esc(g.email)}</div>
+        <div class="gym-meta">Registered: ${new Date(g.createdAt).toLocaleDateString('en-IN')}</div>
+        <div class="btn-group">
+          <button class="btn btn-approve" onclick="approveGym('${g._id}','${esc(g.gymName||g.name)}')">✓ Approve</button>
+          <button class="btn btn-reject"  onclick="rejectGym('${g._id}','${esc(g.gymName||g.name)}')">✗ Reject</button>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('pendingList').innerHTML = '<div class="empty">Error loading</div>';
+  }
+}
+
+async function loadGyms() {
+  try {
+    const res = await fetch(`${BASE}/admin/gyms`, { headers: hdrs() });
+    if (!res.ok) throw new Error();
+    const gyms = await res.json();
+    const el = document.getElementById('gymList');
+    if (!gyms.length) { el.innerHTML = '<div class="empty">No active gyms yet</div>'; return; }
+    el.innerHTML = gyms.map(g => `
+      <div class="gym-item">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div class="gym-name">🏋️ ${esc(g.gymName || '(No gym name)')}
+              <span class="badge ${g.isActive?'badge-active':'badge-suspended'}" style="margin-left:6px">${g.isActive?'Active':'Suspended'}</span>
+            </div>
+            <div class="gym-meta">👤 ${esc(g.name)} &bull; 📧 ${esc(g.email)}</div>
+            <div class="gym-meta">Approved: ${g.approvedAt ? new Date(g.approvedAt).toLocaleDateString('en-IN') : '—'}</div>
+            ${g.lastLogin ? `<div class="gym-meta">Last login: ${new Date(g.lastLogin).toLocaleDateString('en-IN')}</div>` : ''}
+          </div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-suspend" onclick="toggleGym('${g._id}','${esc(g.gymName||g.name)}')">${g.isActive?'⏸ Suspend':'▶ Activate'}</button>
+          <button class="btn btn-delete"  onclick="deleteGym('${g._id}','${esc(g.gymName||g.name)}')">🗑 Remove</button>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('gymList').innerHTML = '<div class="empty">Error loading gyms</div>';
+  }
+}
+
+async function approveGym(id, name) {
+  try {
+    const res = await fetch(`${BASE}/auth/approve/${id}`, { method: 'POST', headers: hdrs() });
+    if (res.ok) { toast(`${name} approved! 🎉`, 'success'); loadAll(); }
+    else { const d = await res.json(); toast(d.error || 'Failed', 'error'); }
+  } catch(e) { toast('Network error', 'error'); }
+}
+
+async function rejectGym(id, name) {
+  const reason = prompt(`Reason for rejecting "${name}" (optional):`);
+  if (reason === null) return; // cancelled
+  try {
+    const res = await fetch(`${BASE}/auth/reject/${id}`, {
+      method: 'POST', headers: hdrs(),
+      body: JSON.stringify({ reason: reason || 'Not approved.' })
+    });
+    if (res.ok) { toast(`${name} rejected.`, 'success'); loadAll(); }
+    else { const d = await res.json(); toast(d.error || 'Failed', 'error'); }
+  } catch(e) { toast('Network error', 'error'); }
+}
+
+async function toggleGym(id, name) {
+  try {
+    const res = await fetch(`${BASE}/admin/gym/${id}/toggle`, { method: 'PATCH', headers: hdrs() });
+    if (res.ok) { const d = await res.json(); toast(d.message, 'success'); loadAll(); }
+    else { toast('Failed', 'error'); }
+  } catch(e) { toast('Network error', 'error'); }
+}
+
+async function deleteGym(id, name) {
+  if (!confirm(`Permanently remove "${name}" and all its staff? This cannot be undone.`)) return;
+  try {
+    const res = await fetch(`${BASE}/admin/gym/${id}`, { method: 'DELETE', headers: hdrs() });
+    if (res.ok) { toast(`${name} removed.`, 'success'); loadAll(); }
+    else { const d = await res.json(); toast(d.error || 'Failed', 'error'); }
+  } catch(e) { toast('Network error', 'error'); }
+}
+
+function loadAll() {
+  loadStats();
+  loadPending();
+  loadGyms();
+}
+
+loadAll();
+</script>
+</body>
+</html>
