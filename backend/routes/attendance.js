@@ -9,7 +9,7 @@ router.use(authMiddleware);
 router.get('/', async (req, res) => {
   try {
     // Safely grab the user ID regardless of how the JWT token was structured
-    const userId = req.user.userId || req.user.id || req.user._id;
+    const userId = req.user.gymId || (req.user.gymId || req.user.userId) || req.user.id;
     
     const data = await Attendance.find({ userId: userId }).populate('memberId');
     res.json(data);
@@ -24,7 +24,7 @@ router.post('/', async (req, res) => {
     const { memberId, status, date } = req.body;
     
     // Safely grab the user ID
-    const userId = req.user.userId || req.user.id || req.user._id;
+    const userId = req.user.gymId || (req.user.gymId || req.user.userId) || req.user.id;
 
     if (!userId) {
       return res.status(400).json({ error: 'Authentication token missing User ID' });
