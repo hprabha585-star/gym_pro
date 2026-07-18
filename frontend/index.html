@@ -105,6 +105,9 @@
     <button class="nav-btn" onclick="showPage('trainers',this);updateBNav('none')" data-page="trainers">
       <span class="ni">💪</span>Trainers
     </button>
+    <button class="nav-btn" id="navPtBlock" onclick="showPage('ptblock',this);updateBNav('none')" data-page="ptblock">
+      <span class="ni">🏋️</span>PT Members
+    </button>
     <button class="nav-btn" onclick="showPage('plans',this);updateBNav('none')" data-page="plans">
       <span class="ni">💎</span>Plans
     </button>
@@ -114,7 +117,7 @@
     <button class="nav-btn" onclick="showPage('payments',this);updateBNav('none')" data-page="payments">
       <span class="ni">💰</span>Payments
     </button>
-    <button class="nav-btn" onclick="showPage('revenue',this);updateBNav('none')" data-page="revenue">
+    <button class="nav-btn" id="navRevenue" onclick="showPage('revenue',this);updateBNav('none')" data-page="revenue">
       <span class="ni">📈</span>Revenue
     </button>
     <button class="nav-btn" onclick="showPage('settings',this);updateBNav('none')" data-page="settings">
@@ -175,21 +178,21 @@
 
     <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding:0 2px" id="dashTodayLabel">Today</div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <div style="background:#1A8C8C;border-radius:14px;padding:10px 12px;cursor:pointer;position:relative;overflow:hidden"
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div style="background:#1A8C8C;border-radius:18px;padding:16px 14px;cursor:pointer;position:relative;overflow:hidden"
         onclick="showPage('attendance',document.querySelector('[data-page=attendance]'));updateBNav('attendance')">
-        <div style="position:absolute;top:-10px;right:-10px;width:44px;height:44px;background:rgba(255,255,255,.1);border-radius:50%"></div>
-        <div style="font-size:1.3rem;margin-bottom:3px">📅</div>
-        <div style="font-size:1.4rem;font-weight:800;color:#fff;line-height:1" id="statActive">—</div>
-        <div style="font-size:.65rem;color:rgba(255,255,255,.75);font-weight:600;margin-top:3px">Today's Attendance</div>
-        <div style="font-size:.58rem;color:rgba(255,255,255,.5);margin-top:1px">Tap to mark »</div>
+        <div style="position:absolute;top:-12px;right:-12px;width:60px;height:60px;background:rgba(255,255,255,.1);border-radius:50%"></div>
+        <div style="font-size:1.8rem;margin-bottom:6px">📅</div>
+        <div style="font-size:1.7rem;font-weight:800;color:#fff;line-height:1" id="statActive">—</div>
+        <div style="font-size:.72rem;color:rgba(255,255,255,.75);font-weight:600;margin-top:4px">Today's Attendance</div>
+        <div style="font-size:.62rem;color:rgba(255,255,255,.5);margin-top:2px">Tap to mark ›</div>
       </div>
-      <div style="background:#fff;border:1px solid #E0ECEC;border-radius:14px;padding:10px 12px;cursor:pointer;position:relative;overflow:hidden">
-        <div style="position:absolute;top:-10px;right:-10px;width:44px;height:44px;background:#F0FAFA;border-radius:50%"></div>
-        <div style="font-size:1.3rem;margin-bottom:3px">👥</div>
-        <div style="font-size:1.4rem;font-weight:800;color:#1A2E2E;line-height:1" id="statTotal">—</div>
-        <div style="font-size:.65rem;color:#8AABAB;font-weight:600;margin-top:3px">Total Members</div>
-        <div style="font-size:.58rem;color:#B0C4C4;margin-top:1px">All status</div>
+      <div style="background:#fff;border:1px solid #E0ECEC;border-radius:18px;padding:16px 14px;cursor:pointer;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-12px;right:-12px;width:60px;height:60px;background:#F0FAFA;border-radius:50%"></div>
+        <div style="font-size:1.8rem;margin-bottom:6px">👥</div>
+        <div style="font-size:1.7rem;font-weight:800;color:#1A2E2E;line-height:1" id="statTotal">—</div>
+        <div style="font-size:.72rem;color:#8AABAB;font-weight:600;margin-top:4px">Total Members</div>
+        <div style="font-size:.62rem;color:#B0C4C4;margin-top:2px">All status</div>
       </div>
     </div>
 
@@ -213,8 +216,7 @@
         </div>
       </div>
 
-      <!-- Breakdown (current month) -->
-      <div style="font-size:.65rem;font-weight:700;color:#1A8C8C;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;margin-top:4px">This Month's Breakdown</div>
+      <!-- Breakdown -->
       <div class="rev-breakdown">
         <span><span>💪 Plan Fees</span><span id="revPlanTotal">₹0</span></span>
         <span><span>🎟️ Admission</span><span id="revAdmissionTotal">₹0</span></span>
@@ -222,7 +224,7 @@
         <span><span>📱 Online (UPI+Card)</span><span id="revOnlineTotal">₹0</span></span>
         <span><span>💵 Cash</span><span id="revCashTotal">₹0</span></span>
         <span style="font-weight:800;border-bottom:2px solid #1A8C8C;padding-top:6px;margin-top:4px">
-          <span>Total This Month</span>
+          <span>Total Revenue</span>
           <span id="revGrandTotal" style="color:#1A8C8C;font-size:.9rem">₹0</span>
         </span>
       </div>
@@ -262,9 +264,17 @@
           <button style="padding:5px 13px;border-radius:20px;border:none;background:#1A8C8C;color:#fff;font-family:inherit;font-size:.72rem;font-weight:800;cursor:pointer;min-height:32px" onclick="openModal('addMemberModal')">+ Add</button>
         </div>
       </div>
-      <div id="dashBody">
-        <div class="empty"><div class="ei">⏳</div><p>Loading…</p></div>
-      </div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:#F5FBFB">
+            <th style="padding:7px 8px 7px 14px;text-align:left;font-size:.62rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.7px">Member</th>
+            <th style="padding:7px 14px 7px 6px;text-align:right;font-size:.62rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.7px">Expires / Status</th>
+          </tr>
+        </thead>
+        <tbody id="dashBody">
+          <tr><td colspan="2"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -445,6 +455,20 @@
   </div>
 
   <!-- ──────────────── REVENUE ──────────────── -->
+  <!-- ──────────────── PT BLOCK ──────────────── -->
+  <div id="page-ptblock" class="page">
+    <div style="background:linear-gradient(135deg,#1A8C8C,#156F6F);border-radius:18px;padding:16px;margin-bottom:12px;
+      display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:1rem;font-weight:800;color:#fff">🏋️ Personal Training</div>
+        <div style="font-size:.72rem;color:rgba(255,255,255,.65);margin-top:2px">Members grouped by trainer</div>
+      </div>
+    </div>
+    <div id="ptBlockWrap">
+      <div class="empty"><div class="ei">⏳</div><p>Loading…</p></div>
+    </div>
+  </div>
+
   <div id="page-revenue" class="page">
     <div class="card">
       <div class="card-head"><span class="card-title">📈 Revenue Dashboard</span></div>
