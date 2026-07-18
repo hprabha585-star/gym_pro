@@ -151,27 +151,60 @@
     <a href="/" class="back-link">← Back to Dashboard</a>
     
     <div class="header">
-      <h1>👑 Admin Control Panel</h1>
-      <p>Manage staff approvals, roles, and user accounts</p>
+      <h1>🏋️ Gym Admin Panel</h1>
+      <p>Create and manage your gym staff</p>
     </div>
     
     <div class="stats">
       <div class="stat-card">
-        <div class="stat-number" id="pendingCount">0</div>
-        <div class="stat-label">Pending Approvals</div>
-      </div>
-      <div class="stat-card">
         <div class="stat-number" id="staffCount">0</div>
         <div class="stat-label">Total Staff</div>
       </div>
+      <div class="stat-card">
+        <div class="stat-number" id="activeCount">0</div>
+        <div class="stat-label">Active</div>
+      </div>
     </div>
     
+    <!-- CREATE STAFF -->
     <div class="section">
-      <div class="section-title">
-        <span>⏳</span> Pending Approvals
+      <div class="section-title"><span>➕</span> Create Staff Account</div>
+      <div style="padding:16px">
+        <div style="display:grid;gap:10px">
+          <div>
+            <label style="font-size:.7rem;font-weight:800;color:#1A8C8C;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Full Name</label>
+            <input type="text" id="newStaffName" placeholder="Staff member name"
+              style="width:100%;padding:12px;border:2px solid #E0ECEC;border-radius:12px;font-family:inherit;font-size:.9rem">
+          </div>
+          <div>
+            <label style="font-size:.7rem;font-weight:800;color:#1A8C8C;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Email</label>
+            <input type="email" id="newStaffEmail" placeholder="staff@email.com"
+              style="width:100%;padding:12px;border:2px solid #E0ECEC;border-radius:12px;font-family:inherit;font-size:.9rem">
+          </div>
+          <div>
+            <label style="font-size:.7rem;font-weight:800;color:#1A8C8C;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Password</label>
+            <input type="password" id="newStaffPassword" placeholder="Min 6 characters"
+              style="width:100%;padding:12px;border:2px solid #E0ECEC;border-radius:12px;font-family:inherit;font-size:.9rem">
+          </div>
+          <div style="background:#F8FFFE;border-radius:12px;padding:12px;border:1px solid #E0ECEC">
+            <div style="font-size:.7rem;font-weight:800;color:#1A8C8C;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">🔒 Access Permissions</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <label style="display:flex;align-items:center;gap:6px;font-size:.8rem;cursor:pointer"><input type="checkbox" id="p_viewMembers" checked> View Members</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:.8rem;cursor:pointer"><input type="checkbox" id="p_addMembers" checked> Add Members</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:.8rem;cursor:pointer"><input type="checkbox" id="p_editMembers" checked> Edit Members</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:.8rem;cursor:pointer"><input type="checkbox" id="p_deleteMembers"> Delete Members</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:.8rem;cursor:pointer"><input type="checkbox" id="p_viewAttendance" checked> Attendance</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:.8rem;cursor:pointer"><input type="checkbox" id="p_viewTrainers" checked> Trainers / PT</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:.8rem;cursor:pointer"><input type="checkbox" id="p_viewPayments" checked> Payments</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:.8rem;cursor:pointer"><input type="checkbox" id="p_viewRevenue"> Revenue 🔒</label>
+            </div>
+          </div>
+          <button class="btn btn-approve" onclick="createStaff()" style="width:100%;padding:12px">➕ Create Staff Account</button>
+        </div>
       </div>
-      <div id="pendingList"></div>
     </div>
+
+
     
     <div class="section">
       <div class="section-title">
@@ -202,11 +235,19 @@
         const res = await fetch(`${BASE}/auth/me`, { headers: hdrs() });
         if (!res.ok) throw new Error();
         const user = await res.json();
+        if (user.role === 'superadmin') {
+          // Superadmin has their own dashboard
+          window.location.href = '/superadmin.html';
+          return false;
+        }
         if (user.role !== 'admin') {
           toast('Admin access only', 'error');
           setTimeout(() => window.location.href = '/', 1500);
           return false;
         }
+        // Show gym admin's name
+        const hdr = document.querySelector('.header p');
+        if (hdr) hdr.textContent = `Gym Admin: ${user.name}`;
         return true;
       } catch(e) {
         window.location.href = '/login.html';
@@ -252,6 +293,7 @@
         if (!res.ok) throw new Error();
         const users = await res.json();
         document.getElementById('staffCount').textContent = users.length;
+        document.getElementById('activeCount').textContent = users.filter(u=>u.isActive).length;
         
         const container = document.getElementById('staffList');
         if (!users.length) {
@@ -259,31 +301,43 @@
           return;
         }
         
-        container.innerHTML = users.map(user => `
-          <div class="user-item">
-            <div class="user-info">
-              <h4>${escapeHtml(user.name)}</h4>
-              <p>${escapeHtml(user.email)}</p>
-              <p>
-                Role: <strong>${user.role}</strong>
+        container.innerHTML = users.map(user => {
+          const p = user.staffPermissions || {};
+          const isStaff = user.role === 'staff';
+          const permHtml = isStaff ? `
+            <div style="margin-top:8px;background:#F8FFFE;border-radius:10px;padding:10px;border:1px solid #E0ECEC">
+              <div style="font-size:.65rem;font-weight:800;color:#1A8C8C;margin-bottom:8px;text-transform:uppercase">🔒 Access Control (toggle to update instantly)</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <label style="display:flex;align-items:center;gap:5px;font-size:.78rem;cursor:pointer">
+                  <input type="checkbox" ${p.viewRevenue?'checked':''} onchange="updatePermissions('${user._id}','viewRevenue',this.checked)"> 📈 Revenue
+                </label>
+                <label style="display:flex;align-items:center;gap:5px;font-size:.78rem;cursor:pointer">
+                  <input type="checkbox" ${p.deleteMembers?'checked':''} onchange="updatePermissions('${user._id}','deleteMembers',this.checked)"> 🗑 Delete
+                </label>
+                <label style="display:flex;align-items:center;gap:5px;font-size:.78rem;cursor:pointer">
+                  <input type="checkbox" ${(p.viewPayments!==false)?'checked':''} onchange="updatePermissions('${user._id}','viewPayments',this.checked)"> 💰 Payments
+                </label>
+                <label style="display:flex;align-items:center;gap:5px;font-size:.78rem;cursor:pointer">
+                  <input type="checkbox" ${p.viewSettings?'checked':''} onchange="updatePermissions('${user._id}','viewSettings',this.checked)"> ⚙️ Settings
+                </label>
+              </div>
+            </div>` : '';
+          return `<div class="user-item" style="flex-direction:column;align-items:stretch">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+              <div class="user-info">
+                <h4>${escapeHtml(user.name)} <span class="role-badge">${user.role}</span></h4>
+                <p>${escapeHtml(user.email)}</p>
                 <span class="badge ${user.isActive ? 'badge-active' : 'badge-inactive'}">${user.isActive ? 'Active' : 'Inactive'}</span>
-              </p>
-              ${user.approvedByName ? `<p>✅ Approved by: ${escapeHtml(user.approvedByName)}</p>` : ''}
-              ${user.lastLogin ? `<p>Last login: ${new Date(user.lastLogin).toLocaleDateString('en-IN')}</p>` : ''}
+                ${user.lastLogin ? `<p style="font-size:.72rem;color:#8AABAB;margin-top:4px">Last login: ${new Date(user.lastLogin).toLocaleDateString('en-IN')}</p>` : ''}
+              </div>
+              <div class="btn-group">
+                <button class="btn btn-ghost btn-sm" onclick="toggleUserStatus('${user._id}')">${user.isActive ? '🔴 Deactivate' : '🟢 Activate'}</button>
+                <button class="btn btn-reject btn-sm" onclick="deleteUser('${user._id}', '${escapeHtml(user.name)}')">🗑 Delete</button>
+              </div>
             </div>
-            <div class="btn-group">
-              <button class="btn btn-ghost btn-sm" onclick="toggleUserStatus('${user._id}')">
-                ${user.isActive ? '🔴 Deactivate' : '🟢 Activate'}
-              </button>
-              <button class="btn btn-ghost btn-sm" onclick="changeRole('${user._id}', '${user.role === 'admin' ? 'staff' : 'admin'}')">
-                Make ${user.role === 'admin' ? 'Staff' : 'Admin'}
-              </button>
-              <button class="btn btn-reject btn-sm" onclick="deleteUser('${user._id}', '${escapeHtml(user.name)}')">
-                🗑 Delete
-              </button>
-            </div>
-          </div>
-        `).join('');
+            ${permHtml}
+          </div>`;
+        }).join('');
       } catch(e) {
         console.error(e);
         document.getElementById('staffList').innerHTML = '<div class="empty"><p>Error loading staff</p></div>';
@@ -387,10 +441,56 @@
       });
     }
     
+    async function createStaff() {
+      const name     = document.getElementById('newStaffName').value.trim();
+      const email    = document.getElementById('newStaffEmail').value.trim();
+      const password = document.getElementById('newStaffPassword').value;
+      if (!name || !email || !password) { toast('Fill all fields', 'error'); return; }
+      if (password.length < 6) { toast('Password min 6 chars', 'error'); return; }
+      const permissions = {
+        viewMembers:    document.getElementById('p_viewMembers').checked,
+        addMembers:     document.getElementById('p_addMembers').checked,
+        editMembers:    document.getElementById('p_editMembers').checked,
+        deleteMembers:  document.getElementById('p_deleteMembers').checked,
+        viewAttendance: document.getElementById('p_viewAttendance').checked,
+        markAttendance: document.getElementById('p_viewAttendance').checked,
+        viewTrainers:   document.getElementById('p_viewTrainers').checked,
+        viewPayments:   document.getElementById('p_viewPayments').checked,
+        viewRevenue:    document.getElementById('p_viewRevenue').checked,
+        viewSettings:   false
+      };
+      try {
+        const res = await fetch(`${BASE}/admin/create-staff`, {
+          method: 'POST', headers: hdrs(),
+          body: JSON.stringify({ name, email, password, permissions })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          toast(`Staff account created for ${name}!`, 'success');
+          document.getElementById('newStaffName').value = '';
+          document.getElementById('newStaffEmail').value = '';
+          document.getElementById('newStaffPassword').value = '';
+          loadStaff();
+        } else {
+          toast(data.error || 'Failed to create staff', 'error');
+        }
+      } catch(e) { toast('Network error', 'error'); }
+    }
+
+    async function updatePermissions(staffId, perm, value) {
+      try {
+        const res = await fetch(`${BASE}/admin/staff/${staffId}/permissions`, {
+          method: 'PATCH', headers: hdrs(),
+          body: JSON.stringify({ [perm]: value })
+        });
+        if (res.ok) { toast('Permission updated', 'success'); }
+        else { toast('Failed to update', 'error'); }
+      } catch(e) { toast('Network error', 'error'); }
+    }
+
     async function init() {
       const isAdmin = await checkAdmin();
       if (!isAdmin) return;
-      await loadPending();
       await loadStaff();
     }
     
