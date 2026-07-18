@@ -208,6 +208,7 @@ function showPage(page, btn) {
     members:'Members',
     attendance:'Attendance',
     trainers:'Trainers',
+    ptblock:'PT Members',
     plans:'Plans',
     discounts:'Discounts',
     payments:'Payments',
@@ -227,6 +228,7 @@ function showPage(page, btn) {
     plans: loadPlans,
     discounts: renderDiscounts,
     payments: loadPayments,
+    ptblock: loadPtBlock,
     revenue: loadRevenuePage,
     settings: loadSettings
   };
@@ -703,6 +705,8 @@ function _renderMemberCard(m, idx) {
       <button onclick="openWhatsApp('${esc(m.phone)}')" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:54px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0"><span style="font-size:1rem">💬</span><span style="font-size:.52rem;font-weight:700;color:#8AABAB">Whatsapp</span></button>
       <button onclick="openMemberAttendance('${safeId}','${safeName}')" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:58px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0"><span style="font-size:1rem">📅</span><span style="font-size:.52rem;font-weight:700;color:#8AABAB">Attendance</span></button>
       <button onclick="openPaymentFor({id:'${safeId}',name:'${safeName}',plan:'${safePlan}',expiryDate:'${m.expiryDate||''}',planPrice:${m.planPrice||0},ptEnabled:${!!m.ptEnabled},ptFee:${m.ptFee||0},admissionFee:${m.admissionFee||0},admissionWaived:${!!m.admissionWaived}})" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:62px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0"><span style="font-size:1rem">🔄</span><span style="font-size:.52rem;font-weight:700;color:#8AABAB">Renew Plan</span></button>
+      <button onclick="sendAttendanceReport('${safeId}','${esc(m.phone||'')}','${safeName}')" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:54px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0"><span style="font-size:1rem">📊</span><span style="font-size:.52rem;font-weight:700;color:#8AABAB">Attend</span></button>
+      <button onclick="sendPaymentReminder('${safeId}','${esc(m.phone||'')}','${safeName}')" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:54px;padding:5px 8px;border:none;background:transparent;cursor:pointer;flex-shrink:0"><span style="font-size:1rem">💰</span><span style="font-size:.52rem;font-weight:700;color:#8AABAB">Reminder</span></button>
       <button onclick="openEditMember('${safeId}')" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:48px;padding:5px 8px;border:none;background:transparent;cursor:pointer;flex-shrink:0"><span style="font-size:1rem">✏️</span><span style="font-size:.52rem;font-weight:700;color:#8AABAB">Edit</span></button>
     </div>
   </div>`;
@@ -2418,6 +2422,217 @@ function openWhatsApp(phone) {
 }
 
 /* ── INIT ── */
+
+/* ══════════════════════════════════════════════════════════════
+   PT BLOCK  -  members grouped by their assigned trainer
+══════════════════════════════════════════════════════════════ */
+async function loadPtBlock() {
+  const wrap = document.getElementById('ptBlockWrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="empty"><div class="ei">⏳</div><p>Loading PT members…</p></div>';
+  try {
+    const [mRes, tRes] = await Promise.all([
+      fetch(API, { headers: hdrs() }),
+      fetch(TAPI, { headers: hdrs() })
+    ]);
+    if (mRes.status === 401) { logout(); return; }
+    const members = await mRes.json();
+    const trainers = tRes.ok ? await tRes.json() : [];
+
+    // Refresh trainerMap
+    trainers.forEach(t => { trainerMap[t._id] = t.name; });
+
+    // Group PT members by trainer
+    const groups = {};
+    members.forEach(m => {
+      if (!m.ptEnabled || !m.ptTrainer) return;
+      const tid = m.ptTrainer;
+      if (!groups[tid]) groups[tid] = { tname: trainerMap[tid] || 'Unknown Trainer', members: [] };
+      groups[tid].members.push(m);
+    });
+
+    // Update cache
+    allMembersCache = members;
+
+    const trainerKeys = Object.keys(groups);
+    if (!trainerKeys.length) {
+      wrap.innerHTML = '<div class="empty"><div class="ei">🏋️</div><p>No members enrolled in Personal Training yet.</p></div>';
+      return;
+    }
+
+    const colors = ['#1A8C8C','#27AE60','#E74C3C','#F39C12','#8E44AD','#2980B9'];
+
+    wrap.innerHTML = trainerKeys.map((tid, idx) => {
+      const grp = groups[tid];
+      const tname = grp.tname;
+      const initials = tname.split(' ').map(x => x[0]).join('').toUpperCase().slice(0, 2);
+      const bg = colors[tname.charCodeAt(0) % colors.length];
+
+      const mRows = grp.members.map(m => {
+        const expDate = m.expiryDate ? new Date(m.expiryDate).toLocaleDateString('en-IN') : '-';
+        const today = new Date(); today.setHours(0,0,0,0);
+        const exp = m.expiryDate ? new Date(m.expiryDate) : null;
+        const daysLeft = exp ? Math.ceil((exp - today) / (1000*60*60*24)) : null;
+        const isActive = m.status === 'Active';
+        const expWarning = daysLeft !== null && daysLeft <= 7
+          ? `<span style="background:#FEF9E7;color:#F39C12;padding:2px 7px;border-radius:10px;font-size:.6rem;font-weight:800;margin-left:4px">${daysLeft<=0?'Expired':`${daysLeft}d left`}</span>` : '';
+
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #F0F5F5">
+          ${avImg(m)}
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:800;font-size:.92rem;color:#1A2E2E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.name)}${expWarning}</div>
+            <div style="font-size:.72rem;color:#4A6464;margin-top:1px">📱 ${esc(m.phone||'')} • PT ₹${m.ptFee||0}/mo</div>
+            <div style="font-size:.68rem;color:#8AABAB;margin-top:1px">${esc(m.plan||'')} • Exp: ${expDate}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
+            <span style="background:${isActive?'#E8F8EF':'#F3F4F6'};color:${isActive?'#27AE60':'#6B7280'};padding:2px 9px;border-radius:12px;font-size:.62rem;font-weight:800">${esc(m.status||'')}</span>
+            <div style="display:flex;gap:4px">
+              <button onclick="dialPhone('${esc(m.phone||'')}')" title="Call" style="width:30px;height:30px;border:none;border-radius:8px;background:#E8F8EF;cursor:pointer;font-size:.85rem">📞</button>
+              <button onclick="sendAttendanceReport('${esc(m._id||'')}','${esc(m.phone||'')}','${esc(m.name||'').replace(/'/g,'')}')" title="Send Attendance Report" style="width:30px;height:30px;border:none;border-radius:8px;background:#E3F2FD;cursor:pointer;font-size:.85rem">📊</button>
+              <button onclick="sendPaymentReminder('${esc(m._id||'')}','${esc(m.phone||'')}','${esc(m.name||'').replace(/'/g,'')}')" title="Payment Reminder" style="width:30px;height:30px;border:none;border-radius:8px;background:#FEF9E7;cursor:pointer;font-size:.85rem">💰</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+
+      return `<div style="background:#fff;border-radius:18px;margin-bottom:14px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.06);border:1px solid #E0ECEC">
+        <div style="background:linear-gradient(135deg,${bg},${bg}CC);padding:14px 16px;display:flex;align-items:center;gap:12px">
+          <div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;color:#fff;flex-shrink:0">${esc(initials)}</div>
+          <div style="flex:1">
+            <div style="font-size:1rem;font-weight:800;color:#fff">${esc(tname)}</div>
+            <div style="font-size:.72rem;color:rgba(255,255,255,.75);margin-top:2px">👥 ${grp.members.length} PT Member${grp.members.length>1?'s':''}</div>
+          </div>
+          <button onclick="sendBulkAttendance('${esc(tid)}','${esc(tname)}')"
+            style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:10px;padding:6px 12px;font-family:inherit;font-size:.72rem;font-weight:800;cursor:pointer;white-space:nowrap">
+            📤 Report All
+          </button>
+        </div>
+        ${mRows}
+      </div>`;
+    }).join('');
+
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty"><div class="ei">⚠️</div><p style="color:#E74C3C">Error loading PT data</p></div>`;
+    console.error(e);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ATTENDANCE REPORT  -  builds this month's report via WhatsApp
+══════════════════════════════════════════════════════════════ */
+async function sendAttendanceReport(memberId, phone, name) {
+  toast('Building report…', '');
+  try {
+    const now = new Date();
+    const yr = now.getFullYear();
+    const mo = String(now.getMonth()+1).padStart(2,'0');
+    const monthKey = `${yr}-${mo}`;
+    const monthName = now.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+
+    // Fetch attendance for the member for this month
+    const res = await fetch(`${API}`, { headers: hdrs() });
+    let presentDays = [], totalDays = 0;
+
+    if (res.ok) {
+      // Use local attendance cache which is date-keyed
+      const allDays = Object.keys(_attCache || {}).filter(d => d.startsWith(monthKey));
+      totalDays = allDays.length;
+      allDays.forEach(d => {
+        if (_attCache[d] && _attCache[d][memberId] === 'Present') {
+          presentDays.push(new Date(d).getDate());
+        }
+      });
+    }
+
+    const totalPresent = presentDays.length;
+    const absent = totalDays - totalPresent;
+    const daysStr = presentDays.sort((a,b)=>a-b).join(', ') || 'No records yet';
+
+    const msg =
+`*🏋️ GymPro Attendance Report*
+Member: *${name}*
+Month: *${monthName}*
+
+✅ Present: *${totalPresent} day${totalPresent!==1?'s':''}*
+📅 Dates: ${daysStr}
+❌ Absent: *${absent >= 0 ? absent : 0} day${absent!==1?'s':''}*
+
+Keep pushing! 💪
+- GymPro Management`;
+
+    const clean = String(phone).replace(/[^0-9]/g, '');
+    const num = clean.startsWith('91') ? clean : '91' + clean;
+    window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
+    toast(`Report sent to ${name}`, 'success');
+  } catch(e) {
+    toast('Failed to build report', 'error');
+    console.error(e);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PAYMENT REMINDER  -  renewal reminder via WhatsApp
+══════════════════════════════════════════════════════════════ */
+async function sendPaymentReminder(memberId, phone, name) {
+  try {
+    const m = allMembersCache.find(x => (x._id||x.id) === memberId) || {};
+    const expDate = m.expiryDate ? new Date(m.expiryDate).toLocaleDateString('en-IN') : 'soon';
+    const plan = m.plan || 'your plan';
+    const today = new Date(); today.setHours(0,0,0,0);
+    const exp = m.expiryDate ? new Date(m.expiryDate) : null;
+    exp && exp.setHours(0,0,0,0);
+    const daysLeft = exp ? Math.ceil((exp - today) / (1000*60*60*24)) : null;
+
+    let urgencyLine = '';
+    if (daysLeft !== null) {
+      if (daysLeft < 0) urgencyLine = `⚠️ *Membership expired ${Math.abs(daysLeft)} days ago!*`;
+      else if (daysLeft === 0) urgencyLine = `⚠️ *Membership expires TODAY!*`;
+      else urgencyLine = `⏰ *${daysLeft} day${daysLeft>1?'s':''} remaining*`;
+    }
+
+    const msg =
+`🏋️ *GymPro Membership Reminder*
+
+Hi *${name}*,
+${urgencyLine}
+
+📋 Plan: *${plan}*
+📅 Expiry: *${expDate}*
+
+Please renew your membership to continue your fitness journey without interruption. 💪
+
+Contact us to renew today!
+- GymPro Management`;
+
+    const clean = String(phone).replace(/[^0-9]/g, '');
+    const num = clean.startsWith('91') ? clean : '91' + clean;
+    window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
+    toast(`Reminder sent to ${name}`, 'success');
+  } catch(e) {
+    toast('Error sending reminder', 'error');
+  }
+}
+
+/* Send attendance report to all PT members of a trainer */
+async function sendBulkAttendance(trainerId, trainerName) {
+  const ptMembers = allMembersCache.filter(m => m.ptEnabled && m.ptTrainer === trainerId);
+  if (!ptMembers.length) { toast('No PT members for this trainer', 'error'); return; }
+  toast(`Sending reports to ${ptMembers.length} members…`, '');
+  for (const m of ptMembers) {
+    await sendAttendanceReport(m._id||m.id, m.phone, m.name);
+    await new Promise(r => setTimeout(r, 800));
+  }
+  toast('All reports sent!', 'success');
+}
+
+/* Send payment reminder to member from member card (also usable from dashboard) */
+async function sendReminderFromCard(memberId) {
+  const m = allMembersCache.find(x => (x._id||x.id) === memberId);
+  if (!m) { toast('Member not found', 'error'); return; }
+  await sendPaymentReminder(m._id||m.id, m.phone, m.name);
+}
+
+
 window.addEventListener('DOMContentLoaded', async () => {
   if (!checkAuth()) return;
   setupCamera();
@@ -2458,6 +2673,13 @@ window.addEventListener('DOMContentLoaded', async () => {
     const sbUser = document.getElementById('sbUser');
     if (sbUser && u.name) {
       sbUser.innerHTML = `<div class="u-name">👤 ${esc(u.name)}</div><div class="u-role">${u.role==='admin'?'Administrator':'Staff Member'}</div>`;
+    }
+    // Role-based access: hide Revenue from staff
+    if (u.role !== 'admin') {
+      const navRev = document.getElementById('navRevenue');
+      if (navRev) navRev.style.display = 'none';
+      const pageRev = document.getElementById('page-revenue');
+      if (pageRev) pageRev.style.display = 'none';
     }
   } catch(e){}
 
