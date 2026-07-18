@@ -8,7 +8,7 @@ const authMiddleware = require('../middleware/auth');
 // Generate GYM QR code (for the gym entrance) - NOW WITH URL
 router.get('/gym-qr', authMiddleware, async (req, res) => {
   try {
-    const userId = req.user.userId || req.user.id;
+    const userId = req.user.gymId || req.user.userId || req.user.id;
     
     const user = await User.findById(userId);
     if (!user) {
@@ -221,7 +221,7 @@ router.post('/my-attendance', async (req, res) => {
 // Admin: Get all QR check-ins for today
 router.get('/today-checkins', authMiddleware, async (req, res) => {
   try {
-    const userId = req.user.userId || req.user.id;
+    const userId = req.user.gymId || req.user.userId || req.user.id;
     const todayStr = new Date().toISOString().split('T')[0];
     
     const checkins = await Attendance.find({
