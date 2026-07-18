@@ -225,8 +225,12 @@
 
       <form id="auth-form" autocomplete="on">
         <div id="name-field" class="form-group hidden-field">
-          <label>Full Name</label>
-          <input type="text" id="name" placeholder="Your full name" autocomplete="name">
+          <label>Your Full Name</label>
+          <input type="text" id="name" placeholder="e.g. Rajesh Kumar" autocomplete="name">
+        </div>
+        <div id="gymname-field" class="form-group hidden-field">
+          <label>Gym Name</label>
+          <input type="text" id="gymname" placeholder="e.g. PowerFit Gym, Vijayawada">
         </div>
 
         <div class="form-group">
@@ -239,21 +243,15 @@
           <input type="password" id="password" placeholder="Min. 6 characters" required autocomplete="current-password">
         </div>
 
-        <div id="role-field" class="form-group hidden-field">
-          <label>Role</label>
-          <select id="role">
-            <option value="staff">Staff</option>
-            <option value="admin">Admin</option>
-          </select>
-        </div>
+
 
         <button type="submit" class="btn-primary" id="submit-btn">Login</button>
       </form>
     </div>
 
     <div class="demo-hint">
-      💡 First time? <strong>Register an Admin account</strong> to get started.<br>
-      ℹ️ New registrations require admin approval.
+      🏋️ <strong>Gym Owner?</strong> Register to get your GymPro account.<br>
+      ✅ The GymPro team will approve your account within 24 hours.
     </div>
   </div>
 
@@ -268,7 +266,7 @@
       document.querySelectorAll('.tab-btn').forEach((b, i) =>
         b.classList.toggle('active', (i === 0) === isLogin));
       document.getElementById('name-field').classList.toggle('hidden-field', isLogin);
-      document.getElementById('role-field').classList.toggle('hidden-field', isLogin);
+      document.getElementById('gymname-field').classList.toggle('hidden-field', isLogin);
       document.getElementById('submit-btn').textContent = isLogin ? 'Login' : 'Request Access';
       document.getElementById('msg').className = 'message';
     }
@@ -299,9 +297,9 @@
       const body = isLogin
         ? { email, password }
         : {
-            name: document.getElementById('name').value.trim(),
-            email, password,
-            role: document.getElementById('role').value
+            name:    document.getElementById('name').value.trim(),
+            gymName: document.getElementById('gymname').value.trim(),
+            email, password
           };
 
       if (!isLogin && !body.name) {
@@ -327,8 +325,9 @@
           } else {
             localStorage.setItem('token', data.token);
             localStorage.setItem('user',  JSON.stringify(data.user));
-            showMsg(isLogin ? 'Login successful! Redirecting…' : 'Account created! Redirecting…', 'success');
-            setTimeout(() => window.location.href = '/', 1000);
+            showMsg('Login successful! Redirecting…', 'success');
+            const dest = data.user.role === 'superadmin' ? '/superadmin.html' : '/';
+            setTimeout(() => window.location.href = dest, 1000);
           }
         } else {
           showMsg(data.error || data.message || 'Authentication failed. Try again.', 'error');
