@@ -516,9 +516,9 @@ function renderDashTable(membersList) {
       <div style="display:flex;align-items:center;gap:12px;padding:12px 12px 8px;cursor:pointer" onclick="openEditMember('${safeId_d}')">
         ${avImgDash(m)}
         <div style="flex:1;min-width:0">
-          <div style="font-weight:800;font-size:1rem;color:#1A2E2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safeName_d}</div>
-          <div style="font-size:.8rem;color:#4A6464;font-weight:600;margin-top:2px">📱 +91 ${safePhone_d}</div>
-          <div style="font-size:.75rem;color:#8AABAB;margin-top:2px">${esc(m.plan||'')}</div>
+          <div style="font-weight:800;font-size:.95rem;color:#1A2E2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safeName_d}</div>
+          <div style="font-size:.75rem;color:#4A6464;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📱 +91 ${safePhone_d}</div>
+          <div style="font-size:.7rem;color:#8AABAB;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.plan||'')}</div>
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end;margin-bottom:5px">
@@ -2674,12 +2674,39 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (sbUser && u.name) {
       sbUser.innerHTML = `<div class="u-name">👤 ${esc(u.name)}</div><div class="u-role">${u.role==='admin'?'Administrator':'Staff Member'}</div>`;
     }
-    // Role-based access: hide Revenue from staff
-    if (u.role !== 'admin') {
+    window._userRole  = u.role;
+    window._userPerms = u.permissions || {};
+
+    // Superadmin should never be on this page
+    if (u.role === 'superadmin') {
+      window.location.href = '/superadmin.html';
+      return;
+    }
+
+    const isAdmin = u.role === 'admin';
+    const perms   = u.permissions || {};
+
+    // Revenue: hidden for staff unless permitted
+    const canViewRevenue = isAdmin || perms.viewRevenue;
+    if (!canViewRevenue) {
       const navRev = document.getElementById('navRevenue');
       if (navRev) navRev.style.display = 'none';
       const pageRev = document.getElementById('page-revenue');
       if (pageRev) pageRev.style.display = 'none';
+      const dashRev = document.getElementById('dashRevenueSummary');
+      if (dashRev) dashRev.style.display = 'none';
+    }
+    // Settings: hidden for staff unless permitted
+    if (!isAdmin && !perms.viewSettings) {
+      document.querySelectorAll('[data-page="settings"]').forEach(el => el.style.display = 'none');
+    }
+    // Delete: hidden for staff unless permitted
+    if (!isAdmin && !perms.deleteMembers) {
+      document.querySelectorAll('.staff-hide-delete').forEach(el => el.style.display = 'none');
+    }
+    // Payments: hidden for staff unless permitted
+    if (!isAdmin && perms.viewPayments === false) {
+      document.querySelectorAll('[data-page="payments"]').forEach(el => el.style.display = 'none');
     }
   } catch(e){}
 
