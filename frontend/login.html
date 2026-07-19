@@ -7,204 +7,111 @@
   <meta name="theme-color" content="#1A8C8C">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
-
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
     :root {
-      --teal:  #1A8C8C;
-      --teal2: #1E9E9E;
-      --green: #27AE60;
-      --red:   #E74C3C;
-      --tx:    #1A2E2E;
-      --tx2:   #4A6464;
-      --tx3:   #8AABAB;
-      --bg:    #F0F5F5;
-      --card:  #FFFFFF;
-      --border:#E0ECEC;
+      --teal: #1A8C8C; --teal2: #1E9E9E; --green: #27AE60; --red: #E74C3C;
+      --tx: #1A2E2E; --tx2: #4A6464; --tx3: #8AABAB;
+      --bg: #F0F5F5; --card: #FFFFFF; --border: #E0ECEC;
     }
-
     body {
       font-family: 'DM Sans', sans-serif;
       background: var(--teal);
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: env(safe-area-inset-top, 1rem) 1rem env(safe-area-inset-bottom, 1rem);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: env(safe-area-inset-top,1rem) 1rem env(safe-area-inset-bottom,1rem);
       -webkit-tap-highlight-color: transparent;
       overscroll-behavior-y: none;
       -webkit-font-smoothing: antialiased;
-      -webkit-user-select: none;
-      user-select: none;
-      position: relative;
-      overflow: hidden;
+      position: relative; overflow: hidden;
     }
-
-    /* Subtle background circles */
     body::before {
-      content: '';
-      position: absolute;
-      width: 340px; height: 340px;
-      background: rgba(255,255,255,.06);
-      border-radius: 50%;
-      top: -80px; right: -80px;
-      pointer-events: none;
+      content:''; position:absolute; width:340px; height:340px;
+      background:rgba(255,255,255,.06); border-radius:50%;
+      top:-80px; right:-80px; pointer-events:none;
     }
     body::after {
-      content: '';
-      position: absolute;
-      width: 280px; height: 280px;
-      background: rgba(255,255,255,.05);
-      border-radius: 50%;
-      bottom: -60px; left: -60px;
-      pointer-events: none;
+      content:''; position:absolute; width:280px; height:280px;
+      background:rgba(255,255,255,.05); border-radius:50%;
+      bottom:-60px; left:-60px; pointer-events:none;
     }
-
-    input, select { -webkit-user-select: auto; user-select: auto; }
-
-    .login-wrap {
-      width: 100%;
-      max-width: 400px;
-      position: relative;
-      z-index: 1;
-    }
+    input, select { -webkit-user-select:auto; user-select:auto; }
+    .login-wrap { width:100%; max-width:400px; position:relative; z-index:1; }
 
     /* Brand */
-    .brand { text-align: center; margin-bottom: 1.75rem; }
+    .brand { text-align:center; margin-bottom:1.6rem; }
     .brand-logo {
-      width: 72px; height: 72px;
-      background: rgba(255,255,255,.2);
-      border: 2px solid rgba(255,255,255,.3);
-      border-radius: 22px;
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 2rem;
-      margin-bottom: .85rem;
+      width:72px; height:72px;
+      background:rgba(255,255,255,.2); border:2px solid rgba(255,255,255,.3);
+      border-radius:22px; display:inline-flex; align-items:center; justify-content:center;
+      font-size:2rem; margin-bottom:.85rem;
     }
-    .brand h1 {
-      font-size: 2rem; font-weight: 800;
-      color: #fff;
-      letter-spacing: -.5px;
-      line-height: 1;
-      margin-bottom: 4px;
-    }
-    .brand p {
-      color: rgba(255,255,255,.65);
-      font-size: .82rem;
-      font-weight: 600;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-    }
+    .brand h1 { font-size:2rem; font-weight:800; color:#fff; letter-spacing:-.5px; margin-bottom:4px; }
+    .brand p  { color:rgba(255,255,255,.65); font-size:.82rem; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; }
 
     /* Card */
-    .auth-card {
-      background: var(--card);
-      border-radius: 22px;
-      padding: 1.6rem;
-      box-shadow: 0 20px 60px rgba(0,0,0,.22);
-    }
+    .auth-card { background:var(--card); border-radius:22px; padding:1.6rem; box-shadow:0 20px 60px rgba(0,0,0,.22); }
 
     /* Tabs */
-    .tabs {
-      display: flex;
-      background: var(--bg);
-      border-radius: 12px;
-      padding: 4px;
-      margin-bottom: 1.3rem;
-      gap: 4px;
-    }
+    .tabs { display:flex; background:var(--bg); border-radius:12px; padding:4px; margin-bottom:1.3rem; gap:4px; }
     .tab-btn {
-      flex: 1; padding: 9px;
-      border: none; background: transparent;
-      border-radius: 9px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: .88rem; font-weight: 700;
-      color: var(--tx2);
-      cursor: pointer; transition: all .2s;
+      flex:1; padding:9px; border:none; background:transparent; border-radius:9px;
+      font-family:'DM Sans',sans-serif; font-size:.88rem; font-weight:700; color:var(--tx2);
+      cursor:pointer; transition:all .2s;
     }
-    .tab-btn.active {
-      background: var(--card);
-      color: var(--teal);
-      box-shadow: 0 1px 8px rgba(0,0,0,.1);
-    }
+    .tab-btn.active { background:var(--card); color:var(--teal); box-shadow:0 1px 8px rgba(0,0,0,.1); }
 
     /* Message */
-    .message {
-      padding: 10px 13px;
-      border-radius: 10px;
-      font-size: .84rem; font-weight: 600;
-      margin-bottom: 1rem;
-      display: none; line-height: 1.4;
-    }
-    .message.error   { background: #FFF0F0; color: var(--red); border: 1px solid #FECDD5; display: block; }
-    .message.success { background: #EDFBF3; color: #1A6B3C; border: 1px solid #A7F3D0; display: block; }
-    .message.info    { background: #E3F2FD; color: #1565C0; border: 1px solid #BBDEFB; display: block; }
+    .message { padding:10px 13px; border-radius:10px; font-size:.84rem; font-weight:600; margin-bottom:1rem; display:none; line-height:1.4; }
+    .message.error   { background:#FFF0F0; color:var(--red);   border:1px solid #FECDD5; display:block; }
+    .message.success { background:#EDFBF3; color:#1A6B3C;       border:1px solid #A7F3D0; display:block; }
+    .message.info    { background:#E3F2FD; color:#1565C0;        border:1px solid #BBDEFB; display:block; }
+    .message.warning { background:#FEF9E7; color:#B7770D;        border:1px solid #FDE68A; display:block; }
 
     /* Form */
-    .form-group { margin-bottom: .9rem; }
+    .form-group { margin-bottom:.9rem; }
     .form-group label {
-      display: block;
-      font-size: .7rem; font-weight: 800;
-      color: var(--teal);
-      margin-bottom: 5px;
-      text-transform: uppercase; letter-spacing: .6px;
+      display:block; font-size:.7rem; font-weight:800; color:var(--teal);
+      margin-bottom:5px; text-transform:uppercase; letter-spacing:.6px;
     }
-    .form-group input,
-    .form-group select {
-      width: 100%;
-      padding: 13px 14px;
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: .93rem; font-weight: 500;
-      color: var(--tx);
-      background: var(--bg);
-      min-height: 50px;
-      -webkit-appearance: none; appearance: none;
-      transition: all .2s;
+    .form-group input, .form-group select {
+      width:100%; padding:13px 14px; border:2px solid var(--border); border-radius:12px;
+      font-family:'DM Sans',sans-serif; font-size:.93rem; font-weight:500; color:var(--tx);
+      background:var(--bg); min-height:50px; -webkit-appearance:none; appearance:none; transition:all .2s;
     }
-    .form-group input:focus,
-    .form-group select:focus {
-      outline: none;
-      border-color: var(--teal);
-      background: #fff;
-      box-shadow: 0 0 0 3px rgba(26,140,140,.12);
+    .form-group input:focus, .form-group select:focus {
+      outline:none; border-color:var(--teal); background:#fff; box-shadow:0 0 0 3px rgba(26,140,140,.12);
     }
-
-    .hidden-field { display: none; }
+    .hidden-field { display:none; }
 
     .btn-primary {
-      width: 100%; padding: 14px;
-      background: var(--teal); color: #fff;
-      border: none; border-radius: 13px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 1rem; font-weight: 800;
-      cursor: pointer; transition: all .2s;
-      margin-top: .4rem;
-      box-shadow: 0 6px 18px rgba(26,140,140,.35);
-      letter-spacing: -.1px;
+      width:100%; padding:14px; background:var(--teal); color:#fff;
+      border:none; border-radius:13px; font-family:'DM Sans',sans-serif;
+      font-size:1rem; font-weight:800; cursor:pointer; transition:all .2s;
+      margin-top:.4rem; box-shadow:0 6px 18px rgba(26,140,140,.35); letter-spacing:-.1px;
     }
-    .btn-primary:hover  { background: var(--teal2); }
-    .btn-primary:active { transform: scale(.97); }
-    .btn-primary:disabled { opacity: .65; cursor: not-allowed; transform: none; }
+    .btn-primary:hover  { background:var(--teal2); }
+    .btn-primary:active { transform:scale(.97); }
+    .btn-primary:disabled { opacity:.65; cursor:not-allowed; transform:none; }
 
-    /* Hint */
-    .demo-hint {
-      background: rgba(255,255,255,.1);
-      border: 1px solid rgba(255,255,255,.15);
-      border-radius: 12px;
-      padding: 11px 14px;
-      font-size: .78rem;
-      color: rgba(255,255,255,.6);
-      margin-top: 1.1rem;
-      text-align: center;
-      line-height: 1.5;
+    /* Pending banner */
+    .pending-box {
+      background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2);
+      border-radius:14px; padding:14px 16px; margin-top:1.1rem; text-align:center; line-height:1.6;
     }
-    .demo-hint strong { color: rgba(255,255,255,.9); font-weight: 700; }
+    .pending-box .pi { font-size:2rem; display:block; margin-bottom:6px; }
+    .pending-box p { color:rgba(255,255,255,.85); font-size:.82rem; }
+    .pending-box strong { color:#fff; }
+
+    .hint {
+      background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.15);
+      border-radius:12px; padding:11px 14px; font-size:.78rem;
+      color:rgba(255,255,255,.6); margin-top:1.1rem; text-align:center; line-height:1.5;
+    }
+    .hint strong { color:rgba(255,255,255,.9); font-weight:700; }
   </style>
 </head>
 <body>
@@ -218,40 +125,37 @@
     <div class="auth-card">
       <div class="tabs">
         <button class="tab-btn active" onclick="setMode('login')">Login</button>
-        <button class="tab-btn" onclick="setMode('register')">Register</button>
+        <button class="tab-btn"        onclick="setMode('register')">Register Gym</button>
       </div>
 
       <div id="msg" class="message"></div>
 
       <form id="auth-form" autocomplete="on">
+        <!-- Register only fields -->
         <div id="name-field" class="form-group hidden-field">
-          <label>Your Full Name</label>
-          <input type="text" id="name" placeholder="e.g. Rajesh Kumar" autocomplete="name">
+          <label>Owner / Gym Manager Name</label>
+          <input type="text" id="name" placeholder="Your full name" autocomplete="name">
         </div>
         <div id="gymname-field" class="form-group hidden-field">
           <label>Gym Name</label>
-          <input type="text" id="gymname" placeholder="e.g. PowerFit Gym, Vijayawada">
+          <input type="text" id="gymName" placeholder="e.g. Fitness Zone, PowerHouse Gym">
         </div>
 
         <div class="form-group">
           <label>Email Address</label>
           <input type="email" id="email" placeholder="you@example.com" required autocomplete="email">
         </div>
-
         <div class="form-group">
           <label>Password</label>
           <input type="password" id="password" placeholder="Min. 6 characters" required autocomplete="current-password">
         </div>
 
-
-
         <button type="submit" class="btn-primary" id="submit-btn">Login</button>
       </form>
     </div>
 
-    <div class="demo-hint">
-      🏋️ <strong>Gym Owner?</strong> Register to get your GymPro account.<br>
-      ✅ The GymPro team will approve your account within 24 hours.
+    <div class="hint" id="bottomHint">
+      💡 Staff members: use the login tab with credentials given by your gym admin.
     </div>
   </div>
 
@@ -259,7 +163,10 @@
     const API_URL = 'https://gym-pro-mvyv.onrender.com/api/auth';
     let isLogin = true;
 
-    if (localStorage.getItem('token')) window.location.href = '/';
+    if (localStorage.getItem('token')) {
+      const u = JSON.parse(localStorage.getItem('user') || '{}');
+      window.location.href = '/';
+    }
 
     function setMode(mode) {
       isLogin = mode === 'login';
@@ -267,8 +174,11 @@
         b.classList.toggle('active', (i === 0) === isLogin));
       document.getElementById('name-field').classList.toggle('hidden-field', isLogin);
       document.getElementById('gymname-field').classList.toggle('hidden-field', isLogin);
-      document.getElementById('submit-btn').textContent = isLogin ? 'Login' : 'Request Access';
+      document.getElementById('submit-btn').textContent = isLogin ? 'Login' : 'Request GymPro Access';
       document.getElementById('msg').className = 'message';
+      document.getElementById('bottomHint').innerHTML = isLogin
+        ? '💡 Staff members: use the login tab with credentials given by your gym admin.'
+        : '💡 After submitting, the <strong>GymPro team</strong> will review and approve your gym account.';
     }
 
     function showMsg(text, type) {
@@ -285,31 +195,26 @@
 
       const email    = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
-
       if (!email || !password) {
         showMsg('Please fill all required fields.', 'error');
         btn.disabled = false;
-        btn.textContent = isLogin ? 'Login' : 'Request Access';
-        return;
-      }
-
-      const endpoint = isLogin ? '/login' : '/register';
-      const body = isLogin
-        ? { email, password }
-        : {
-            name:    document.getElementById('name').value.trim(),
-            gymName: document.getElementById('gymname').value.trim(),
-            email, password
-          };
-
-      if (!isLogin && !body.name) {
-        showMsg('Please enter your name.', 'error');
-        btn.disabled = false;
-        btn.textContent = 'Request Access';
+        btn.textContent = isLogin ? 'Login' : 'Request GymPro Access';
         return;
       }
 
       try {
+        let body, endpoint;
+        if (isLogin) {
+          endpoint = '/login';
+          body = { email, password };
+        } else {
+          const name    = document.getElementById('name').value.trim();
+          const gymName = document.getElementById('gymName').value.trim();
+          if (!name) { showMsg('Please enter your name.', 'error'); btn.disabled=false; btn.textContent='Request GymPro Access'; return; }
+          endpoint = '/register';
+          body = { name, email, password, gymName };
+        }
+
         const res  = await fetch(`${API_URL}${endpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -319,25 +224,32 @@
 
         if (res.ok) {
           if (data.pendingApproval) {
-            showMsg('✅ Registration request submitted! Waiting for admin approval. You will be notified when approved.', 'success');
-            document.getElementById('auth-form').reset();
-            setMode('login');
+            // Show pending approval message
+            document.querySelector('.auth-card').innerHTML = `
+              <div style="text-align:center;padding:10px 0">
+                <div style="font-size:3rem;margin-bottom:12px">⏳</div>
+                <div style="font-size:1.1rem;font-weight:800;color:#1A2E2E;margin-bottom:8px">Request Submitted!</div>
+                <p style="color:#4A6464;font-size:.88rem;line-height:1.6">
+                  Your gym registration has been sent to the <strong>GymPro team</strong> for review.<br><br>
+                  You will receive access credentials once approved. This usually takes <strong>24–48 hours</strong>.
+                </p>
+              </div>`;
           } else {
             localStorage.setItem('token', data.token);
             localStorage.setItem('user',  JSON.stringify(data.user));
+            // Route by role
             showMsg('Login successful! Redirecting…', 'success');
-            const dest = data.user.role === 'superadmin' ? '/superadmin.html' : '/';
-            setTimeout(() => window.location.href = dest, 1000);
+            setTimeout(() => window.location.href = '/', 800);
           }
         } else {
-          showMsg(data.error || data.message || 'Authentication failed. Try again.', 'error');
+          showMsg(data.error || data.message || 'Authentication failed.', 'error');
           btn.disabled = false;
-          btn.textContent = isLogin ? 'Login' : 'Request Access';
+          btn.textContent = isLogin ? 'Login' : 'Request GymPro Access';
         }
       } catch (err) {
         showMsg('Network error. Check your connection.', 'error');
         btn.disabled = false;
-        btn.textContent = isLogin ? 'Login' : 'Request Access';
+        btn.textContent = isLogin ? 'Login' : 'Request GymPro Access';
       }
     });
   </script>
