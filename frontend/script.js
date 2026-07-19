@@ -2980,16 +2980,18 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   try {
     const u = JSON.parse(localStorage.getItem('user')||'{}');
-    const sbUser = document.getElementById('sbUser');
-    if (sbUser && u.name) {
-      sbUser.innerHTML = `<div class="u-name">👤 ${esc(u.name)}</div><div class="u-role">${u.role==='admin'?'Administrator':'Staff Member'}</div>`;
-    }
-        // Role-based UI setup
     window._userRole  = u.role;
     window._userPerms = u.permissions || {};
 
+    // Sidebar user label
+    const sbUser = document.getElementById('sbUser');
+    if (sbUser && u.name) {
+      const roleLabel = u.role==='superadmin' ? 'GymPro Creator' : u.role==='admin' ? 'Gym Admin' : 'Staff Member';
+      sbUser.innerHTML = `<div class="u-name">&#x1F464; ${esc(u.name)}</div><div class="u-role">${roleLabel}</div>`;
+    }
+
     if (u.role === 'superadmin') {
-      // Super-admin: show only the control panel, hide gym UI
+      // Hide all gym pages, show control panel
       document.querySelectorAll('.page').forEach(p => { p.style.display='none'; p.classList.remove('active'); });
       const saPage = document.getElementById('page-superadmin');
       if (saPage) { saPage.style.display='block'; saPage.classList.add('active'); }
@@ -2998,32 +3000,32 @@ window.addEventListener('DOMContentLoaded', async () => {
       const saLabel = document.getElementById('saEmailLabel');
       if (saLabel) saLabel.textContent = u.email || '';
       loadSuperAdminData();
+      setInterval(loadSaPending, 30000);
+      // IMPORTANT: return so gym data is never loaded for superadmin
+      return;
 
     } else if (u.role === 'admin') {
-      // Gym admin: show all + expose Staff Mgmt nav
+      // Gym admin: show Staff Mgmt nav
       const navGA = document.getElementById('navGymAdmin');
       if (navGA) navGA.style.display = '';
       const gaLabel = document.getElementById('gaAdminLabel');
-      if (gaLabel) gaLabel.textContent = (u.gymName ? u.gymName + ' — ' : '') + (u.name || '');
+      if (gaLabel) gaLabel.textContent = (u.gymName ? u.gymName + ' - ' : '') + (u.name || '');
 
     } else {
-      // Staff: permission-based hiding
+      // Staff: hide sections based on permissions
       const p = u.permissions || {};
       const hideEl = (id) => { const el=document.getElementById(id); if(el) el.style.display='none'; };
-      if (!p.viewRevenue)  { hideEl('navRevenue'); hideEl('page-revenue'); hideEl('dashRevenueSummary'); }
-      if (!p.viewSettings) { document.querySelectorAll('[data-page="settings"]').forEach(e=>e.style.display='none'); }
+      if (!p.viewRevenue)        { hideEl('navRevenue'); hideEl('page-revenue'); hideEl('dashRevenueSummary'); }
+      if (!p.viewSettings)       { document.querySelectorAll('[data-page="settings"]').forEach(e=>e.style.display='none'); }
+      if (p.viewPayments===false) { document.querySelectorAll('[data-page="payments"]').forEach(e=>e.style.display='none'); }
     }
-
-    // Payments: hidden for staff unless permitted
-    if (!isAdmin && perms.viewPayments === false) {
-      document.querySelectorAll('[data-page="payments"]').forEach(el => el.style.display = 'none');
-    }
-  } catch(e){}
+  } catch(e){ console.error('Role init error:', e); }
 
   populatePlanSelect();
   populatePlanSelect('ePlan');
   recalcPrice();
   loadDashboard();
+
   loadPlans();
 
   fetch(`${BASE}/health`, {headers:hdrs()}).catch(()=>{});
