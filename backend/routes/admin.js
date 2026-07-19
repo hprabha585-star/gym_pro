@@ -148,6 +148,16 @@ router.delete('/user/:userId', verifyToken, adminOnly, async (req, res) => {
 });
 
 // GET /admin/users  — all users (superadmin only)
+// -- GET /all-gyms  (superadmin sees all gym owner accounts) --
+router.get('/all-gyms', verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'superadmin')
+      return res.status(403).json({ error: 'Super-admin only.' });
+    const gyms = await User.find({ role: 'admin' }).select('-password').sort({ createdAt: -1 });
+    res.json(gyms);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 router.get('/users', verifyToken, superAdminOnly, async (req, res) => {
   try {
     const users = await User.find().select('-password').sort({ createdAt: -1 });
