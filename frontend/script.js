@@ -209,6 +209,8 @@ function showPage(page, btn) {
     attendance:'Attendance',
     trainers:'Trainers',
     ptblock:'PT Members',
+    superadmin:'Control Panel',
+    gymadmin:'Admin Panel',
     plans:'Plans',
     discounts:'Discounts',
     payments:'Payments',
@@ -229,6 +231,8 @@ function showPage(page, btn) {
     discounts: renderDiscounts,
     payments: loadPayments,
     ptblock: loadPtBlock,
+    superadmin: loadSuperAdminData,
+    gymadmin: loadGymAdminData,
     revenue: loadRevenuePage,
     settings: loadSettings
   };
@@ -2633,6 +2637,312 @@ async function sendReminderFromCard(memberId) {
 }
 
 
+
+/* ================================================================
+   SUPER-ADMIN FUNCTIONS  (you — hprabha585@gmail.com)
+   Approve/reject gym owner accounts
+================================================================ */
+let _saRejectId = null;
+
+async function loadSuperAdminData() {
+  await Promise.all([loadSaPending(), loadSaGyms()]);
+}
+
+async function loadSaPending() {
+  try {
+    const res = await fetch(`${BASE}/auth/pending-approvals`, { headers: hdrs() });
+    if (!res.ok) throw new Error();
+    const list = await res.json();
+
+    document.getElementById('saPending').textContent = list.length;
+    document.getElementById('saPendingBadge').textContent = list.length;
+
+    const el = document.getElementById('saPendingList');
+    if (!list.length) {
+      el.innerHTML = '<div class="empty"><div class="ei">✅</div><p>No pending approvals</p></div>';
+      return;
+    }
+    el.innerHTML = list.map(u => `
+      <div style="padding:14px 16px;border-bottom:1px solid #F0F5F5">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+          <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#1A8C8C,#27AE60);
+            display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;font-weight:800;flex-shrink:0">
+            ${esc((u.gymName||u.name||'G').charAt(0).toUpperCase())}
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:800;font-size:.95rem;color:#1A2E2E">${esc(u.gymName ? u.gymName+"'s Gym" : u.name)}</div>
+            <div style="font-size:.75rem;color:#4A6464;margin-top:1px">👤 ${esc(u.name)} &nbsp;|&nbsp; ✉️ ${esc(u.email)}</div>
+            <div style="font-size:.68rem;color:#8AABAB;margin-top:2px">📅 ${new Date(u.createdAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="saApprove('${esc(u._id)}','${esc(u.gymName||u.name)}')"
+            style="flex:1;padding:9px;background:#27AE60;color:#fff;border:none;border-radius:10px;font-family:inherit;font-weight:700;font-size:.82rem;cursor:pointer">
+            ✅ Approve Gym
+          </button>
+          <button onclick="saOpenReject('${esc(u._id)}')"
+            style="flex:1;padding:9px;background:#E74C3C;color:#fff;border:none;border-radius:10px;font-family:inherit;font-weight:700;font-size:.82rem;cursor:pointer">
+            ❌ Reject
+          </button>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('saPendingList').innerHTML = '<div class="empty"><p style="color:#E74C3C">Error loading</p></div>';
+  }
+}
+
+async function loadSaGyms() {
+  try {
+    const res = await fetch(`${BASE}/admin/all-gyms`, { headers: hdrs() });
+    if (!res.ok) throw new Error();
+    const gyms = await res.json();
+
+    document.getElementById('saActive').textContent = gyms.filter(g=>g.isActive&&g.isApproved).length;
+    document.getElementById('saTotal').textContent  = gyms.length;
+    document.getElementById('saGymsBadge').textContent = gyms.length;
+
+    const el = document.getElementById('saGymsList');
+    if (!gyms.length) {
+      el.innerHTML = '<div class="empty"><div class="ei">🏋️</div><p>No gyms registered yet</p></div>';
+      return;
+    }
+    el.innerHTML = gyms.map(u => {
+      const active = u.isApproved && u.isActive;
+      const rejected = !u.isApproved && !u.pendingApproval;
+      const statusBg  = active ? '#E8F8EF' : rejected ? '#FEE2E2' : '#FEF9E7';
+      const statusClr = active ? '#27AE60' : rejected ? '#E74C3C' : '#D97706';
+      const statusLbl = active ? '✅ Active' : rejected ? '❌ Rejected' : '⏳ Inactive';
+      return `
+        <div style="padding:14px 16px;border-bottom:1px solid #F0F5F5">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+            <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#1A8C8C,#2980B9);
+              display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;font-weight:800;flex-shrink:0">
+              ${esc((u.gymName||u.name||'G').charAt(0).toUpperCase())}
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:800;font-size:.92rem;color:#1A2E2E">${esc(u.gymName ? u.gymName+"'s Gym" : u.name)}</div>
+              <div style="font-size:.72rem;color:#4A6464;margin-top:1px">👤 ${esc(u.name)} — ${esc(u.email)}</div>
+              <div style="font-size:.65rem;color:#8AABAB;margin-top:2px">Last login: ${u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('en-IN') : 'Never'}</div>
+            </div>
+            <span style="background:${statusBg};color:${statusClr};padding:3px 10px;border-radius:14px;font-size:.65rem;font-weight:800;flex-shrink:0">${statusLbl}</span>
+          </div>
+          <div style="display:flex;gap:7px">
+            ${active
+              ? `<button onclick="saToggleGym('${esc(u._id)}','${esc(u.gymName||u.name)}')"
+                  style="padding:7px 12px;background:#FEF9E7;color:#D97706;border:1px solid #FDE68A;border-radius:9px;font-family:inherit;font-weight:700;font-size:.75rem;cursor:pointer">
+                  🔴 Deactivate
+                </button>`
+              : `<button onclick="saToggleGym('${esc(u._id)}','${esc(u.gymName||u.name)}')"
+                  style="padding:7px 12px;background:#E8F8EF;color:#27AE60;border:1px solid #A7F3D0;border-radius:9px;font-family:inherit;font-weight:700;font-size:.75rem;cursor:pointer">
+                  🟢 Activate
+                </button>`
+            }
+            <button onclick="saDeleteGym('${esc(u._id)}','${esc(u.gymName||u.name)}')"
+              style="padding:7px 12px;background:#FEE2E2;color:#E74C3C;border:1px solid #FECDD5;border-radius:9px;font-family:inherit;font-weight:700;font-size:.75rem;cursor:pointer">
+              🗑️ Remove
+            </button>
+          </div>
+        </div>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('saGymsList').innerHTML = '<div class="empty"><p style="color:#E74C3C">Error loading gyms</p></div>';
+  }
+}
+
+async function saApprove(userId, name) {
+  try {
+    const res = await fetch(`${BASE}/auth/approve/${userId}`, { method:'POST', headers:hdrs() });
+    const data = await res.json();
+    if (res.ok) { toast(`✅ ${name}'s gym approved!`, 'success'); loadSuperAdminData(); }
+    else toast(data.error || 'Failed', 'error');
+  } catch(e) { toast('Network error', 'error'); }
+}
+
+function saOpenReject(userId) {
+  _saRejectId = userId;
+  document.getElementById('saRejectReason').value = '';
+  document.getElementById('saRejectModal').style.display = 'flex';
+}
+
+async function confirmSaReject() {
+  const reason = document.getElementById('saRejectReason').value.trim() || 'Not approved by GymPro.';
+  try {
+    const res = await fetch(`${BASE}/auth/reject/${_saRejectId}`, {
+      method:'POST', headers:hdrs(), body:JSON.stringify({ reason })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      toast('Registration rejected', 'success');
+      document.getElementById('saRejectModal').style.display = 'none';
+      _saRejectId = null;
+      loadSuperAdminData();
+    } else toast(data.error || 'Failed', 'error');
+  } catch(e) { toast('Network error', 'error'); }
+}
+
+async function saToggleGym(userId, name) {
+  try {
+    const res = await fetch(`${BASE}/admin/user/${userId}/toggle`, { method:'PATCH', headers:hdrs() });
+    const data = await res.json();
+    if (res.ok) { toast(data.message, 'success'); loadSaGyms(); }
+    else toast(data.error || 'Failed', 'error');
+  } catch(e) { toast('Network error', 'error'); }
+}
+
+async function saDeleteGym(userId, name) {
+  if (!confirm(`Permanently remove "${name}" gym? This cannot be undone.`)) return;
+  try {
+    const res = await fetch(`${BASE}/admin/user/${userId}`, { method:'DELETE', headers:hdrs() });
+    const data = await res.json();
+    if (res.ok) { toast(`${name} removed`, 'success'); loadSuperAdminData(); }
+    else toast(data.error || 'Failed', 'error');
+  } catch(e) { toast('Network error', 'error'); }
+}
+
+/* ================================================================
+   GYM ADMIN FUNCTIONS  (gym owner — create/manage staff)
+================================================================ */
+async function loadGymAdminData() {
+  try {
+    const res = await fetch(`${BASE}/admin/staff`, { headers: hdrs() });
+    if (!res.ok) throw new Error();
+    const staff = await res.json();
+
+    document.getElementById('gaStaffCount').textContent  = staff.length;
+    document.getElementById('gaActiveCount').textContent = staff.filter(s=>s.isActive).length;
+
+    const el = document.getElementById('gaStaffList');
+    if (!staff.length) {
+      el.innerHTML = '<div class="empty"><div class="ei">👥</div><p>No staff yet. Create one above.</p></div>';
+      return;
+    }
+
+    const permsMap = [
+      {key:'viewMembers',    icon:'👥', label:'Members'},
+      {key:'viewAttendance', icon:'📅', label:'Attendance'},
+      {key:'viewPayments',   icon:'💳', label:'Payments'},
+      {key:'viewTrainers',   icon:'💪', label:'Trainers'},
+      {key:'viewRevenue',    icon:'📈', label:'Revenue'},
+      {key:'deleteMembers',  icon:'🗑️', label:'Delete'},
+    ];
+
+    el.innerHTML = staff.map(s => {
+      const p = s.staffPermissions || {};
+      const initials = (s.name||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
+      const toggles = permsMap.map(pm => `
+        <label style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:#fff;border:1px solid #E0ECEC;
+          border-radius:8px;cursor:pointer;font-size:.74rem;font-weight:600">
+          <input type="checkbox" ${p[pm.key]?'checked':''} style="accent-color:#1A8C8C;width:14px;height:14px"
+            onchange="gaUpdatePerm('${esc(s._id)}','${pm.key}',this.checked)">
+          ${pm.icon} ${pm.label}
+        </label>`).join('');
+
+      return `
+        <div style="padding:14px 16px;border-bottom:1px solid #F0F5F5">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#1A8C8C,#27AE60);
+              display:flex;align-items:center;justify-content:center;color:#fff;font-size:.95rem;font-weight:800;flex-shrink:0">
+              ${esc(initials)}
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:800;font-size:.92rem;color:#1A2E2E">${esc(s.name)}</div>
+              <div style="font-size:.72rem;color:#8AABAB">${esc(s.email)}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+              <span style="background:${s.isActive?'#E8F8EF':'#F3F4F6'};color:${s.isActive?'#27AE60':'#6B7280'};
+                padding:2px 9px;border-radius:12px;font-size:.62rem;font-weight:800">
+                ${s.isActive?'Active':'Inactive'}
+              </span>
+              <div style="display:flex;gap:5px">
+                <button onclick="gaToggleStaff('${esc(s._id)}','${esc(s.name)}')"
+                  style="padding:5px 9px;border-radius:8px;border:1px solid #E0ECEC;background:#F0F5F5;
+                  font-family:inherit;font-size:.7rem;font-weight:700;cursor:pointer">
+                  ${s.isActive?'🔴 Block':'🟢 Activate'}
+                </button>
+                <button onclick="gaDeleteStaff('${esc(s._id)}','${esc(s.name)}')"
+                  style="padding:5px 9px;border-radius:8px;border:1px solid #FECDD5;background:#FEE2E2;
+                  color:#E74C3C;font-family:inherit;font-size:.7rem;font-weight:700;cursor:pointer">🗑️</button>
+              </div>
+            </div>
+          </div>
+          <div style="background:#F8FFFE;border:1px solid #E0ECEC;border-radius:10px;padding:10px">
+            <div style="font-size:.62rem;font-weight:800;color:#1A8C8C;text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px">
+              🔒 Access Control — toggle to update instantly
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">${toggles}</div>
+          </div>
+        </div>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('gaStaffList').innerHTML = '<div class="empty"><p style="color:#E74C3C">Error loading staff</p></div>';
+  }
+}
+
+async function gaCreateStaff() {
+  const name  = document.getElementById('gaSName').value.trim();
+  const email = document.getElementById('gaSEmail').value.trim();
+  const pass  = document.getElementById('gaSPass').value.trim();
+  if (!name||!email||!pass) { toast('Fill all fields','error'); return; }
+  if (pass.length < 6)      { toast('Password min 6 characters','error'); return; }
+
+  const permissions = {
+    viewMembers:    document.getElementById('gp_members').checked,
+    addMembers:     document.getElementById('gp_members').checked,
+    editMembers:    document.getElementById('gp_members').checked,
+    deleteMembers:  document.getElementById('gp_delete').checked,
+    viewAttendance: document.getElementById('gp_attendance').checked,
+    markAttendance: document.getElementById('gp_attendance').checked,
+    viewTrainers:   document.getElementById('gp_trainers').checked,
+    viewPayments:   document.getElementById('gp_payments').checked,
+    viewRevenue:    document.getElementById('gp_revenue').checked,
+    viewSettings:   false
+  };
+
+  try {
+    const res = await fetch(`${BASE}/admin/create-staff`, {
+      method:'POST', headers:hdrs(), body:JSON.stringify({ name, email, password:pass, permissions })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      toast(`✅ Staff account created for ${name}`, 'success');
+      ['gaSName','gaSEmail','gaSPass'].forEach(id => document.getElementById(id).value='');
+      ['gp_members','gp_attendance','gp_payments','gp_trainers'].forEach(id => document.getElementById(id).checked=true);
+      ['gp_revenue','gp_delete'].forEach(id => document.getElementById(id).checked=false);
+      loadGymAdminData();
+    } else toast(data.error||'Failed', 'error');
+  } catch(e) { toast('Network error','error'); }
+}
+
+async function gaUpdatePerm(staffId, perm, value) {
+  try {
+    const res = await fetch(`${BASE}/admin/staff/${staffId}/permissions`, {
+      method:'PATCH', headers:hdrs(), body:JSON.stringify({ [perm]: value })
+    });
+    if (res.ok) toast('Permission updated','success');
+    else        toast('Failed to update','error');
+  } catch(e) { toast('Network error','error'); }
+}
+
+async function gaToggleStaff(staffId, name) {
+  try {
+    const res = await fetch(`${BASE}/admin/user/${staffId}/toggle`, { method:'PATCH', headers:hdrs() });
+    const data = await res.json();
+    if (res.ok) { toast(data.message,'success'); loadGymAdminData(); }
+    else toast('Failed','error');
+  } catch(e) { toast('Network error','error'); }
+}
+
+async function gaDeleteStaff(staffId, name) {
+  if (!confirm(`Remove staff "${name}"? They will lose access immediately.`)) return;
+  try {
+    const res = await fetch(`${BASE}/admin/user/${staffId}`, { method:'DELETE', headers:hdrs() });
+    const data = await res.json();
+    if (res.ok) { toast(`${name} removed`,'success'); loadGymAdminData(); }
+    else toast(data.error||'Failed','error');
+  } catch(e) { toast('Network error','error'); }
+}
+
+
 window.addEventListener('DOMContentLoaded', async () => {
   if (!checkAuth()) return;
   setupCamera();
@@ -2674,36 +2984,36 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (sbUser && u.name) {
       sbUser.innerHTML = `<div class="u-name">👤 ${esc(u.name)}</div><div class="u-role">${u.role==='admin'?'Administrator':'Staff Member'}</div>`;
     }
+        // Role-based UI setup
     window._userRole  = u.role;
     window._userPerms = u.permissions || {};
 
-    // Superadmin should never be on this page
     if (u.role === 'superadmin') {
-      window.location.href = '/superadmin.html';
-      return;
+      // Super-admin: show only the control panel, hide gym UI
+      document.querySelectorAll('.page').forEach(p => { p.style.display='none'; p.classList.remove('active'); });
+      const saPage = document.getElementById('page-superadmin');
+      if (saPage) { saPage.style.display='block'; saPage.classList.add('active'); }
+      const topTitle = document.querySelector('.top-bar .page-title');
+      if (topTitle) topTitle.textContent = 'Control Panel';
+      const saLabel = document.getElementById('saEmailLabel');
+      if (saLabel) saLabel.textContent = u.email || '';
+      loadSuperAdminData();
+
+    } else if (u.role === 'admin') {
+      // Gym admin: show all + expose Staff Mgmt nav
+      const navGA = document.getElementById('navGymAdmin');
+      if (navGA) navGA.style.display = '';
+      const gaLabel = document.getElementById('gaAdminLabel');
+      if (gaLabel) gaLabel.textContent = (u.gymName ? u.gymName + ' — ' : '') + (u.name || '');
+
+    } else {
+      // Staff: permission-based hiding
+      const p = u.permissions || {};
+      const hideEl = (id) => { const el=document.getElementById(id); if(el) el.style.display='none'; };
+      if (!p.viewRevenue)  { hideEl('navRevenue'); hideEl('page-revenue'); hideEl('dashRevenueSummary'); }
+      if (!p.viewSettings) { document.querySelectorAll('[data-page="settings"]').forEach(e=>e.style.display='none'); }
     }
 
-    const isAdmin = u.role === 'admin';
-    const perms   = u.permissions || {};
-
-    // Revenue: hidden for staff unless permitted
-    const canViewRevenue = isAdmin || perms.viewRevenue;
-    if (!canViewRevenue) {
-      const navRev = document.getElementById('navRevenue');
-      if (navRev) navRev.style.display = 'none';
-      const pageRev = document.getElementById('page-revenue');
-      if (pageRev) pageRev.style.display = 'none';
-      const dashRev = document.getElementById('dashRevenueSummary');
-      if (dashRev) dashRev.style.display = 'none';
-    }
-    // Settings: hidden for staff unless permitted
-    if (!isAdmin && !perms.viewSettings) {
-      document.querySelectorAll('[data-page="settings"]').forEach(el => el.style.display = 'none');
-    }
-    // Delete: hidden for staff unless permitted
-    if (!isAdmin && !perms.deleteMembers) {
-      document.querySelectorAll('.staff-hide-delete').forEach(el => el.style.display = 'none');
-    }
     // Payments: hidden for staff unless permitted
     if (!isAdmin && perms.viewPayments === false) {
       document.querySelectorAll('[data-page="payments"]').forEach(el => el.style.display = 'none');
