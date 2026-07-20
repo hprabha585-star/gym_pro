@@ -2638,9 +2638,9 @@ async function sendReminderFromCard(memberId) {
 
 
 
+
 /* ================================================================
-   SUPER-ADMIN FUNCTIONS  (you — hprabha585@gmail.com)
-   Approve/reject gym owner accounts
+   SUPERADMIN FUNCTIONS
 ================================================================ */
 let _saRejectId = null;
 
@@ -2649,17 +2649,15 @@ async function loadSuperAdminData() {
 }
 
 async function loadSaPending() {
+  const el = document.getElementById('saPendingList');
   try {
     const res = await fetch(`${BASE}/auth/pending-approvals`, { headers: hdrs() });
-    if (!res.ok) throw new Error();
+    if (res.status === 401) { logout(); return; }
     const list = await res.json();
-
     document.getElementById('saPending').textContent = list.length;
     document.getElementById('saPendingBadge').textContent = list.length;
-
-    const el = document.getElementById('saPendingList');
     if (!list.length) {
-      el.innerHTML = '<div class="empty"><div class="ei">✅</div><p>No pending approvals</p></div>';
+      el.innerHTML = '<div class="empty"><div class="ei">&#x2705;</div><p>No pending approvals</p></div>';
       return;
     }
     el.innerHTML = list.map(u => `
@@ -2667,85 +2665,73 @@ async function loadSaPending() {
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
           <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#1A8C8C,#27AE60);
             display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;font-weight:800;flex-shrink:0">
-            ${esc((u.gymName||u.name||'G').charAt(0).toUpperCase())}
+            ${esc((u.gymName||u.name||'G')[0].toUpperCase())}
           </div>
           <div style="flex:1;min-width:0">
-            <div style="font-weight:800;font-size:.95rem;color:#1A2E2E">${esc(u.gymName ? u.gymName+"'s Gym" : u.name)}</div>
-            <div style="font-size:.75rem;color:#4A6464;margin-top:1px">👤 ${esc(u.name)} &nbsp;|&nbsp; ✉️ ${esc(u.email)}</div>
-            <div style="font-size:.68rem;color:#8AABAB;margin-top:2px">📅 ${new Date(u.createdAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
+            <div style="font-weight:800;font-size:.95rem;color:#1A2E2E">${esc(u.gymName||'Unnamed Gym')}</div>
+            <div style="font-size:.75rem;color:#4A6464;margin-top:1px">&#x1F464; ${esc(u.name)} &nbsp;|&nbsp; &#x2709;&#xFE0F; ${esc(u.email)}</div>
+            <div style="font-size:.68rem;color:#8AABAB;margin-top:2px">&#x1F4C5; ${new Date(u.createdAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
           </div>
         </div>
         <div style="display:flex;gap:8px">
           <button onclick="saApprove('${esc(u._id)}','${esc(u.gymName||u.name)}')"
             style="flex:1;padding:9px;background:#27AE60;color:#fff;border:none;border-radius:10px;font-family:inherit;font-weight:700;font-size:.82rem;cursor:pointer">
-            ✅ Approve Gym
+            &#x2705; Approve Gym
           </button>
           <button onclick="saOpenReject('${esc(u._id)}')"
             style="flex:1;padding:9px;background:#E74C3C;color:#fff;border:none;border-radius:10px;font-family:inherit;font-weight:700;font-size:.82rem;cursor:pointer">
-            ❌ Reject
+            &#x274C; Reject
           </button>
         </div>
       </div>`).join('');
   } catch(e) {
-    document.getElementById('saPendingList').innerHTML = '<div class="empty"><p style="color:#E74C3C">Error loading</p></div>';
+    el.innerHTML = '<div class="empty"><p style="color:#E74C3C">Error loading</p></div>';
   }
 }
 
 async function loadSaGyms() {
+  const el = document.getElementById('saGymsList');
   try {
     const res = await fetch(`${BASE}/admin/all-gyms`, { headers: hdrs() });
     if (!res.ok) throw new Error();
     const gyms = await res.json();
-
-    document.getElementById('saActive').textContent = gyms.filter(g=>g.isActive&&g.isApproved).length;
-    document.getElementById('saTotal').textContent  = gyms.length;
+    const active = gyms.filter(g => g.isActive && g.isApproved).length;
+    document.getElementById('saActiveCount').textContent = active;
+    document.getElementById('saTotal').textContent = gyms.length;
     document.getElementById('saGymsBadge').textContent = gyms.length;
-
-    const el = document.getElementById('saGymsList');
     if (!gyms.length) {
-      el.innerHTML = '<div class="empty"><div class="ei">🏋️</div><p>No gyms registered yet</p></div>';
+      el.innerHTML = '<div class="empty"><div class="ei">&#x1F3CB;&#xFE0F;</div><p>No gyms registered yet</p></div>';
       return;
     }
     el.innerHTML = gyms.map(u => {
       const active = u.isApproved && u.isActive;
-      const rejected = !u.isApproved && !u.pendingApproval;
-      const statusBg  = active ? '#E8F8EF' : rejected ? '#FEE2E2' : '#FEF9E7';
-      const statusClr = active ? '#27AE60' : rejected ? '#E74C3C' : '#D97706';
-      const statusLbl = active ? '✅ Active' : rejected ? '❌ Rejected' : '⏳ Inactive';
-      return `
-        <div style="padding:14px 16px;border-bottom:1px solid #F0F5F5">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
-            <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#1A8C8C,#2980B9);
-              display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;font-weight:800;flex-shrink:0">
-              ${esc((u.gymName||u.name||'G').charAt(0).toUpperCase())}
-            </div>
-            <div style="flex:1;min-width:0">
-              <div style="font-weight:800;font-size:.92rem;color:#1A2E2E">${esc(u.gymName ? u.gymName+"'s Gym" : u.name)}</div>
-              <div style="font-size:.72rem;color:#4A6464;margin-top:1px">👤 ${esc(u.name)} — ${esc(u.email)}</div>
-              <div style="font-size:.65rem;color:#8AABAB;margin-top:2px">Last login: ${u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('en-IN') : 'Never'}</div>
-            </div>
-            <span style="background:${statusBg};color:${statusClr};padding:3px 10px;border-radius:14px;font-size:.65rem;font-weight:800;flex-shrink:0">${statusLbl}</span>
+      const statusBg  = active ? '#E8F8EF' : '#FEE2E2';
+      const statusClr = active ? '#27AE60' : '#E74C3C';
+      const statusLbl = active ? '&#x2705; Active' : '&#x26A0;&#xFE0F; Inactive';
+      return `<div style="padding:14px 16px;border-bottom:1px solid #F0F5F5">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#1A8C8C,#2980B9);
+            display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;font-weight:800;flex-shrink:0">
+            ${esc((u.gymName||u.name||'G')[0].toUpperCase())}
           </div>
-          <div style="display:flex;gap:7px">
-            ${active
-              ? `<button onclick="saToggleGym('${esc(u._id)}','${esc(u.gymName||u.name)}')"
-                  style="padding:7px 12px;background:#FEF9E7;color:#D97706;border:1px solid #FDE68A;border-radius:9px;font-family:inherit;font-weight:700;font-size:.75rem;cursor:pointer">
-                  🔴 Deactivate
-                </button>`
-              : `<button onclick="saToggleGym('${esc(u._id)}','${esc(u.gymName||u.name)}')"
-                  style="padding:7px 12px;background:#E8F8EF;color:#27AE60;border:1px solid #A7F3D0;border-radius:9px;font-family:inherit;font-weight:700;font-size:.75rem;cursor:pointer">
-                  🟢 Activate
-                </button>`
-            }
-            <button onclick="saDeleteGym('${esc(u._id)}','${esc(u.gymName||u.name)}')"
-              style="padding:7px 12px;background:#FEE2E2;color:#E74C3C;border:1px solid #FECDD5;border-radius:9px;font-family:inherit;font-weight:700;font-size:.75rem;cursor:pointer">
-              🗑️ Remove
-            </button>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:800;font-size:.92rem;color:#1A2E2E">${esc(u.gymName||'Unnamed Gym')}</div>
+            <div style="font-size:.72rem;color:#4A6464;margin-top:1px">${esc(u.name)} &mdash; ${esc(u.email)}</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap">
+              <span style="background:${statusBg};color:${statusClr};padding:2px 9px;border-radius:12px;font-size:.65rem;font-weight:800">${statusLbl}</span>
+              <span style="font-size:.65rem;color:#8AABAB">Last login: ${u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('en-IN') : 'Never'}</span>
+            </div>
           </div>
-        </div>`;
+          <button onclick="saToggleGym('${esc(u._id)}')"
+            style="padding:7px 11px;border-radius:9px;border:1px solid #E0ECEC;background:#F0F5F5;
+            font-family:inherit;font-size:.7rem;font-weight:700;cursor:pointer;flex-shrink:0">
+            ${active ? '&#x1F534; Block' : '&#x1F7E2; Enable'}
+          </button>
+        </div>
+      </div>`;
     }).join('');
   } catch(e) {
-    document.getElementById('saGymsList').innerHTML = '<div class="empty"><p style="color:#E74C3C">Error loading gyms</p></div>';
+    el.innerHTML = '<div class="empty"><p style="color:#E74C3C">Error loading gyms</p></div>';
   }
 }
 
@@ -2753,9 +2739,9 @@ async function saApprove(userId, name) {
   try {
     const res = await fetch(`${BASE}/auth/approve/${userId}`, { method:'POST', headers:hdrs() });
     const data = await res.json();
-    if (res.ok) { toast(`✅ ${name}'s gym approved!`, 'success'); loadSuperAdminData(); }
-    else toast(data.error || 'Failed', 'error');
-  } catch(e) { toast('Network error', 'error'); }
+    if (res.ok) { toast(`&#x2705; ${name} approved!`, 'success'); loadSuperAdminData(); }
+    else toast(data.error||'Failed', 'error');
+  } catch(e) { toast('Network error','error'); }
 }
 
 function saOpenReject(userId) {
@@ -2765,116 +2751,157 @@ function saOpenReject(userId) {
 }
 
 async function confirmSaReject() {
-  const reason = document.getElementById('saRejectReason').value.trim() || 'Not approved by GymPro.';
+  const reason = document.getElementById('saRejectReason').value.trim() || 'Not approved.';
   try {
     const res = await fetch(`${BASE}/auth/reject/${_saRejectId}`, {
       method:'POST', headers:hdrs(), body:JSON.stringify({ reason })
     });
     const data = await res.json();
     if (res.ok) {
-      toast('Registration rejected', 'success');
+      toast('Rejected', 'success');
       document.getElementById('saRejectModal').style.display = 'none';
-      _saRejectId = null;
       loadSuperAdminData();
-    } else toast(data.error || 'Failed', 'error');
-  } catch(e) { toast('Network error', 'error'); }
+    } else toast(data.error||'Failed','error');
+  } catch(e) { toast('Network error','error'); }
 }
 
-async function saToggleGym(userId, name) {
+async function saToggleGym(userId) {
   try {
     const res = await fetch(`${BASE}/admin/user/${userId}/toggle`, { method:'PATCH', headers:hdrs() });
     const data = await res.json();
-    if (res.ok) { toast(data.message, 'success'); loadSaGyms(); }
-    else toast(data.error || 'Failed', 'error');
-  } catch(e) { toast('Network error', 'error'); }
-}
-
-async function saDeleteGym(userId, name) {
-  if (!confirm(`Permanently remove "${name}" gym? This cannot be undone.`)) return;
-  try {
-    const res = await fetch(`${BASE}/admin/user/${userId}`, { method:'DELETE', headers:hdrs() });
-    const data = await res.json();
-    if (res.ok) { toast(`${name} removed`, 'success'); loadSuperAdminData(); }
-    else toast(data.error || 'Failed', 'error');
-  } catch(e) { toast('Network error', 'error'); }
+    if (res.ok) { toast(data.message,'success'); loadSaGyms(); }
+    else toast('Failed','error');
+  } catch(e) { toast('Network error','error'); }
 }
 
 /* ================================================================
-   GYM ADMIN FUNCTIONS  (gym owner — create/manage staff)
+   GYM ADMIN FUNCTIONS
 ================================================================ */
 async function loadGymAdminData() {
+  await Promise.all([loadGaPending(), loadGaStaff()]);
+}
+
+async function loadGaPending() {
+  const el = document.getElementById('gaPendingList');
+  try {
+    const res = await fetch(`${BASE}/auth/pending-staff`, { headers: hdrs() });
+    if (!res.ok) throw new Error();
+    const list = await res.json();
+    document.getElementById('gaPendingCount').textContent = list.length;
+    document.getElementById('gaStaffBadge').textContent = list.length;
+    if (!list.length) {
+      el.innerHTML = '<div class="empty"><div class="ei">&#x2705;</div><p>No pending staff requests</p></div>';
+      return;
+    }
+    el.innerHTML = list.map(s => `
+      <div style="padding:12px 16px;border-bottom:1px solid #F0F5F5">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#8E44AD,#9B59B6);
+            display:flex;align-items:center;justify-content:center;color:#fff;font-size:.9rem;font-weight:800;flex-shrink:0">
+            ${esc((s.name||'?')[0].toUpperCase())}
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:800;font-size:.9rem;color:#1A2E2E">${esc(s.name)}</div>
+            <div style="font-size:.72rem;color:#8AABAB">${esc(s.email)}</div>
+            <div style="font-size:.65rem;color:#B0C4C4;margin-top:1px">&#x1F4C5; ${new Date(s.createdAt).toLocaleDateString('en-IN')}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:7px">
+          <button onclick="gaApproveStaff('${esc(s._id)}','${esc(s.name)}')"
+            style="flex:1;padding:8px;background:#27AE60;color:#fff;border:none;border-radius:9px;font-family:inherit;font-weight:700;font-size:.8rem;cursor:pointer">
+            &#x2705; Approve
+          </button>
+          <button onclick="gaRejectStaff('${esc(s._id)}','${esc(s.name)}')"
+            style="flex:1;padding:8px;background:#E74C3C;color:#fff;border:none;border-radius:9px;font-family:inherit;font-weight:700;font-size:.8rem;cursor:pointer">
+            &#x274C; Reject
+          </button>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty"><p style="color:#E74C3C">Error</p></div>';
+  }
+}
+
+async function gaApproveStaff(staffId, name) {
+  try {
+    const res = await fetch(`${BASE}/auth/approve-staff/${staffId}`, { method:'POST', headers:hdrs() });
+    const data = await res.json();
+    if (res.ok) { toast(`&#x2705; ${name} approved!`, 'success'); loadGymAdminData(); }
+    else toast(data.error||'Failed','error');
+  } catch(e) { toast('Network error','error'); }
+}
+
+async function gaRejectStaff(staffId, name) {
+  if (!confirm(`Reject ${name}'s request?`)) return;
+  try {
+    const res = await fetch(`${BASE}/auth/reject-staff/${staffId}`, {
+      method:'POST', headers:hdrs(), body:JSON.stringify({ reason:'Not approved by admin.' })
+    });
+    const data = await res.json();
+    if (res.ok) { toast(`${name} rejected`,'success'); loadGymAdminData(); }
+    else toast(data.error||'Failed','error');
+  } catch(e) { toast('Network error','error'); }
+}
+
+async function loadGaStaff() {
+  const el = document.getElementById('gaStaffList');
   try {
     const res = await fetch(`${BASE}/admin/staff`, { headers: hdrs() });
     if (!res.ok) throw new Error();
     const staff = await res.json();
-
-    document.getElementById('gaStaffCount').textContent  = staff.length;
     document.getElementById('gaActiveCount').textContent = staff.filter(s=>s.isActive).length;
-
-    const el = document.getElementById('gaStaffList');
+    document.getElementById('gaStaffCount').textContent  = staff.length;
     if (!staff.length) {
-      el.innerHTML = '<div class="empty"><div class="ei">👥</div><p>No staff yet. Create one above.</p></div>';
+      el.innerHTML = '<div class="empty"><div class="ei">&#x1F465;</div><p>No staff yet</p></div>';
       return;
     }
-
     const permsMap = [
-      {key:'viewMembers',    icon:'👥', label:'Members'},
-      {key:'viewAttendance', icon:'📅', label:'Attendance'},
-      {key:'viewPayments',   icon:'💳', label:'Payments'},
-      {key:'viewTrainers',   icon:'💪', label:'Trainers'},
-      {key:'viewRevenue',    icon:'📈', label:'Revenue'},
-      {key:'deleteMembers',  icon:'🗑️', label:'Delete'},
+      {key:'viewMembers',icon:'&#x1F465;',label:'Members'},
+      {key:'viewAttendance',icon:'&#x1F4C5;',label:'Attendance'},
+      {key:'viewPayments',icon:'&#x1F4B3;',label:'Payments'},
+      {key:'viewTrainers',icon:'&#x1F4AA;',label:'Trainers'},
+      {key:'viewRevenue',icon:'&#x1F4C8;',label:'Revenue'},
+      {key:'deleteMembers',icon:'&#x1F5D1;&#xFE0F;',label:'Delete'},
     ];
-
     el.innerHTML = staff.map(s => {
       const p = s.staffPermissions || {};
       const initials = (s.name||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
-      const toggles = permsMap.map(pm => `
-        <label style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:#fff;border:1px solid #E0ECEC;
-          border-radius:8px;cursor:pointer;font-size:.74rem;font-weight:600">
+      const toggles = permsMap.map(pm=>`
+        <label style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:#fff;border:1px solid #E0ECEC;border-radius:8px;cursor:pointer;font-size:.74rem;font-weight:600">
           <input type="checkbox" ${p[pm.key]?'checked':''} style="accent-color:#1A8C8C;width:14px;height:14px"
             onchange="gaUpdatePerm('${esc(s._id)}','${pm.key}',this.checked)">
           ${pm.icon} ${pm.label}
         </label>`).join('');
-
-      return `
-        <div style="padding:14px 16px;border-bottom:1px solid #F0F5F5">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-            <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#1A8C8C,#27AE60);
-              display:flex;align-items:center;justify-content:center;color:#fff;font-size:.95rem;font-weight:800;flex-shrink:0">
-              ${esc(initials)}
-            </div>
-            <div style="flex:1;min-width:0">
-              <div style="font-weight:800;font-size:.92rem;color:#1A2E2E">${esc(s.name)}</div>
-              <div style="font-size:.72rem;color:#8AABAB">${esc(s.email)}</div>
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
-              <span style="background:${s.isActive?'#E8F8EF':'#F3F4F6'};color:${s.isActive?'#27AE60':'#6B7280'};
-                padding:2px 9px;border-radius:12px;font-size:.62rem;font-weight:800">
-                ${s.isActive?'Active':'Inactive'}
-              </span>
-              <div style="display:flex;gap:5px">
-                <button onclick="gaToggleStaff('${esc(s._id)}','${esc(s.name)}')"
-                  style="padding:5px 9px;border-radius:8px;border:1px solid #E0ECEC;background:#F0F5F5;
-                  font-family:inherit;font-size:.7rem;font-weight:700;cursor:pointer">
-                  ${s.isActive?'🔴 Block':'🟢 Activate'}
-                </button>
-                <button onclick="gaDeleteStaff('${esc(s._id)}','${esc(s.name)}')"
-                  style="padding:5px 9px;border-radius:8px;border:1px solid #FECDD5;background:#FEE2E2;
-                  color:#E74C3C;font-family:inherit;font-size:.7rem;font-weight:700;cursor:pointer">🗑️</button>
-              </div>
+      return `<div style="padding:13px 16px;border-bottom:1px solid #F0F5F5">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#1A8C8C,#27AE60);
+            display:flex;align-items:center;justify-content:center;color:#fff;font-size:.9rem;font-weight:800;flex-shrink:0">${esc(initials)}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:800;font-size:.9rem;color:#1A2E2E">${esc(s.name)}</div>
+            <div style="font-size:.7rem;color:#8AABAB">${esc(s.email)}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            <span style="background:${s.isActive?'#E8F8EF':'#F3F4F6'};color:${s.isActive?'#27AE60':'#6B7280'};padding:2px 8px;border-radius:10px;font-size:.62rem;font-weight:800">${s.isActive?'Active':'Inactive'}</span>
+            <div style="display:flex;gap:4px">
+              <button onclick="gaToggleStaff('${esc(s._id)}','${esc(s.name)}')"
+                style="padding:4px 9px;border-radius:7px;border:1px solid #E0ECEC;background:#F0F5F5;font-family:inherit;font-size:.68rem;font-weight:700;cursor:pointer">
+                ${s.isActive?'&#x1F534; Block':'&#x1F7E2; Enable'}
+              </button>
+              <button onclick="gaDeleteStaff('${esc(s._id)}','${esc(s.name)}')"
+                style="padding:4px 9px;border-radius:7px;border:1px solid #FECDD5;background:#FEE2E2;color:#E74C3C;font-family:inherit;font-size:.68rem;font-weight:700;cursor:pointer">
+                &#x1F5D1;&#xFE0F;
+              </button>
             </div>
           </div>
-          <div style="background:#F8FFFE;border:1px solid #E0ECEC;border-radius:10px;padding:10px">
-            <div style="font-size:.62rem;font-weight:800;color:#1A8C8C;text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px">
-              🔒 Access Control — toggle to update instantly
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">${toggles}</div>
-          </div>
-        </div>`;
+        </div>
+        <div style="background:#F8FFFE;border:1px solid #E0ECEC;border-radius:10px;padding:9px">
+          <div style="font-size:.62rem;font-weight:800;color:#1A8C8C;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">&#x1F512; Access — toggle to update</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">${toggles}</div>
+        </div>
+      </div>`;
     }).join('');
   } catch(e) {
-    document.getElementById('gaStaffList').innerHTML = '<div class="empty"><p style="color:#E74C3C">Error loading staff</p></div>';
+    el.innerHTML = '<div class="empty"><p style="color:#E74C3C">Error loading staff</p></div>';
   }
 }
 
@@ -2883,43 +2910,36 @@ async function gaCreateStaff() {
   const email = document.getElementById('gaSEmail').value.trim();
   const pass  = document.getElementById('gaSPass').value.trim();
   if (!name||!email||!pass) { toast('Fill all fields','error'); return; }
-  if (pass.length < 6)      { toast('Password min 6 characters','error'); return; }
-
+  if (pass.length<6) { toast('Password min 6 chars','error'); return; }
   const permissions = {
-    viewMembers:    document.getElementById('gp_members').checked,
-    addMembers:     document.getElementById('gp_members').checked,
-    editMembers:    document.getElementById('gp_members').checked,
-    deleteMembers:  document.getElementById('gp_delete').checked,
-    viewAttendance: document.getElementById('gp_attendance').checked,
-    markAttendance: document.getElementById('gp_attendance').checked,
-    viewTrainers:   document.getElementById('gp_trainers').checked,
-    viewPayments:   document.getElementById('gp_payments').checked,
-    viewRevenue:    document.getElementById('gp_revenue').checked,
-    viewSettings:   false
+    viewMembers:document.getElementById('gp_members').checked, addMembers:document.getElementById('gp_members').checked,
+    editMembers:document.getElementById('gp_members').checked, deleteMembers:document.getElementById('gp_delete').checked,
+    viewAttendance:document.getElementById('gp_attendance').checked, markAttendance:document.getElementById('gp_attendance').checked,
+    viewTrainers:document.getElementById('gp_trainers').checked, viewPayments:document.getElementById('gp_payments').checked,
+    viewRevenue:document.getElementById('gp_revenue').checked, viewSettings:false
   };
-
   try {
     const res = await fetch(`${BASE}/admin/create-staff`, {
       method:'POST', headers:hdrs(), body:JSON.stringify({ name, email, password:pass, permissions })
     });
     const data = await res.json();
     if (res.ok) {
-      toast(`✅ Staff account created for ${name}`, 'success');
-      ['gaSName','gaSEmail','gaSPass'].forEach(id => document.getElementById(id).value='');
-      ['gp_members','gp_attendance','gp_payments','gp_trainers'].forEach(id => document.getElementById(id).checked=true);
-      ['gp_revenue','gp_delete'].forEach(id => document.getElementById(id).checked=false);
-      loadGymAdminData();
-    } else toast(data.error||'Failed', 'error');
+      toast(`&#x2705; ${name} created`, 'success');
+      ['gaSName','gaSEmail','gaSPass'].forEach(id=>document.getElementById(id).value='');
+      ['gp_members','gp_attendance','gp_payments','gp_trainers'].forEach(id=>document.getElementById(id).checked=true);
+      ['gp_revenue','gp_delete'].forEach(id=>document.getElementById(id).checked=false);
+      loadGaStaff();
+    } else toast(data.error||'Failed','error');
   } catch(e) { toast('Network error','error'); }
 }
 
 async function gaUpdatePerm(staffId, perm, value) {
   try {
     const res = await fetch(`${BASE}/admin/staff/${staffId}/permissions`, {
-      method:'PATCH', headers:hdrs(), body:JSON.stringify({ [perm]: value })
+      method:'PATCH', headers:hdrs(), body:JSON.stringify({ [perm]:value })
     });
-    if (res.ok) toast('Permission updated','success');
-    else        toast('Failed to update','error');
+    if (res.ok) toast('Updated','success');
+    else toast('Failed','error');
   } catch(e) { toast('Network error','error'); }
 }
 
@@ -2927,7 +2947,7 @@ async function gaToggleStaff(staffId, name) {
   try {
     const res = await fetch(`${BASE}/admin/user/${staffId}/toggle`, { method:'PATCH', headers:hdrs() });
     const data = await res.json();
-    if (res.ok) { toast(data.message,'success'); loadGymAdminData(); }
+    if (res.ok) { toast(data.message,'success'); loadGaStaff(); }
     else toast('Failed','error');
   } catch(e) { toast('Network error','error'); }
 }
@@ -2937,10 +2957,11 @@ async function gaDeleteStaff(staffId, name) {
   try {
     const res = await fetch(`${BASE}/admin/user/${staffId}`, { method:'DELETE', headers:hdrs() });
     const data = await res.json();
-    if (res.ok) { toast(`${name} removed`,'success'); loadGymAdminData(); }
+    if (res.ok) { toast(`${name} removed`,'success'); loadGaStaff(); }
     else toast(data.error||'Failed','error');
   } catch(e) { toast('Network error','error'); }
 }
+
 
 
 window.addEventListener('DOMContentLoaded', async () => {
@@ -2991,40 +3012,60 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (u.role === 'superadmin') {
-      // Hide all gym pages, show control panel
+      // SuperAdmin: show ONLY the control panel, nothing else
       document.querySelectorAll('.page').forEach(p => { p.style.display='none'; p.classList.remove('active'); });
       const saPage = document.getElementById('page-superadmin');
       if (saPage) { saPage.style.display='block'; saPage.classList.add('active'); }
+      // Update top bar title
       const topTitle = document.querySelector('.top-bar .page-title');
       if (topTitle) topTitle.textContent = 'Control Panel';
+      // Set email label
       const saLabel = document.getElementById('saEmailLabel');
       if (saLabel) saLabel.textContent = u.email || '';
+      // Load data and auto-refresh pending every 30s
       loadSuperAdminData();
       setInterval(loadSaPending, 30000);
-      // IMPORTANT: return so gym data is never loaded for superadmin
+      // STOP - don't load any gym data for superadmin
       return;
 
     } else if (u.role === 'admin') {
-      // Gym admin: show Staff Mgmt nav
+      // Gym Admin: full app + show Staff Mgmt nav
       const navGA = document.getElementById('navGymAdmin');
       if (navGA) navGA.style.display = '';
       const gaLabel = document.getElementById('gaAdminLabel');
       if (gaLabel) gaLabel.textContent = (u.gymName ? u.gymName + ' - ' : '') + (u.name || '');
+      // Auto-refresh pending staff badge every 30s
+      setInterval(async () => {
+        try {
+          const r = await fetch(`${BASE}/auth/pending-staff`, { headers: hdrs() });
+          if (r.ok) {
+            const list = await r.json();
+            const badge = document.getElementById('gaStaffBadge');
+            if (badge && list.length) {
+              badge.textContent = list.length;
+              badge.style.display = '';
+            }
+          }
+        } catch(e) {}
+      }, 30000);
 
     } else {
       // Staff: hide sections based on permissions
       const p = u.permissions || {};
       const hideEl = (id) => { const el=document.getElementById(id); if(el) el.style.display='none'; };
-      if (!p.viewRevenue)        { hideEl('navRevenue'); hideEl('page-revenue'); hideEl('dashRevenueSummary'); }
-      if (!p.viewSettings)       { document.querySelectorAll('[data-page="settings"]').forEach(e=>e.style.display='none'); }
+      if (!p.viewRevenue)         { hideEl('navRevenue'); hideEl('page-revenue'); hideEl('dashRevenueSummary'); }
+      if (!p.viewSettings)        { document.querySelectorAll('[data-page="settings"]').forEach(e=>e.style.display='none'); }
       if (p.viewPayments===false) { document.querySelectorAll('[data-page="payments"]').forEach(e=>e.style.display='none'); }
+      // Also hide gymadmin nav for staff
+      hideEl('navGymAdmin');
     }
-  } catch(e){ console.error('Role init error:', e); }
+  } catch(e) { console.error('Role init error:', e); }
 
   populatePlanSelect();
   populatePlanSelect('ePlan');
   recalcPrice();
   loadDashboard();
+
 
   loadPlans();
 
