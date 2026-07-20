@@ -10,248 +10,336 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    :root {
-      --teal: #1A8C8C; --teal2: #1E9E9E; --green: #27AE60; --red: #E74C3C;
-      --tx: #1A2E2E; --tx2: #4A6464; --tx3: #8AABAB;
-      --bg: #F0F5F5; --card: #FFFFFF; --border: #E0ECEC;
-    }
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--teal);
-      min-height: 100vh;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: env(safe-area-inset-top,1rem) 1rem env(safe-area-inset-bottom,1rem);
-      -webkit-tap-highlight-color: transparent;
-      overscroll-behavior-y: none;
-      -webkit-font-smoothing: antialiased;
-      position: relative; overflow: hidden;
-    }
-    body::before {
-      content:''; position:absolute; width:340px; height:340px;
-      background:rgba(255,255,255,.06); border-radius:50%;
-      top:-80px; right:-80px; pointer-events:none;
-    }
-    body::after {
-      content:''; position:absolute; width:280px; height:280px;
-      background:rgba(255,255,255,.05); border-radius:50%;
-      bottom:-60px; left:-60px; pointer-events:none;
-    }
-    input, select { -webkit-user-select:auto; user-select:auto; }
-    .login-wrap { width:100%; max-width:400px; position:relative; z-index:1; }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--teal:#1A8C8C;--teal2:#1E9E9E;--red:#E74C3C;--tx:#1A2E2E;--tx2:#4A6464;--bg:#F0F5F5;--card:#fff;--border:#E0ECEC}
+    body{font-family:'DM Sans',sans-serif;background:var(--teal);min-height:100vh;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:env(safe-area-inset-top,1rem) 1rem env(safe-area-inset-bottom,1rem);
+      -webkit-tap-highlight-color:transparent;overscroll-behavior-y:none;
+      -webkit-font-smoothing:antialiased;position:relative;overflow:hidden}
+    body::before{content:'';position:absolute;width:340px;height:340px;background:rgba(255,255,255,.06);border-radius:50%;top:-80px;right:-80px;pointer-events:none}
+    body::after{content:'';position:absolute;width:260px;height:260px;background:rgba(255,255,255,.05);border-radius:50%;bottom:-60px;left:-60px;pointer-events:none}
+    input,select{-webkit-user-select:auto;user-select:auto}
+    .wrap{width:100%;max-width:420px;position:relative;z-index:1}
 
     /* Brand */
-    .brand { text-align:center; margin-bottom:1.6rem; }
-    .brand-logo {
-      width:72px; height:72px;
-      background:rgba(255,255,255,.2); border:2px solid rgba(255,255,255,.3);
-      border-radius:22px; display:inline-flex; align-items:center; justify-content:center;
-      font-size:2rem; margin-bottom:.85rem;
-    }
-    .brand h1 { font-size:2rem; font-weight:800; color:#fff; letter-spacing:-.5px; margin-bottom:4px; }
-    .brand p  { color:rgba(255,255,255,.65); font-size:.82rem; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; }
+    .brand{text-align:center;margin-bottom:1.4rem}
+    .brand-logo{width:68px;height:68px;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.3);
+      border-radius:20px;display:inline-flex;align-items:center;justify-content:center;font-size:1.9rem;margin-bottom:.75rem}
+    .brand h1{font-size:1.9rem;font-weight:800;color:#fff;letter-spacing:-.5px;margin-bottom:3px}
+    .brand p{color:rgba(255,255,255,.6);font-size:.78rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase}
+
+    /* Role selector pills */
+    .role-pills{display:flex;gap:6px;margin-bottom:14px}
+    .role-pill{flex:1;padding:9px 4px;border:2px solid rgba(255,255,255,.25);border-radius:12px;
+      background:rgba(255,255,255,.1);color:rgba(255,255,255,.75);font-family:'DM Sans',sans-serif;
+      font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s;text-align:center}
+    .role-pill.active{background:#fff;color:var(--teal);border-color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.15)}
+    .role-pill:hover:not(.active){background:rgba(255,255,255,.18)}
 
     /* Card */
-    .auth-card { background:var(--card); border-radius:22px; padding:1.6rem; box-shadow:0 20px 60px rgba(0,0,0,.22); }
+    .card{background:var(--card);border-radius:22px;padding:1.5rem;box-shadow:0 20px 60px rgba(0,0,0,.22)}
 
-    /* Tabs */
-    .tabs { display:flex; background:var(--bg); border-radius:12px; padding:4px; margin-bottom:1.3rem; gap:4px; }
-    .tab-btn {
-      flex:1; padding:9px; border:none; background:transparent; border-radius:9px;
-      font-family:'DM Sans',sans-serif; font-size:.88rem; font-weight:700; color:var(--tx2);
-      cursor:pointer; transition:all .2s;
-    }
-    .tab-btn.active { background:var(--card); color:var(--teal); box-shadow:0 1px 8px rgba(0,0,0,.1); }
+    /* Inner tabs (Login / Register) */
+    .tabs{display:flex;background:var(--bg);border-radius:11px;padding:4px;margin-bottom:1.2rem;gap:4px}
+    .tab{flex:1;padding:8px;border:none;background:transparent;border-radius:8px;
+      font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:700;color:var(--tx2);cursor:pointer;transition:all .2s}
+    .tab.active{background:#fff;color:var(--teal);box-shadow:0 1px 6px rgba(0,0,0,.1)}
 
     /* Message */
-    .message { padding:10px 13px; border-radius:10px; font-size:.84rem; font-weight:600; margin-bottom:1rem; display:none; line-height:1.4; }
-    .message.error   { background:#FFF0F0; color:var(--red);   border:1px solid #FECDD5; display:block; }
-    .message.success { background:#EDFBF3; color:#1A6B3C;       border:1px solid #A7F3D0; display:block; }
-    .message.info    { background:#E3F2FD; color:#1565C0;        border:1px solid #BBDEFB; display:block; }
-    .message.warning { background:#FEF9E7; color:#B7770D;        border:1px solid #FDE68A; display:block; }
+    .msg{padding:10px 13px;border-radius:10px;font-size:.84rem;font-weight:600;margin-bottom:.9rem;display:none;line-height:1.4}
+    .msg.error  {background:#FFF0F0;color:var(--red);border:1px solid #FECDD5;display:block}
+    .msg.success{background:#EDFBF3;color:#1A6B3C;border:1px solid #A7F3D0;display:block}
+    .msg.info   {background:#E3F2FD;color:#1565C0;border:1px solid #BBDEFB;display:block}
 
-    /* Form */
-    .form-group { margin-bottom:.9rem; }
-    .form-group label {
-      display:block; font-size:.7rem; font-weight:800; color:var(--teal);
-      margin-bottom:5px; text-transform:uppercase; letter-spacing:.6px;
-    }
-    .form-group input, .form-group select {
-      width:100%; padding:13px 14px; border:2px solid var(--border); border-radius:12px;
-      font-family:'DM Sans',sans-serif; font-size:.93rem; font-weight:500; color:var(--tx);
-      background:var(--bg); min-height:50px; -webkit-appearance:none; appearance:none; transition:all .2s;
-    }
-    .form-group input:focus, .form-group select:focus {
-      outline:none; border-color:var(--teal); background:#fff; box-shadow:0 0 0 3px rgba(26,140,140,.12);
-    }
-    .hidden-field { display:none; }
+    /* Fields */
+    .field{margin-bottom:.85rem}
+    .field label{display:block;font-size:.68rem;font-weight:800;color:var(--teal);
+      margin-bottom:4px;text-transform:uppercase;letter-spacing:.6px}
+    .field input{width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:12px;
+      font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:500;color:var(--tx);
+      background:var(--bg);min-height:48px;-webkit-appearance:none;appearance:none;transition:all .2s}
+    .field input:focus{outline:none;border-color:var(--teal);background:#fff;box-shadow:0 0 0 3px rgba(26,140,140,.12)}
+    .hidden{display:none}
 
-    .btn-primary {
-      width:100%; padding:14px; background:var(--teal); color:#fff;
-      border:none; border-radius:13px; font-family:'DM Sans',sans-serif;
-      font-size:1rem; font-weight:800; cursor:pointer; transition:all .2s;
-      margin-top:.4rem; box-shadow:0 6px 18px rgba(26,140,140,.35); letter-spacing:-.1px;
-    }
-    .btn-primary:hover  { background:var(--teal2); }
-    .btn-primary:active { transform:scale(.97); }
-    .btn-primary:disabled { opacity:.65; cursor:not-allowed; transform:none; }
+    .btn{width:100%;padding:13px;background:var(--teal);color:#fff;border:none;border-radius:13px;
+      font-family:'DM Sans',sans-serif;font-size:.96rem;font-weight:800;cursor:pointer;
+      transition:all .2s;margin-top:.3rem;box-shadow:0 6px 18px rgba(26,140,140,.32);letter-spacing:-.1px}
+    .btn:hover{background:var(--teal2)}
+    .btn:active{transform:scale(.97)}
+    .btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
 
-    /* Pending banner */
-    .pending-box {
-      background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2);
-      border-radius:14px; padding:14px 16px; margin-top:1.1rem; text-align:center; line-height:1.6;
-    }
-    .pending-box .pi { font-size:2rem; display:block; margin-bottom:6px; }
-    .pending-box p { color:rgba(255,255,255,.85); font-size:.82rem; }
-    .pending-box strong { color:#fff; }
+    /* Bottom note */
+    .note{margin-top:1rem;text-align:center;font-size:.76rem;color:rgba(255,255,255,.55);line-height:1.5}
+    .note strong{color:rgba(255,255,255,.85)}
 
-    .hint {
-      background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.15);
-      border-radius:12px; padding:11px 14px; font-size:.78rem;
-      color:rgba(255,255,255,.6); margin-top:1.1rem; text-align:center; line-height:1.5;
-    }
-    .hint strong { color:rgba(255,255,255,.9); font-weight:700; }
+    /* Role badge strip */
+    .role-badge-strip{display:flex;align-items:center;gap:8px;margin-bottom:1rem;padding:10px 12px;
+      border-radius:12px;font-size:.82rem;font-weight:700}
+    .rbs-sa{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2)}
+    .rbs-ad{background:#E8F8EF;color:#1A6B3C;border:1px solid #A7F3D0}
+    .rbs-st{background:#E3F2FD;color:#1565C0;border:1px solid #BBDEFB}
   </style>
 </head>
 <body>
-  <div class="login-wrap">
-    <div class="brand">
-      <div class="brand-logo">🏋️</div>
-      <h1>GymPro</h1>
-      <p>Build · Transform · Achieve</p>
-    </div>
-
-    <div class="auth-card">
-      <div class="tabs">
-        <button class="tab-btn active" onclick="setMode('login')">Login</button>
-        <button class="tab-btn"        onclick="setMode('register')">Register Gym</button>
-      </div>
-
-      <div id="msg" class="message"></div>
-
-      <form id="auth-form" autocomplete="on">
-        <!-- Register only fields -->
-        <div id="name-field" class="form-group hidden-field">
-          <label>Owner / Gym Manager Name</label>
-          <input type="text" id="name" placeholder="Your full name" autocomplete="name">
-        </div>
-        <div id="gymname-field" class="form-group hidden-field">
-          <label>Gym Name</label>
-          <input type="text" id="gymName" placeholder="e.g. Fitness Zone, PowerHouse Gym">
-        </div>
-
-        <div class="form-group">
-          <label>Email Address</label>
-          <input type="email" id="email" placeholder="you@example.com" required autocomplete="email">
-        </div>
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" id="password" placeholder="Min. 6 characters" required autocomplete="current-password">
-        </div>
-
-        <button type="submit" class="btn-primary" id="submit-btn">Login</button>
-      </form>
-    </div>
-
-    <div class="hint" id="bottomHint">
-      💡 Staff members: use the login tab with credentials given by your gym admin.
-    </div>
+<div class="wrap">
+  <!-- Brand -->
+  <div class="brand">
+    <div class="brand-logo">🏋️</div>
+    <h1>GymPro</h1>
+    <p>Build · Transform · Achieve</p>
   </div>
 
-  <script>
-    const API_URL = 'https://gym-pro-mvyv.onrender.com/api/auth';
-    let isLogin = true;
+  <!-- Role pills -->
+  <div class="role-pills">
+    <button class="role-pill" onclick="setRole('superadmin')">🏆 Super Admin</button>
+    <button class="role-pill active" onclick="setRole('admin')">🏋️ Gym Admin</button>
+    <button class="role-pill" onclick="setRole('staff')">👤 Staff</button>
+  </div>
 
-    if (localStorage.getItem('token')) {
-      const u = JSON.parse(localStorage.getItem('user') || '{}');
-      window.location.href = '/';
-    }
+  <!-- Card -->
+  <div class="card">
 
-    function setMode(mode) {
-      isLogin = mode === 'login';
-      document.querySelectorAll('.tab-btn').forEach((b, i) =>
-        b.classList.toggle('active', (i === 0) === isLogin));
-      document.getElementById('name-field').classList.toggle('hidden-field', isLogin);
-      document.getElementById('gymname-field').classList.toggle('hidden-field', isLogin);
-      document.getElementById('submit-btn').textContent = isLogin ? 'Login' : 'Request GymPro Access';
-      document.getElementById('msg').className = 'message';
-      document.getElementById('bottomHint').innerHTML = isLogin
-        ? '💡 Staff members: use the login tab with credentials given by your gym admin.'
-        : '💡 After submitting, the <strong>GymPro team</strong> will review and approve your gym account.';
-    }
+    <!-- SuperAdmin view: Login only -->
+    <div id="view-superadmin" style="display:none">
+      <div class="role-badge-strip rbs-sa">🏆 GymPro Creator Login</div>
+      <div class="msg" id="msg-sa"></div>
+      <div class="field"><label>Email</label><input type="email" id="sa-email" placeholder="hprabha585@gmail.com" autocomplete="email"></div>
+      <div class="field"><label>Password</label><input type="password" id="sa-pass" placeholder="Password" autocomplete="current-password"></div>
+      <button class="btn" onclick="doLogin('superadmin')">Login as Super Admin</button>
+    </div>
 
-    function showMsg(text, type) {
-      const el = document.getElementById('msg');
-      el.textContent = text;
-      el.className = `message ${type}`;
-    }
+    <!-- Admin view: Login + Register tabs -->
+    <div id="view-admin">
+      <div class="tabs">
+        <button class="tab active" onclick="setAdminTab('login')">Login</button>
+        <button class="tab" onclick="setAdminTab('register')">Register Gym</button>
+      </div>
+      <div class="msg" id="msg-ad"></div>
 
-    document.getElementById('auth-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('submit-btn');
-      btn.disabled = true;
-      btn.textContent = 'Please wait…';
+      <!-- Admin Login -->
+      <div id="admin-login">
+        <div class="field"><label>Email</label><input type="email" id="ad-email" placeholder="you@email.com" autocomplete="email"></div>
+        <div class="field"><label>Password</label><input type="password" id="ad-pass" placeholder="Password" autocomplete="current-password"></div>
+        <button class="btn" onclick="doLogin('admin')">Login</button>
+      </div>
 
-      const email    = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-      if (!email || !password) {
-        showMsg('Please fill all required fields.', 'error');
-        btn.disabled = false;
-        btn.textContent = isLogin ? 'Login' : 'Request GymPro Access';
-        return;
-      }
+      <!-- Admin Register -->
+      <div id="admin-register" class="hidden">
+        <div class="field"><label>Your Name</label><input type="text" id="ad-name" placeholder="Owner / Manager name" autocomplete="name"></div>
+        <div class="field"><label>Gym Name</label><input type="text" id="ad-gymname" placeholder="e.g. PowerHouse Gym"></div>
+        <div class="field"><label>Email</label><input type="email" id="ad-reg-email" placeholder="you@email.com" autocomplete="email"></div>
+        <div class="field"><label>Password</label><input type="password" id="ad-reg-pass" placeholder="Min 6 characters"></div>
+        <button class="btn" onclick="doRegisterAdmin()">Request GymPro Access</button>
+      </div>
+    </div>
 
-      try {
-        let body, endpoint;
-        if (isLogin) {
-          endpoint = '/login';
-          body = { email, password };
-        } else {
-          const name    = document.getElementById('name').value.trim();
-          const gymName = document.getElementById('gymName').value.trim();
-          if (!name) { showMsg('Please enter your name.', 'error'); btn.disabled=false; btn.textContent='Request GymPro Access'; return; }
-          endpoint = '/register';
-          body = { name, email, password, gymName };
-        }
+    <!-- Staff view: Login + Register tabs -->
+    <div id="view-staff" style="display:none">
+      <div class="tabs">
+        <button class="tab active" onclick="setStaffTab('login')">Login</button>
+        <button class="tab" onclick="setStaffTab('register')">Create Account</button>
+      </div>
+      <div class="msg" id="msg-st"></div>
 
-        const res  = await fetch(`${API_URL}${endpoint}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-        const data = await res.json();
+      <!-- Staff Login -->
+      <div id="staff-login">
+        <div class="field"><label>Email</label><input type="email" id="st-email" placeholder="your@email.com" autocomplete="email"></div>
+        <div class="field"><label>Password</label><input type="password" id="st-pass" placeholder="Password" autocomplete="current-password"></div>
+        <button class="btn" onclick="doLogin('staff')">Login</button>
+      </div>
 
-        if (res.ok) {
-          if (data.pendingApproval) {
-            // Show pending approval message
-            document.querySelector('.auth-card').innerHTML = `
-              <div style="text-align:center;padding:10px 0">
-                <div style="font-size:3rem;margin-bottom:12px">⏳</div>
-                <div style="font-size:1.1rem;font-weight:800;color:#1A2E2E;margin-bottom:8px">Request Submitted!</div>
-                <p style="color:#4A6464;font-size:.88rem;line-height:1.6">
-                  Your gym registration has been sent to the <strong>GymPro team</strong> for review.<br><br>
-                  You will receive access credentials once approved. This usually takes <strong>24–48 hours</strong>.
-                </p>
-              </div>`;
-          } else {
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user',  JSON.stringify(data.user));
-            // Route by role
-            showMsg('Login successful! Redirecting…', 'success');
-            setTimeout(() => window.location.href = '/', 800);
-          }
-        } else {
-          showMsg(data.error || data.message || 'Authentication failed.', 'error');
-          btn.disabled = false;
-          btn.textContent = isLogin ? 'Login' : 'Request GymPro Access';
-        }
-      } catch (err) {
-        showMsg('Network error. Check your connection.', 'error');
-        btn.disabled = false;
-        btn.textContent = isLogin ? 'Login' : 'Request GymPro Access';
-      }
+      <!-- Staff Register -->
+      <div id="staff-register" class="hidden">
+        <div class="field"><label>Your Name</label><input type="text" id="st-name" placeholder="Full name" autocomplete="name"></div>
+        <div class="field">
+          <label>Your Gym Admin's Email</label>
+          <input type="email" id="st-admin-email" placeholder="admin@gym.com">
+          <div style="font-size:.7rem;color:#8AABAB;margin-top:4px">Enter the email of the gym owner you work for</div>
+        </div>
+        <div class="field"><label>Your Email</label><input type="email" id="st-reg-email" placeholder="your@email.com" autocomplete="email"></div>
+        <div class="field"><label>Password</label><input type="password" id="st-reg-pass" placeholder="Min 6 characters"></div>
+        <button class="btn" onclick="doRegisterStaff()">Send Request to Admin</button>
+      </div>
+    </div>
+
+  </div><!-- /card -->
+
+  <div class="note" id="bottom-note">
+    💡 Select your role above to login or create an account
+  </div>
+</div>
+
+<script>
+const API = 'https://gym-pro-mvyv.onrender.com/api/auth';
+let currentRole = 'admin';
+
+// Redirect if already logged in
+if (localStorage.getItem('token')) { window.location.href = '/'; }
+
+function setRole(role) {
+  currentRole = role;
+  // Pills
+  document.querySelectorAll('.role-pill').forEach((p,i) => {
+    p.classList.toggle('active', ['superadmin','admin','staff'][i] === role);
+  });
+  // Views
+  document.getElementById('view-superadmin').style.display = role==='superadmin' ? 'block' : 'none';
+  document.getElementById('view-admin').style.display      = role==='admin'       ? 'block' : 'none';
+  document.getElementById('view-staff').style.display      = role==='staff'       ? 'block' : 'none';
+  // Clear messages
+  ['msg-sa','msg-ad','msg-st'].forEach(id => { const el=document.getElementById(id); if(el){el.className='msg';el.textContent='';} });
+  // Bottom note
+  const notes = {
+    superadmin: '🔒 Super Admin access is restricted to GymPro creator only.',
+    admin:      '💡 Register your gym for GymPro access. Approval required.',
+    staff:      '💡 Create an account using your gym admin\'s email.'
+  };
+  document.getElementById('bottom-note').textContent = notes[role];
+}
+
+function setAdminTab(tab) {
+  document.querySelectorAll('#view-admin .tab').forEach((t,i)=>t.classList.toggle('active',i===(tab==='login'?0:1)));
+  document.getElementById('admin-login').classList.toggle('hidden', tab!=='login');
+  document.getElementById('admin-register').classList.toggle('hidden', tab!=='register');
+  clearMsg('msg-ad');
+}
+
+function setStaffTab(tab) {
+  document.querySelectorAll('#view-staff .tab').forEach((t,i)=>t.classList.toggle('active',i===(tab==='login'?0:1)));
+  document.getElementById('staff-login').classList.toggle('hidden', tab!=='login');
+  document.getElementById('staff-register').classList.toggle('hidden', tab!=='register');
+  clearMsg('msg-st');
+}
+
+function showMsg(id, text, type) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'msg ' + type;
+}
+function clearMsg(id) {
+  const el = document.getElementById(id);
+  if (el) { el.className='msg'; el.textContent=''; }
+}
+
+/* ── Login (all roles share this) ─────────────────────────── */
+async function doLogin(role) {
+  const emailId = role==='superadmin' ? 'sa-email' : role==='admin' ? 'ad-email' : 'st-email';
+  const passId  = role==='superadmin' ? 'sa-pass'  : role==='admin' ? 'ad-pass'  : 'st-pass';
+  const msgId   = role==='superadmin' ? 'msg-sa'   : role==='admin' ? 'msg-ad'   : 'msg-st';
+  const btn     = event.target;
+
+  const email    = document.getElementById(emailId).value.trim();
+  const password = document.getElementById(passId).value;
+  if (!email||!password) { showMsg(msgId,'Fill in email and password.','error'); return; }
+
+  btn.disabled=true; btn.textContent='Please wait…';
+  try {
+    const res  = await fetch(`${API}/login`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ email, password })
     });
-  </script>
+    const data = await res.json();
+    if (res.ok) {
+      // Role mismatch guard
+      if (role!=='admin' && data.user.role !== role) {
+        showMsg(msgId, `This login is for ${role}s only. Your account role is "${data.user.role}".`, 'error');
+        btn.disabled=false; btn.textContent='Login'; return;
+      }
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user',  JSON.stringify(data.user));
+      showMsg(msgId,'Login successful! Redirecting…','success');
+      setTimeout(()=>window.location.href='/', 700);
+    } else {
+      showMsg(msgId, data.error||'Login failed.', 'error');
+      btn.disabled=false; btn.textContent='Login';
+    }
+  } catch(e) {
+    showMsg(msgId,'Network error. Check connection.','error');
+    btn.disabled=false; btn.textContent='Login';
+  }
+}
+
+/* ── Register Gym Admin ────────────────────────────────────── */
+async function doRegisterAdmin() {
+  const name    = document.getElementById('ad-name').value.trim();
+  const gymName = document.getElementById('ad-gymname').value.trim();
+  const email   = document.getElementById('ad-reg-email').value.trim();
+  const password= document.getElementById('ad-reg-pass').value;
+  const btn     = event.target;
+
+  if (!name||!gymName||!email||!password) { showMsg('msg-ad','Fill all fields.','error'); return; }
+  if (password.length<6) { showMsg('msg-ad','Password must be at least 6 characters.','error'); return; }
+
+  btn.disabled=true; btn.textContent='Please wait…';
+  try {
+    const res  = await fetch(`${API}/register`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name, gymName, email, password })
+    });
+    const data = await res.json();
+    if (res.ok && data.pendingApproval) {
+      document.getElementById('view-admin').innerHTML = `
+        <div style="text-align:center;padding:8px 0">
+          <div style="font-size:3rem;margin-bottom:12px">⏳</div>
+          <div style="font-size:1.05rem;font-weight:800;color:#1A2E2E;margin-bottom:8px">Request Submitted!</div>
+          <p style="color:#4A6464;font-size:.85rem;line-height:1.7">
+            <strong>${gymName}</strong> gym registration has been sent to the
+            <strong>GymPro team</strong> for review.<br><br>
+            You'll be notified once approved. Usually takes <strong>24–48 hours</strong>.
+          </p>
+        </div>`;
+    } else {
+      showMsg('msg-ad', data.error||'Registration failed.','error');
+      btn.disabled=false; btn.textContent='Request GymPro Access';
+    }
+  } catch(e) {
+    showMsg('msg-ad','Network error.','error');
+    btn.disabled=false; btn.textContent='Request GymPro Access';
+  }
+}
+
+/* ── Register Staff ────────────────────────────────────────── */
+async function doRegisterStaff() {
+  const name       = document.getElementById('st-name').value.trim();
+  const adminEmail = document.getElementById('st-admin-email').value.trim();
+  const email      = document.getElementById('st-reg-email').value.trim();
+  const password   = document.getElementById('st-reg-pass').value;
+  const btn        = event.target;
+
+  if (!name||!adminEmail||!email||!password) { showMsg('msg-st','Fill all fields.','error'); return; }
+  if (password.length<6) { showMsg('msg-st','Password min 6 characters.','error'); return; }
+
+  btn.disabled=true; btn.textContent='Sending request…';
+  try {
+    const res  = await fetch(`${API}/register-staff`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name, adminEmail, email, password })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      document.getElementById('view-staff').innerHTML = `
+        <div style="text-align:center;padding:8px 0">
+          <div style="font-size:3rem;margin-bottom:12px">📨</div>
+          <div style="font-size:1.05rem;font-weight:800;color:#1A2E2E;margin-bottom:8px">Request Sent!</div>
+          <p style="color:#4A6464;font-size:.85rem;line-height:1.7">
+            Your request has been sent to your gym admin.<br><br>
+            Once the admin approves you, come back here and <strong>Login</strong> with your credentials.
+          </p>
+        </div>`;
+    } else {
+      showMsg('msg-st', data.error||'Registration failed.','error');
+      btn.disabled=false; btn.textContent='Send Request to Admin';
+    }
+  } catch(e) {
+    showMsg('msg-st','Network error.','error');
+    btn.disabled=false; btn.textContent='Send Request to Admin';
+  }
+}
+
+// Default: show admin view
+setRole('admin');
+</script>
 </body>
 </html>
