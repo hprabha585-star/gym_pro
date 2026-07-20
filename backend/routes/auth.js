@@ -251,14 +251,25 @@ router.post('/reject-staff/:userId', verifyToken, adminOnly, async (req, res) =>
 /* ─── POST /logout ───────────────────────────────────────────── */
 router.post('/logout', verifyToken, (req, res) => res.json({ message: 'Logged out.' }));
 
-/* ─── PATCH /profile ─────────────────────────────────────────── */
+/* --- GET /gym-profile (returns gym owner's gymData - works for both admin and staff) --- */
+router.get('/gym-profile', verifyToken, async (req, res) => {
+  try {
+    const ownerId = req.user.gymId || req.user.userId;
+    const owner = await User.findById(ownerId).select('gymData gymName name');
+    if (!owner) return res.status(404).json({ error: 'Gym profile not found.' });
+    res.json({ gymData: owner.gymData || '{}', gymName: owner.gymName || owner.name || '' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/* --- PATCH /profile (saves to gym owner account so staff and admin share same settings) --- */
 router.patch('/profile', verifyToken, async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId);
-    if (!user) return res.status(404).json({ error: 'User not found.' });
-    if (req.body.gymData  !== undefined) user.gymData  = req.body.gymData;
-    if (req.body.gymName  !== undefined) user.gymName  = req.body.gymName;
-    await user.save();
+    const ownerId = req.user.gymId || req.user.userId;
+    const owner = await User.findById(ownerId);
+    if (!owner) return res.status(404).json({ error: 'Gym profile not found.' });
+    if (req.body.gymData !== undefined) owner.gymData = req.body.gymData;
+    if (req.body.gymName !== undefined) owner.gymName = req.body.gymName;
+    await owner.save();
     res.json({ message: 'Profile updated.' });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
