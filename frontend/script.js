@@ -126,11 +126,12 @@ function sortByExpiry(members) {
 /* ── PROFILE SYNC ── */
 async function loadServerProfile() {
   try {
-    const res = await fetch(`${BASE}/auth/me`, { headers: hdrs() });
-    if (!res.ok) return;
-    const user = await res.json();
-    if (user.gymData && user.gymData !== '{}') {
-      const d = typeof user.gymData === 'string' ? JSON.parse(user.gymData) : user.gymData;
+    // Use /gym-profile so staff always get the GYM OWNER's settings (UPI, plans, etc.)
+    const res = await fetch(`${BASE}/auth/gym-profile`, { headers: hdrs() });
+    if (!res.ok) throw new Error('gym-profile failed');
+    const data = await res.json();
+    if (data.gymData && data.gymData !== '{}') {
+      const d = typeof data.gymData === 'string' ? JSON.parse(data.gymData) : data.gymData;
       if (d.plans && d.plans.length) gymPlans = d.plans;
       if (d.cfg)  gymCfg  = d.cfg;
       if (d.disc) gymDisc = d.disc;
@@ -197,10 +198,17 @@ function updateBNav(id) {
 }
 
 function showPage(page, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  // Hide all pages (remove active + reset any inline display:none)
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active');
+    p.style.display = 'none';
+  });
   document.querySelectorAll('.nav-btn').forEach(l => l.classList.remove('active'));
   const target = document.getElementById(`page-${page}`);
-  if (target) target.classList.add('active');
+  if (target) {
+    target.classList.add('active');
+    target.style.display = 'block';
+  }
   if (btn) btn.classList.add('active');
   
   const titles = {
@@ -3071,6 +3079,10 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Stop here for superadmin - never load gym data
   if (_isSuperAdmin) return;
+
+  // Ensure dashboard page is visible (showPage sets all to display:none)
+  const _dash = document.getElementById('page-dashboard');
+  if (_dash) _dash.style.display = 'block';
 
   populatePlanSelect();
   populatePlanSelect('ePlan');
