@@ -2999,6 +2999,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   const admFeeEl = document.getElementById('mAdmFee');
   if (admFeeEl && gymCfg.admissionFee) admFeeEl.value = gymCfg.admissionFee;
 
+  // Role-based init
+  let _isSuperAdmin = false;
   try {
     const u = JSON.parse(localStorage.getItem('user')||'{}');
     window._userRole  = u.role;
@@ -3012,42 +3014,49 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (u.role === 'superadmin') {
-      // SuperAdmin: show ONLY the control panel, nothing else
+      _isSuperAdmin = true;
+      // Hide ALL gym pages - show only control panel
       document.querySelectorAll('.page').forEach(p => { p.style.display='none'; p.classList.remove('active'); });
       const saPage = document.getElementById('page-superadmin');
       if (saPage) { saPage.style.display='block'; saPage.classList.add('active'); }
-      // Update top bar title
+      // Hide bottom nav - superadmin only needs the panel
+      const bnav = document.querySelector('.bottom-nav');
+      if (bnav) bnav.style.display = 'none';
+      // Top bar title
       const topTitle = document.querySelector('.top-bar .page-title');
-      if (topTitle) topTitle.textContent = 'Control Panel';
-      // Set email label
+      if (topTitle) topTitle.textContent = 'GymPro Control Panel';
+      // Email label
       const saLabel = document.getElementById('saEmailLabel');
       if (saLabel) saLabel.textContent = u.email || '';
-      // Load data and auto-refresh pending every 30s
+      // Load and auto-refresh every 30s
       loadSuperAdminData();
       setInterval(loadSaPending, 30000);
-      // STOP - don't load any gym data for superadmin
-      return;
 
     } else if (u.role === 'admin') {
-      // Gym Admin: full app + show Staff Mgmt nav
+      // Show Staff Mgmt in sidebar
       const navGA = document.getElementById('navGymAdmin');
       if (navGA) navGA.style.display = '';
       const gaLabel = document.getElementById('gaAdminLabel');
       if (gaLabel) gaLabel.textContent = (u.gymName ? u.gymName + ' - ' : '') + (u.name || '');
-      // Auto-refresh pending staff badge every 30s
-      setInterval(async () => {
+      // Load pending staff count immediately and show banner
+      (async () => {
         try {
           const r = await fetch(`${BASE}/auth/pending-staff`, { headers: hdrs() });
           if (r.ok) {
             const list = await r.json();
-            const badge = document.getElementById('gaStaffBadge');
-            if (badge && list.length) {
-              badge.textContent = list.length;
-              badge.style.display = '';
+            if (list.length) {
+              const badge = document.getElementById('gaStaffBadge');
+              if (badge) badge.textContent = list.length;
+              const banner = document.getElementById('staffPendingBanner');
+              if (banner) {
+                banner.style.display = 'flex';
+                const sp = banner.querySelector('span');
+                if (sp) sp.textContent = list.length + ' staff request' + (list.length>1?'s':'') + ' pending approval';
+              }
             }
           }
         } catch(e) {}
-      }, 30000);
+      })();
 
     } else {
       // Staff: hide sections based on permissions
@@ -3056,15 +3065,18 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (!p.viewRevenue)         { hideEl('navRevenue'); hideEl('page-revenue'); hideEl('dashRevenueSummary'); }
       if (!p.viewSettings)        { document.querySelectorAll('[data-page="settings"]').forEach(e=>e.style.display='none'); }
       if (p.viewPayments===false) { document.querySelectorAll('[data-page="payments"]').forEach(e=>e.style.display='none'); }
-      // Also hide gymadmin nav for staff
       hideEl('navGymAdmin');
     }
   } catch(e) { console.error('Role init error:', e); }
+
+  // Stop here for superadmin - never load gym data
+  if (_isSuperAdmin) return;
 
   populatePlanSelect();
   populatePlanSelect('ePlan');
   recalcPrice();
   loadDashboard();
+
 
 
   loadPlans();
