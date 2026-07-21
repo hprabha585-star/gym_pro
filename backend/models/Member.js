@@ -90,16 +90,36 @@ const memberSchema = new mongoose.Schema({
     method: { type: String, enum: ['upi', 'cash', 'card'] },
     receiptNo: String,
     plan: String,
-    months: Number,
-    type: { type: String, enum: ['plan', 'admission', 'pt'], default: 'plan' }
+    months: Number
   }],
   status: { 
     type: String, 
     enum: ['Active', 'Trial', 'Inactive', 'Expired'], 
     default: 'Active' 
+  },
+  // Auto-assigned sequential member number per gym
+  memberNo: {
+    type: Number,
+    default: null
   }
 }, { 
   timestamps: true 
+});
+
+// Auto-assign memberNo before first save
+memberSchema.pre('save', async function(next) {
+  if (this.memberNo) return next(); // already assigned
+  try {
+    const last = await this.constructor.findOne(
+      { userId: this.userId },
+      { memberNo: 1 },
+      { sort: { memberNo: -1 } }
+    );
+    this.memberNo = (last && last.memberNo) ? last.memberNo + 1 : 1001;
+  } catch(e) {
+    this.memberNo = Date.now() % 10000 + 1000; // fallback
+  }
+  next();
 });
 
 // Compound index to ensure unique phone per user
