@@ -486,6 +486,12 @@
   </div>
 
   <div id="page-revenue" class="page">
+    <div style="display:flex;align-items:center;gap:8px;background:#fff;border-radius:14px;padding:10px 14px;margin-bottom:10px;border:1px solid #E0ECEC;box-shadow:0 2px 8px rgba(0,0,0,.04)">
+      <span style="font-size:1.1rem">🔍</span>
+      <input id="revenueSearch" type="text" placeholder="Search by member name or ID..." oninput="filterRevenue()"
+        style="flex:1;border:none;outline:none;font-family:inherit;font-size:.88rem;color:#1A2E2E;background:transparent">
+      <button onclick="document.getElementById('revenueSearch').value='';filterRevenue()" style="border:none;background:none;cursor:pointer;color:#8AABAB;font-size:.8rem;font-weight:700">Clear</button>
+    </div>
     <div class="card">
       <div class="card-head"><span class="card-title">📈 Revenue Dashboard</span></div>
       <div style="padding:16px">
