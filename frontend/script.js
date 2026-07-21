@@ -550,6 +550,9 @@ function renderDashTable(membersList) {
         <button onclick="openPaymentForById('${safeId_d}')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5">
           <span style="font-size:1rem">🔄</span><span style="font-size:.55rem;font-weight:700;color:#8AABAB">Renew</span>
         </button>
+        <button onclick="sendPaymentReminder('${safeId_d}','${safePhone_d}','${safeName_d}')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5">
+          <span style="font-size:1rem">💰</span><span style="font-size:.55rem;font-weight:700;color:#8AABAB">Reminder</span>
+        </button>
         <button onclick="openEditMember('${safeId_d}')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;border:none;background:transparent;cursor:pointer">
           <span style="font-size:1rem">✏️</span><span style="font-size:.55rem;font-weight:700;color:#8AABAB">Edit</span>
         </button>
@@ -687,12 +690,12 @@ function _renderMemberCard(m, idx) {
     <div style="display:flex;align-items:stretch;gap:12px;padding:12px 12px 8px;position:relative">
       ${_memberAvatar(m)}
       <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px">
-          <div>
-            <span style="font-size:.85rem;font-weight:800;color:#1A2E2E">Name: </span>
-            <span style="font-size:.85rem;font-weight:700;color:#1A2E2E">${safeName}</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;min-width:0">
+            <span style="font-size:.85rem;font-weight:800;color:#1A2E2E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${safeName}</span>
+            ${m.gender ? `<span style="font-size:.6rem;padding:2px 6px;border-radius:8px;font-weight:700;background:${m.gender==='Male'?'#EFF6FF':'#FDF2F8'};color:${m.gender==='Male'?'#2980B9':'#8E44AD'}">${m.gender}</span>` : ''}
           </div>
-          <span style="font-size:.7rem;font-weight:700;color:#1A8C8C;white-space:nowrap">M ID ${idx+1}</span>
+          <span style="font-size:.65rem;font-weight:800;color:#fff;background:#1A8C8C;padding:2px 8px;border-radius:8px;white-space:nowrap;flex-shrink:0">ID #${m.memberNo || (idx+1)}</span>
         </div>
         <div style="font-size:.78rem;color:#4A6464;margin-bottom:3px">
           <span style="font-weight:600">Mobile: </span>+91 - ${safePhone}
@@ -709,7 +712,7 @@ function _renderMemberCard(m, idx) {
           <span style="font-weight:700;color:#4A6464">${m.lastPaymentDate ? new Date(m.lastPaymentDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</span>
         </div>
       </div>
-      <button onclick="event.stopPropagation();delMember('${safeId}','${safeName.replace(/'/g,"\\'")}')" style="position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;background:#FEECEB;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#E74C3C;flex-shrink:0">🗑</button>
+      
     </div>
     <div style="display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:6px 8px;border-top:1px solid #F0F5F5;background:linear-gradient(90deg,#E8F8EF 0%,#fff 70%);gap:0;">
       <button onclick="openEditMember('${safeId}')" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:54px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0"><span style="font-size:1rem">🪪</span><span style="font-size:.52rem;font-weight:700;color:#8AABAB">ID Card</span></button>
@@ -719,7 +722,8 @@ function _renderMemberCard(m, idx) {
       <button onclick="openPaymentFor({id:'${safeId}',name:'${safeName}',plan:'${safePlan}',expiryDate:'${m.expiryDate||''}',planPrice:${m.planPrice||0},ptEnabled:${!!m.ptEnabled},ptFee:${m.ptFee||0},admissionFee:${m.admissionFee||0},admissionWaived:${!!m.admissionWaived}})" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:62px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0"><span style="font-size:1rem">🔄</span><span style="font-size:.52rem;font-weight:700;color:#8AABAB">Renew Plan</span></button>
       <button onclick="sendAttendanceReport('${safeId}','${esc(m.phone||'')}','${safeName}')" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:54px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5;flex-shrink:0"><span style="font-size:1rem">📊</span><span style="font-size:.52rem;font-weight:700;color:#8AABAB">Attend</span></button>
       <button onclick="sendPaymentReminder('${safeId}','${esc(m.phone||'')}','${safeName}')" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:54px;padding:5px 8px;border:none;background:transparent;cursor:pointer;flex-shrink:0"><span style="font-size:1rem">💰</span><span style="font-size:.52rem;font-weight:700;color:#8AABAB">Reminder</span></button>
-      <button onclick="openEditMember('${safeId}')" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:48px;padding:5px 8px;border:none;background:transparent;cursor:pointer;flex-shrink:0"><span style="font-size:1rem">✏️</span><span style="font-size:.52rem;font-weight:700;color:#8AABAB">Edit</span></button>
+      <button onclick="openEditMember('${safeId}')" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:48px;padding:5px 8px;border:none;background:transparent;cursor:pointer;border-left:1px solid #F0F5F5;flex-shrink:0"><span style="font-size:1rem">✏️</span><span style="font-size:.52rem;font-weight:700;color:#8AABAB">Edit</span></button>
+      <button onclick="delMember('${safeId}','${safeName.replace(/'/g,"\\'")}')" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:48px;padding:5px 8px;border:none;background:#FFF0F0;cursor:pointer;border-left:1px solid #FECDD5;flex-shrink:0"><span style="font-size:1rem">🗑️</span><span style="font-size:.52rem;font-weight:700;color:#E74C3C">Delete</span></button>
     </div>
   </div>`;
 }
@@ -1882,13 +1886,23 @@ async function loadPayments() {
 }
 
 /* ── REVENUE PAGE ── */
+let _revenueSearchQuery = '';
+
+function filterRevenue() {
+  _revenueSearchQuery = (document.getElementById('revenueSearch')?.value || '').toLowerCase().trim();
+  loadRevenuePage();
+}
+
 async function loadRevenuePage() {
   const container = document.getElementById('revenueDetailed');
   if (!container) return;
   try {
     const res = await fetch(API, {headers:hdrs()});
     if (res.status===401) { logout(); return; }
-    const members = await res.json();
+    const allMembers = await res.json();
+    const members = _revenueSearchQuery
+      ? allMembers.filter(m => (m.name||'').toLowerCase().includes(_revenueSearchQuery) || String(m.memberNo||'').includes(_revenueSearchQuery))
+      : allMembers;
     const revenue = calculateRevenue(members);
     
     const today = new Date();
@@ -1945,7 +1959,10 @@ async function loadRevenuePage() {
           const history = m.paymentHistory || [];
           return `
             <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #F0F5F5">
-              <div style="font-weight:700;font-size:.82rem;color:#1A2E2E">${esc(m.name)}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+                <span style="font-weight:700;font-size:.82rem;color:#1A2E2E">${esc(m.name)}</span>
+                <span style="font-size:.65rem;font-weight:800;background:#1A8C8C;color:#fff;padding:1px 7px;border-radius:8px">ID #${m.memberNo||'-'}</span>
+              </div>
               ${history.map(p => `
                 <div style="display:flex;justify-content:space-between;font-size:.7rem;color:#4A6464;padding:2px 0;padding-left:12px">
                   <span>₹${(p.amount||0).toLocaleString('en-IN')}</span>
