@@ -524,37 +524,47 @@ function renderDashTable(membersList) {
     const safePhone_d = esc(m.phone||'');
     const safeId_d = esc(m._id);
     const safeName_d = esc(m.name||'');
-    return `<div style="border-bottom:1px solid #F0F5F5;overflow:hidden">
-      <div style="display:flex;align-items:center;gap:12px;padding:12px 12px 8px;cursor:pointer" onclick="openEditMember('${safeId_d}')">
-        ${avImgDash(m)}
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:800;font-size:.95rem;color:#1A2E2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safeName_d}</div>
-          <div style="font-size:.75rem;color:#4A6464;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📱 +91 ${safePhone_d}</div>
-          <div style="font-size:.7rem;color:#8AABAB;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.plan||'')}</div>
+    return `<div style="border-bottom:2px solid #F0F5F5;overflow:hidden;background:#fff">
+      <!-- Top info row: full-width, photo + details + expiry -->
+      <div style="display:flex;align-items:stretch;gap:0;padding:0">
+        <!-- Photo -->
+        <div style="padding:12px 10px 0 12px;flex-shrink:0" onclick="openEditMember('${safeId_d}')">
+          ${avImgDash(m)}
         </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end;margin-bottom:5px">
-            <span style="width:8px;height:8px;border-radius:50%;background:${expColor};flex-shrink:0"></span>
-            <span style="font-size:.8rem;font-weight:700;color:#1A2E2E;white-space:nowrap">${expLabel}</span>
+        <!-- Details -->
+        <div style="flex:1;min-width:0;padding:10px 6px 8px 0" onclick="openEditMember('${safeId_d}')">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+            <span style="font-weight:800;font-size:1rem;color:#1A2E2E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${safeName_d}</span>
+            <span style="font-size:.6rem;font-weight:800;color:#fff;background:#1A8C8C;padding:1px 6px;border-radius:7px;white-space:nowrap;flex-shrink:0">ID #${m.memberNo||''}</span>
           </div>
-          <span style="background:${sb};color:${sc};padding:3px 10px;border-radius:20px;font-size:.68rem;font-weight:800">${esc(m.status||'')}</span>
+          <div style="font-size:.78rem;color:#4A6464;font-weight:600;margin-bottom:2px">📱 +91 ${safePhone_d}</div>
+          <div style="font-size:.72rem;color:#8AABAB;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.plan||'')}</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="width:7px;height:7px;border-radius:50%;background:${expColor};flex-shrink:0"></span>
+            <span style="font-size:.75rem;font-weight:700;color:#1A2E2E">${expLabel}</span>
+            <span style="background:${sb};color:${sc};padding:2px 8px;border-radius:14px;font-size:.62rem;font-weight:800;margin-left:2px">${esc(m.status||'')}</span>
+          </div>
         </div>
       </div>
-      <div style="display:flex;border-top:1px solid #F0F5F5;background:linear-gradient(90deg,#E8F8EF 0%,#fff 70%)">
-        <button onclick="dialPhone('${safePhone_d}')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5">
-          <span style="font-size:1rem">📞</span><span style="font-size:.55rem;font-weight:700;color:#8AABAB">Call</span>
+      <!-- Action bar: 6 buttons full width -->
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);border-top:1px solid #F0F5F5">
+        <button onclick="dialPhone('${safePhone_d}')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 2px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5">
+          <span style="font-size:.95rem">📞</span><span style="font-size:.5rem;font-weight:700;color:#8AABAB">Call</span>
         </button>
-        <button onclick="openWhatsApp('${safePhone_d}')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5">
-          <span style="font-size:1rem">💬</span><span style="font-size:.55rem;font-weight:700;color:#8AABAB">WhatsApp</span>
+        <button onclick="openWhatsApp('${safePhone_d}')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 2px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5">
+          <span style="font-size:.95rem">💬</span><span style="font-size:.5rem;font-weight:700;color:#8AABAB">WhatsApp</span>
         </button>
-        <button onclick="openPaymentForById('${safeId_d}')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5">
-          <span style="font-size:1rem">🔄</span><span style="font-size:.55rem;font-weight:700;color:#8AABAB">Renew</span>
+        <button onclick="openPaymentForById('${safeId_d}')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 2px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5">
+          <span style="font-size:.95rem">🔄</span><span style="font-size:.5rem;font-weight:700;color:#8AABAB">Renew</span>
         </button>
-        <button onclick="sendPaymentReminder('${safeId_d}','${safePhone_d}','${safeName_d}')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5">
-          <span style="font-size:1rem">💰</span><span style="font-size:.55rem;font-weight:700;color:#8AABAB">Reminder</span>
+        <button onclick="sendPaymentReminder('${safeId_d}','${safePhone_d}','${safeName_d}')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 2px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5">
+          <span style="font-size:.95rem">💰</span><span style="font-size:.5rem;font-weight:700;color:#8AABAB">Reminder</span>
         </button>
-        <button onclick="openEditMember('${safeId_d}')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;border:none;background:transparent;cursor:pointer">
-          <span style="font-size:1rem">✏️</span><span style="font-size:.55rem;font-weight:700;color:#8AABAB">Edit</span>
+        <button onclick="openEditMember('${safeId_d}')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 2px;border:none;background:transparent;cursor:pointer;border-right:1px solid #F0F5F5">
+          <span style="font-size:.95rem">✏️</span><span style="font-size:.5rem;font-weight:700;color:#8AABAB">Edit</span>
+        </button>
+        <button onclick="delMember('${safeId_d}','${safeName_d}')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 2px;border:none;background:#FFF0F0;cursor:pointer">
+          <span style="font-size:.95rem">🗑️</span><span style="font-size:.5rem;font-weight:700;color:#E74C3C">Delete</span>
         </button>
       </div>
     </div>`;
@@ -735,7 +745,8 @@ function _applyMembersFilters() {
   if (_memberSearchQuery)
     list = list.filter(m =>
       (m.name||'').toLowerCase().includes(_memberSearchQuery) ||
-      (m.phone||'').includes(_memberSearchQuery)
+      (m.phone||'').includes(_memberSearchQuery) ||
+      String(m.memberNo||'').includes(_memberSearchQuery)
     );
   const wrap = document.getElementById('membersListWrap');
   if (!wrap) return;
