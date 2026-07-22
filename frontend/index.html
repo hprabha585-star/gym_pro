@@ -280,17 +280,13 @@
           <button style="padding:5px 13px;border-radius:20px;border:none;background:#1A8C8C;color:#fff;font-family:inherit;font-size:.72rem;font-weight:800;cursor:pointer;min-height:32px" onclick="openModal('addMemberModal')">+ Add</button>
         </div>
       </div>
-      <table style="width:100%;border-collapse:collapse">
-        <thead>
-          <tr style="background:#F5FBFB">
-            <th style="padding:7px 8px 7px 14px;text-align:left;font-size:.62rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.7px">Member</th>
-            <th style="padding:7px 14px 7px 6px;text-align:right;font-size:.62rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.7px">Expires / Status</th>
-          </tr>
-        </thead>
-        <tbody id="dashBody">
-          <tr><td colspan="2"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr>
-        </tbody>
-      </table>
+      <div style="display:flex;padding:7px 14px;background:#F5FBFB">
+        <div style="flex:1;text-align:left;font-size:.62rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.7px">Member</div>
+        <div style="text-align:right;font-size:.62rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.7px">Expires / Status</div>
+      </div>
+      <div id="dashBody">
+        <div class="empty"><div class="ei">⏳</div><p>Loading…</p></div>
+      </div>
     </div>
   </div>
 
