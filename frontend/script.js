@@ -788,7 +788,7 @@ async function delMember(id, name) {
   if (!confirm(`Delete "${name}"? Cannot undo.`)) return;
   try {
     const res = await fetch(`${API}/${id}`, {method:'DELETE',headers:hdrs()});
-    if (res.ok) { toast(`${name} deleted`,'success'); loadAllMembers(); loadDashboard(); }
+    if (res.ok) { toast(`${name} deleted`,'success'); loadAllMembers(); loadDashboard(); loadPayments(); }
     else toast('Error deleting','error');
   } catch(e) { toast('Network error','error'); }
 }
@@ -1888,7 +1888,10 @@ async function loadPayments() {
       return `<div class="pay-row">
         <div style="display:flex;align-items:center;gap:12px">${avImg(m)}<div><div style="font-weight:700;font-size:.85rem">${esc(m.name)}</div><div style="font-size:.72rem;color:var(--tx3)">${esc(m.plan)}</div><div style="font-size:.7rem;color:var(--tx3)">Exp: ${fmt(m.expiryDate)}</div></div></div>
         <span class="badge ${d<0?'b-inactive':'b-trial'}">${d<0?'Overdue':d+'d'}</span>
-        <button class="btn btn-success btn-sm" onclick="openPaymentForById('${esc(String(m._id||''))}')" >Renew</button>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn btn-success btn-sm" onclick="openPaymentForById('${esc(String(m._id||''))}')">Renew</button>
+          <button class="btn btn-sm" style="background:#FFF0F0;color:#E74C3C" onclick="delMember('${esc(String(m._id||''))}','${esc(String(m.name||'').replace(/'/g,"\\'"))}')">🗑️</button>
+        </div>
       </div>`;
     }).join('');
   } catch(e) {
