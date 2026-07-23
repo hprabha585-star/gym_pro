@@ -10,7 +10,9 @@ router.use(authMiddleware);
 // Get all members (only current user's members)
 router.get('/', async (req, res) => {
   try {
-    const members = await Member.find({ userId: (req.user.gymId || req.user.userId) }).sort({ joinDate: -1 });
+    const members = await Member.find({ userId: (req.user.gymId || req.user.userId) })
+      .select('-photo')
+      .sort({ joinDate: -1 });
     res.json(members);
   } catch (err) {
     res.status(500).json({ error: err.message });
