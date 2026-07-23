@@ -99,13 +99,37 @@ function avImg(m) {
 }
 
 // Larger avatar for dashboard expiring-soon cards
+/* ================================================================
+   PHOTO COMPRESSION
+   Resizes any photo to max 200x200px at 50% JPEG quality before
+   storing in MongoDB. Reduces storage from ~2MB to ~10KB per photo.
+================================================================ */
+function compressPhoto(dataUrl, maxSize, quality, callback) {
+  maxSize  = maxSize  || 200;   // max width/height in px
+  quality  = quality  || 0.50;  // JPEG quality 0-1
+  const img = new Image();
+  img.onload = function() {
+    let w = img.width, h = img.height;
+    if (w > maxSize || h > maxSize) {
+      if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+      else       { w = Math.round(w * maxSize / h); h = maxSize; }
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    callback(canvas.toDataURL('image/jpeg', quality));
+  };
+  img.onerror = function() { callback(dataUrl); }; // fallback: use original
+  img.src = dataUrl;
+}
+
 function avImgDash(m) {
   const initials = (m.name||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
   const bg = avClr(m.name);
   if (m.photo?.startsWith('data:image')) {
-    return `<img src="${m.photo}" alt="${esc(m.name)}" style="width:96px;height:96px;border-radius:18px;object-fit:cover;flex-shrink:0;box-shadow:0 4px 16px rgba(0,0,0,.22)">`;
+    return `<img src="${m.photo}" alt="${esc(m.name)}" style="width:72px;height:72px;border-radius:14px;object-fit:cover;flex-shrink:0;box-shadow:0 3px 10px rgba(0,0,0,.18)">`;
   }
-  return `<div style="width:96px;height:96px;border-radius:18px;background:linear-gradient(135deg,${bg},${bg}CC);display:inline-flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 4px 16px rgba(0,0,0,.22)">${esc(initials)}</div>`;
+  return `<div style="width:72px;height:72px;border-radius:14px;background:linear-gradient(135deg,${bg},${bg}CC);display:inline-flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 3px 10px rgba(0,0,0,.18)">${esc(initials)}</div>`;
 }
 
 function badge(status) {
@@ -532,17 +556,17 @@ function renderDashTable(membersList) {
           ${avImgDash(m)}
         </div>
         <!-- Details -->
-        <div style="flex:1;min-width:0;padding:10px 6px 8px 0" onclick="openEditMember('${safeId_d}')">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+        <div style="flex:1;min-width:0;padding:10px 12px 8px 8px" onclick="openEditMember('${safeId_d}')">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:3px">
             <span style="font-weight:800;font-size:1rem;color:#1A2E2E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${safeName_d}</span>
-            <span style="font-size:.6rem;font-weight:800;color:#fff;background:#1A8C8C;padding:1px 6px;border-radius:7px;white-space:nowrap;flex-shrink:0">ID #${m.memberNo||''}</span>
+            <span style="font-size:.6rem;font-weight:800;color:#fff;background:#1A8C8C;padding:2px 7px;border-radius:7px;white-space:nowrap;flex-shrink:0">ID #${m.memberNo||''}</span>
           </div>
           <div style="font-size:.78rem;color:#4A6464;font-weight:600;margin-bottom:2px">📱 +91 ${safePhone_d}</div>
-          <div style="font-size:.72rem;color:#8AABAB;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.plan||'')}</div>
+          <div style="font-size:.72rem;color:#8AABAB;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.plan||'')}</div>
           <div style="display:flex;align-items:center;gap:6px">
             <span style="width:7px;height:7px;border-radius:50%;background:${expColor};flex-shrink:0"></span>
-            <span style="font-size:.75rem;font-weight:700;color:#1A2E2E">${expLabel}</span>
-            <span style="background:${sb};color:${sc};padding:2px 8px;border-radius:14px;font-size:.62rem;font-weight:800;margin-left:2px">${esc(m.status||'')}</span>
+            <span style="font-size:.78rem;font-weight:700;color:#1A2E2E">${expLabel}</span>
+            <span style="background:${sb};color:${sc};padding:2px 9px;border-radius:14px;font-size:.65rem;font-weight:800">${esc(m.status||'')}</span>
           </div>
         </div>
       </div>
@@ -788,7 +812,7 @@ async function delMember(id, name) {
   if (!confirm(`Delete "${name}"? Cannot undo.`)) return;
   try {
     const res = await fetch(`${API}/${id}`, {method:'DELETE',headers:hdrs()});
-    if (res.ok) { toast(`${name} deleted`,'success'); loadAllMembers(); loadDashboard(); loadPayments(); }
+    if (res.ok) { toast(`${name} deleted`,'success'); loadAllMembers(); loadDashboard(); }
     else toast('Error deleting','error');
   } catch(e) { toast('Network error','error'); }
 }
@@ -1058,9 +1082,11 @@ function setupCamera() {
     captureBtn.onclick = () => {
       can.width = vid.videoWidth; can.height = vid.videoHeight;
       can.getContext('2d').drawImage(vid,0,0);
-      const d = can.toDataURL('image/jpeg',.75);
-      prev.src = d; pd.value = d; 
-      if (clr) clr.style.display = 'inline-flex';
+      const rawCapture = can.toDataURL('image/jpeg', 1.0);
+      compressPhoto(rawCapture, 200, 0.50, function(d) {
+        prev.src = d; pd.value = d;
+        if (clr) clr.style.display = 'inline-flex';
+      });
       closeModal('cameraModal');
       if (curStream) curStream.getTracks().forEach(t => t.stop());
     };
@@ -1086,20 +1112,22 @@ function setupCamera() {
       r.onload = ev => {
         const result = ev.target.result;
         if (!result) { prev.style.opacity='1'; return; }
-        prev.src = result;
-        prev.style.opacity = '1';
-        pd.value = result;
-        if (clr) clr.style.display = 'inline-flex';
-        const modalId = window._presCamModalId ||
-          (document.getElementById('editMemberModal') ? 'editMemberModal' : 'addMemberModal');
-        const modal = document.getElementById(modalId);
-        if (modal && !modal.classList.contains('open')) {
-          modal.classList.add('open');
-          _setModalHeight(modal);
-          const mbox = modal.querySelector('.mbox');
-          if (mbox) setTimeout(() => { mbox.scrollTop = 0; }, 50);
-        }
-        window._presCamModalId = null;
+        compressPhoto(result, 200, 0.50, function(compressed) {
+          prev.src = compressed;
+          prev.style.opacity = '1';
+          pd.value = compressed;
+          if (clr) clr.style.display = 'inline-flex';
+          const modalId = window._presCamModalId ||
+            (document.getElementById('editMemberModal') ? 'editMemberModal' : 'addMemberModal');
+          const modal = document.getElementById(modalId);
+          if (modal && !modal.classList.contains('open')) {
+            modal.classList.add('open');
+            _setModalHeight(modal);
+            const mbox = modal.querySelector('.mbox');
+            if (mbox) setTimeout(() => { mbox.scrollTop = 0; }, 50);
+          }
+          window._presCamModalId = null;
+        });
       };
       r.onerror = () => { prev.style.opacity = '1'; toast('Photo error — try Upload', 'error'); };
       r.readAsDataURL(f);
@@ -1162,14 +1190,16 @@ function setupEditPhoto() {
       r.onload = e2 => {
         const result = e2.target.result;
         if (!result) { ePrev.style.opacity='1'; return; }
-        ePrev.src = result;
-        ePrev.style.opacity = '1';
-        ePD.value = result;
-        if (eClr) eClr.style.display = 'inline-flex';
-        const modal = document.getElementById('editMemberModal');
-        if (modal && !modal.classList.contains('open')) {
-          modal.classList.add('open'); _setModalHeight(modal);
-        }
+        compressPhoto(result, 200, 0.50, function(compressed) {
+          ePrev.src = compressed;
+          ePrev.style.opacity = '1';
+          ePD.value = compressed;
+          if (eClr) eClr.style.display = 'inline-flex';
+          const modal = document.getElementById('editMemberModal');
+          if (modal && !modal.classList.contains('open')) {
+            modal.classList.add('open'); _setModalHeight(modal);
+          }
+        });
       };
       r.onerror = () => { ePrev.style.opacity='1'; toast('Photo error','error'); };
       r.readAsDataURL(f);
@@ -1885,12 +1915,25 @@ async function loadPayments() {
       const p = m.expiryDate.split('T')[0].split('-');
       const expDate = new Date(p[0], p[1]-1, p[2]);
       const d = Math.ceil((expDate - today)/86400000);
-      return `<div class="pay-row">
-        <div style="display:flex;align-items:center;gap:12px">${avImg(m)}<div><div style="font-weight:700;font-size:.85rem">${esc(m.name)}</div><div style="font-size:.72rem;color:var(--tx3)">${esc(m.plan)}</div><div style="font-size:.7rem;color:var(--tx3)">Exp: ${fmt(m.expiryDate)}</div></div></div>
-        <span class="badge ${d<0?'b-inactive':'b-trial'}">${d<0?'Overdue':d+'d'}</span>
-        <div style="display:flex;gap:6px;flex-shrink:0">
-          <button class="btn btn-success btn-sm" onclick="openPaymentForById('${esc(String(m._id||''))}')">Renew</button>
-          <button class="btn btn-sm" style="background:#FFF0F0;color:#E74C3C" onclick="delMember('${esc(String(m._id||''))}','${esc(String(m.name||'').replace(/'/g,"\\'"))}')">🗑️</button>
+      const safePayId = esc(String(m._id||''));
+      const safePayName = esc(m.name||'');
+      return `<div style="padding:12px 14px;border-bottom:1px solid #F0F5F5;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:12px">
+          ${avImg(m)}
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span style="font-weight:800;font-size:.9rem;color:#1A2E2E">${esc(m.name)}</span>
+              <span style="font-size:.6rem;font-weight:800;color:#fff;background:#1A8C8C;padding:1px 6px;border-radius:6px">ID #${m.memberNo||''}</span>
+            </div>
+            <div style="font-size:.72rem;color:#8AABAB;margin-top:1px">${esc(m.plan)}</div>
+            <div style="font-size:.7rem;color:#8AABAB;margin-top:1px">Exp: ${fmt(m.expiryDate)}</div>
+          </div>
+          <span class="badge ${d<0?'b-inactive':'b-trial'}" style="flex-shrink:0">${d<0?'Overdue':d+'d'}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <button onclick="openPaymentForById('${safePayId}')" style="padding:9px 4px;background:#27AE60;color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer">🔄 Renew</button>
+          <button onclick="sendPaymentReminder('${safePayId}','${esc(m.phone||'')}','${esc(m.name||'')}')" style="padding:9px 4px;background:#F39C12;color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer">💰 Remind</button>
+          <button onclick="delMember('${safePayId}','${safePayName}')" style="padding:9px 4px;background:#E74C3C;color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer">🗑️ Delete</button>
         </div>
       </div>`;
     }).join('');
