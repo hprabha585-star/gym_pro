@@ -1950,6 +1950,15 @@ function filterRevenue() {
   loadRevenuePage();
 }
 
+function _getRevenueDateRange() {
+  const fromVal = document.getElementById('revenueFromDate')?.value || '';
+  const toVal   = document.getElementById('revenueToDate')?.value || '';
+  // from = start of day, to = end of day, so the "to" date itself is included
+  const from = fromVal ? new Date(fromVal + 'T00:00:00') : null;
+  const to   = toVal   ? new Date(toVal   + 'T23:59:59') : null;
+  return { from, to };
+}
+
 async function loadRevenuePage() {
   const container = document.getElementById('revenueDetailed');
   if (!container) return;
@@ -2011,28 +2020,56 @@ async function loadRevenuePage() {
       </div>
       
       <div style="background:#fff;border:1px solid #E0ECEC;border-radius:14px;padding:14px;margin-top:12px">
-        <div style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Payment History (All Time)</div>
-        ${members.filter(m => (m.paymentHistory || []).length).map(m => {
-          const history = m.paymentHistory || [];
-          return `
-            <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #F0F5F5">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
-                <span style="font-weight:700;font-size:.82rem;color:#1A2E2E">${esc(m.name)}</span>
-                <span style="font-size:.65rem;font-weight:800;background:#1A8C8C;color:#fff;padding:1px 7px;border-radius:8px">ID #${m.memberNo||'-'}</span>
-              </div>
-              ${history.map(p => `
-                <div style="display:flex;justify-content:space-between;font-size:.7rem;color:#4A6464;padding:2px 0;padding-left:12px">
-                  <span>₹${(p.amount||0).toLocaleString('en-IN')}</span>
-                  <span>${p.date ? new Date(p.date).toLocaleDateString('en-IN') : '—'}</span>
-                  <span>
-                    <span class="payment-method-badge ${p.method === 'upi' ? 'pm-upi' : p.method === 'cash' ? 'pm-cash' : 'pm-card'}">${(p.method||'cash').toUpperCase()}</span>
-                  </span>
-                  ${p.type ? `<span style="font-size:.6rem;color:#8AABAB">${p.type}</span>` : ''}
+        ${(() => {
+          const { from, to } = _getRevenueDateRange();
+          const isFiltered = !!(from || to);
+
+          const rangeLabel = isFiltered
+            ? `${from ? from.toLocaleDateString('en-IN') : 'Start'} — ${to ? to.toLocaleDateString('en-IN') : 'Today'}`
+            : 'All Time';
+
+          let filteredTotal = 0;
+          const rows = members.filter(m => (m.paymentHistory || []).length).map(m => {
+            let history = m.paymentHistory || [];
+            if (isFiltered) {
+              history = history.filter(p => {
+                if (!p.date) return false;
+                const d = new Date(p.date);
+                if (from && d < from) return false;
+                if (to && d > to) return false;
+                return true;
+              });
+            }
+            history.forEach(p => filteredTotal += (p.amount || 0));
+            if (!history.length) return '';
+            return `
+              <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #F0F5F5">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+                  <span style="font-weight:700;font-size:.82rem;color:#1A2E2E">${esc(m.name)}</span>
+                  <span style="font-size:.65rem;font-weight:800;background:#1A8C8C;color:#fff;padding:1px 7px;border-radius:8px">ID #${m.memberNo||'-'}</span>
                 </div>
-              `).join('')}
+                ${history.map(p => `
+                  <div style="display:flex;justify-content:space-between;font-size:.7rem;color:#4A6464;padding:2px 0;padding-left:12px">
+                    <span>₹${(p.amount||0).toLocaleString('en-IN')}</span>
+                    <span>${p.date ? new Date(p.date).toLocaleDateString('en-IN') : '—'}</span>
+                    <span>
+                      <span class="payment-method-badge ${p.method === 'upi' ? 'pm-upi' : p.method === 'cash' ? 'pm-cash' : 'pm-card'}">${(p.method||'cash').toUpperCase()}</span>
+                    </span>
+                    ${p.type ? `<span style="font-size:.6rem;color:#8AABAB">${p.type}</span>` : ''}
+                  </div>
+                `).join('')}
+              </div>
+            `;
+          }).join('');
+
+          return `
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">
+              <span style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.5px">Payment History (${rangeLabel})</span>
+              ${isFiltered ? `<span style="font-size:.78rem;font-weight:800;color:#1A8C8C">Total: ₹${filteredTotal.toLocaleString('en-IN')}</span>` : ''}
             </div>
+            ${rows || `<div class="empty" style="padding:20px 0"><p style="color:#8AABAB;font-size:.8rem">No payments in this range</p></div>`}
           `;
-        }).join('')}
+        })()}
       </div>
     `;
     
