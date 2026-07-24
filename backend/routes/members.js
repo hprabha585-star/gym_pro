@@ -11,7 +11,6 @@ router.use(authMiddleware);
 router.get('/', async (req, res) => {
   try {
     const members = await Member.find({ userId: (req.user.gymId || req.user.userId) })
-      .select('-photo')
       .sort({ joinDate: -1 });
     res.json(members);
   } catch (err) {
