@@ -280,13 +280,17 @@
           <button style="padding:5px 13px;border-radius:20px;border:none;background:#1A8C8C;color:#fff;font-family:inherit;font-size:.72rem;font-weight:800;cursor:pointer;min-height:32px" onclick="openModal('addMemberModal')">+ Add</button>
         </div>
       </div>
-      <div style="display:flex;padding:7px 14px;background:#F5FBFB">
-        <div style="flex:1;text-align:left;font-size:.62rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.7px">Member</div>
-        <div style="text-align:right;font-size:.62rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.7px">Expires / Status</div>
-      </div>
-      <div id="dashBody">
-        <div class="empty"><div class="ei">⏳</div><p>Loading…</p></div>
-      </div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:#F5FBFB">
+            <th style="padding:7px 8px 7px 14px;text-align:left;font-size:.62rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.7px">Member</th>
+            <th style="padding:7px 14px 7px 6px;text-align:right;font-size:.62rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.7px">Expires / Status</th>
+          </tr>
+        </thead>
+        <tbody id="dashBody">
+          <tr><td colspan="2"><div class="empty"><div class="ei">⏳</div><p>Loading…</p></div></td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -487,6 +491,16 @@
       <input id="revenueSearch" type="text" placeholder="Search by member name or ID..." oninput="filterRevenue()"
         style="flex:1;border:none;outline:none;font-family:inherit;font-size:.88rem;color:#1A2E2E;background:transparent">
       <button onclick="document.getElementById('revenueSearch').value='';filterRevenue()" style="border:none;background:none;cursor:pointer;color:#8AABAB;font-size:.8rem;font-weight:700">Clear</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border-radius:14px;padding:10px 14px;margin-bottom:10px;border:1px solid #E0ECEC;box-shadow:0 2px 8px rgba(0,0,0,.04)">
+      <span style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.4px">Payments From</span>
+      <input id="revenueFromDate" type="date" onchange="filterRevenue()"
+        style="border:1.5px solid #E0ECEC;border-radius:9px;padding:6px 8px;font-family:inherit;font-size:.8rem;color:#1A2E2E">
+      <span style="font-size:.7rem;font-weight:800;color:#8AABAB;text-transform:uppercase;letter-spacing:.4px">To</span>
+      <input id="revenueToDate" type="date" onchange="filterRevenue()"
+        style="border:1.5px solid #E0ECEC;border-radius:9px;padding:6px 8px;font-family:inherit;font-size:.8rem;color:#1A2E2E">
+      <button onclick="document.getElementById('revenueFromDate').value='';document.getElementById('revenueToDate').value='';filterRevenue()"
+        style="border:none;background:none;cursor:pointer;color:#8AABAB;font-size:.8rem;font-weight:700;margin-left:auto">Clear dates</button>
     </div>
     <div class="card">
       <div class="card-head"><span class="card-title">📈 Revenue Dashboard</span></div>
